@@ -45,48 +45,48 @@ pub fn new_crc32() -> Crc32 {
 }
 
 // Update CRC-32 with a single byte
-pub fn update_byte(crc : Crc32, byte : Int) -> Crc32 {
+fn crc32_update_byte(crc : Crc32, byte : Int) -> Crc32 {
   let index = (crc.land(0xffL)).lxor(byte.to_int64().land(0xffL)).to_int()
   (crc >> 8).lxor(crc32_table[index])
 }
 
 // Update CRC-32 with a string
-pub fn update_string(crc : Crc32, s : String) -> Crc32 {
+fn crc32_update_string(crc : Crc32, s : String) -> Crc32 {
   let mut result = crc
   for i = 0; i < s.length(); i = i + 1 {
-    result = update_byte(result, s[i].to_int())
+    result = crc32_update_byte(result, s[i])
   }
   result
 }
 
 // Finalize CRC-32 (XOR with 0xffffffff)
-pub fn finalize(crc : Crc32) -> Crc32 {
+fn finalize(crc : Crc32) -> Crc32 {
   crc.lxor(0xffffffffL)
 }
 
 // Compute CRC-32 of a string
-pub fn string(s : String) -> Crc32 {
+pub fn crc32_string(s : String) -> Crc32 {
   let crc = new_crc32()
-  let updated = update_string(crc, s)
+  let updated = crc32_update_string(crc, s)
   finalize(updated)
 }
 
 // Check if two CRC-32 values are equal
-pub fn equal(c1 : Crc32, c2 : Crc32) -> Bool {
+pub fn crc32_equal(c1 : Crc32, c2 : Crc32) -> Bool {
   c1 == c2
 }
 
 // Check CRC-32 with error message
-pub fn check(expect : Crc32, found : Crc32) -> @types.Result[Unit, String] {
-  if equal(expect, found) {
-    @types.ok(())
+pub fn crc32_check(expect : Crc32, found : Crc32) -> Result[Unit, String] {
+  if crc32_equal(expect, found) {
+    Ok(())
   } else {
-    @types.err("CRC-32 mismatch: expected \{to_hex(expect)}, found \{to_hex(found)}")
+    Err("CRC-32 mismatch: expected \{crc32_to_hex(expect)}, found \{crc32_to_hex(found)}")
   }
 }
 
 // Format CRC-32 as hex string
-pub fn to_hex(crc : Crc32) -> String {
+pub fn crc32_to_hex(crc : Crc32) -> String {
   let hex_chars = "0123456789abcdef"
   let mut result = ""
   let mut value = crc
