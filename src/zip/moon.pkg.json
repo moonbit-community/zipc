@@ -1,0 +1,5 @@
+{
+  "import": [
+    "zipc/zipc/deflate"
+  ]
+}
