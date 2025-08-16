@@ -1,6 +1,6 @@
 // Core types for deflate module
-pub typealias UInt16 = Int
-pub typealias UInt32 = Int64
+pub typealias Int as UInt16
+pub typealias Int64 as UInt32
 
 // Compression levels
 pub enum Level {

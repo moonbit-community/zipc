@@ -1,4 +1,4 @@
-// Main deflate module - public API
+// Simplified deflate module - public API
 
 // Re-export types
 pub typealias UInt16 = @types.UInt16
@@ -41,8 +41,7 @@ pub fn[T, E] unwrap_or(result : Result[T, E], default : T) -> T {
   @types.unwrap_or(result, default)
 }
 
-// Placeholder for inflate function - to be implemented
-pub fn inflate(data : String, ~decompressed_size : Int = -1, ~start : Int = 0, ~len : Int = -1) -> Result[String, String] {
-  // For now, return an error indicating not implemented
+// Placeholder inflate function
+pub fn inflate(data : String) -> Result[String, String] {
   err("Deflate decompression not yet implemented")
 }

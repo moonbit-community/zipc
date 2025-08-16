@@ -20,13 +20,11 @@ pub let find = @zip.find
 pub let add = @zip.add
 pub let remove = @zip.remove
 pub let member_count = @zip.member_count
-pub let fold = @zip.fold
 pub let of_binary_string = @zip.of_binary_string
 pub let to_binary_string = @zip.to_binary_string
 
 // File operations
 pub let stored_of_binary_string = @zip.stored_of_binary_string
-pub let deflate_of_binary_string = @zip.deflate_of_binary_string
 
 // Member operations  
 pub let member_make = @zip.member_make

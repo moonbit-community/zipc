@@ -1,7 +1,7 @@
 // Adler-32 checksum implementation for zlib format
 // Adler-32 is defined as: a = 1 + sum of bytes, b = sum of a values, result = b * 65536 + a
 
-pub typealias Adler32 = Int64
+pub typealias Int64 as Adler32
 
 let adler32_base : Int64 = 65521L  // Largest prime smaller than 65536
 
@@ -19,20 +19,19 @@ pub fn update_byte(adler : Adler32, byte : Int) -> Adler32 {
   (new_b << 16).lor(new_a)
 }
 
-// Update Adler-32 with a string slice
-pub fn update_string(adler : Adler32, s : String, ~start : Int = 0, ~len : Int = -1) -> Adler32 {
-  let actual_len = if len == -1 { s.length() - start } else { len }
+// Update Adler-32 with a string
+pub fn update_string(adler : Adler32, s : String) -> Adler32 {
   let mut result = adler
-  for i = start; i < start + actual_len; i = i + 1 {
+  for i = 0; i < s.length(); i = i + 1 {
     result = update_byte(result, s[i].to_int())
   }
   result
 }
 
-// Compute Adler-32 of a string slice
-pub fn string(s : String, ~start : Int = 0, ~len : Int = -1) -> Adler32 {
+// Compute Adler-32 of a string
+pub fn string(s : String) -> Adler32 {
   let adler = new_adler32()
-  update_string(adler, s, ~start, ~len)
+  update_string(adler, s)
 }
 
 // Check if two Adler-32 values are equal
@@ -41,7 +40,7 @@ pub fn equal(a1 : Adler32, a2 : Adler32) -> Bool {
 }
 
 // Check Adler-32 with error message
-pub fn check(~expect : Adler32, ~found : Adler32) -> @types.Result[Unit, String] {
+pub fn check(expect : Adler32, found : Adler32) -> @types.Result[Unit, String] {
   if equal(expect, found) {
     @types.ok(())
   } else {

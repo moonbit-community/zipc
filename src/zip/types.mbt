@@ -12,11 +12,11 @@ pub enum Compression {
 }
 
 // File paths and modes
-pub typealias Fpath = String
-pub typealias Mode = Int
+pub typealias String as Fpath
+pub typealias Int as Mode
 
 // POSIX time (seconds since Unix epoch)
-pub typealias Ptime = Int
+pub typealias Int as Ptime
 
 // File data structure
 pub struct File {
@@ -25,10 +25,10 @@ pub struct File {
   compressed_size : Int
   compressed_bytes : String
   decompressed_size : Int
-  decompressed_crc32 : @deflate.Crc32
-  version_made_by : @deflate.UInt16
-  version_needed_to_extract : @deflate.UInt16
-  gp_flags : @deflate.UInt16
+  decompressed_crc32 : Int64  // Using Int64 directly for now
+  version_made_by : Int
+  version_needed_to_extract : Int
+  gp_flags : Int
 }
 
 // Member kinds
@@ -52,6 +52,6 @@ pub struct Archive {
 
 // Constants
 pub let dos_epoch : Ptime = 315532800  // 1980-01-01 00:00:00 UTC
-pub let max_file_size : Int = 4294967295  // 4GB - 1 (ZIP32 limit)
+pub let max_file_size : Int = 2147483647  // Use max int instead of 4GB
 pub let max_members : Int = 65535  // ZIP32 limit
 pub let max_path_length : Int = 65535

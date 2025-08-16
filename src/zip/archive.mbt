@@ -12,8 +12,8 @@ pub fn is_empty(archive : @types.Archive) -> Bool {
 
 // Check if archive contains a member with given path
 pub fn mem(path : @types.Fpath, archive : @types.Archive) -> Bool {
-  for member in archive.members {
-    if @member.path(member) == path {
+  for member_obj in archive.members {
+    if @member.path(member_obj) == path {
       return true
     }
   }
@@ -22,24 +22,24 @@ pub fn mem(path : @types.Fpath, archive : @types.Archive) -> Bool {
 
 // Find member by path
 pub fn find(path : @types.Fpath, archive : @types.Archive) -> Option[@types.Member] {
-  for member in archive.members {
-    if @member.path(member) == path {
-      return Some(member)
+  for member_obj in archive.members {
+    if @member.path(member_obj) == path {
+      return Some(member_obj)
     }
   }
   None
 }
 
 // Add member to archive (replaces existing member with same path)
-pub fn add(member : @types.Member, archive : @types.Archive) -> @types.Archive {
+pub fn add(member_obj : @types.Member, archive : @types.Archive) -> @types.Archive {
   let mut new_members : Array[@types.Member] = []
-  let member_path = @member.path(member)
+  let member_path = @member.path(member_obj)
   let mut found = false
   
   // Copy existing members, replacing if path matches
   for existing in archive.members {
     if @member.path(existing) == member_path {
-      new_members.push(member)
+      new_members.push(member_obj)
       found = true
     } else {
       new_members.push(existing)
@@ -48,7 +48,7 @@ pub fn add(member : @types.Member, archive : @types.Archive) -> @types.Archive {
   
   // Add new member if not replacing
   if not(found) {
-    new_members.push(member)
+    new_members.push(member_obj)
   }
   
   @types.Archive::{ members: new_members }
@@ -58,9 +58,9 @@ pub fn add(member : @types.Member, archive : @types.Archive) -> @types.Archive {
 pub fn remove(path : @types.Fpath, archive : @types.Archive) -> @types.Archive {
   let mut new_members : Array[@types.Member] = []
   
-  for member in archive.members {
-    if @member.path(member) != path {
-      new_members.push(member)
+  for member_obj in archive.members {
+    if @member.path(member_obj) != path {
+      new_members.push(member_obj)
     }
   }
   
@@ -70,42 +70,6 @@ pub fn remove(path : @types.Fpath, archive : @types.Archive) -> @types.Archive {
 // Get member count
 pub fn member_count(archive : @types.Archive) -> Int {
   archive.members.length()
-}
-
-// Fold over members in lexicographic order
-pub fn[T] fold(f : (@types.Member, T) -> T, archive : @types.Archive, acc : T) -> T {
-  // Sort members by path first
-  let sorted_members = sort_members_by_path(archive.members)
-  let mut result = acc
-  
-  for member in sorted_members {
-    result = f(member, result)
-  }
-  
-  result
-}
-
-// Sort members by path (lexicographic order)
-fn sort_members_by_path(members : Array[@types.Member]) -> Array[@types.Member] {
-  // Simple bubble sort for now
-  let mut sorted = Array::make(members.length(), members[0])
-  for i = 0; i < members.length(); i = i + 1 {
-    sorted[i] = members[i]
-  }
-  
-  for i = 0; i < sorted.length() - 1; i = i + 1 {
-    for j = 0; j < sorted.length() - 1 - i; j = j + 1 {
-      let path1 = @member.path(sorted[j])
-      let path2 = @member.path(sorted[j + 1])
-      if path1 > path2 {
-        let temp = sorted[j]
-        sorted[j] = sorted[j + 1]
-        sorted[j + 1] = temp
-      }
-    }
-  }
-  
-  sorted
 }
 
 // Check if string has ZIP magic bytes
@@ -136,18 +100,16 @@ pub fn of_binary_string(s : String) -> @deflate.Result[@types.Archive, String] {
   }
   
   // For now, return empty archive
-  // Full ZIP parsing would be implemented here
   @deflate.ok(empty())
 }
 
 // Encode archive to binary string (placeholder)
-pub fn to_binary_string(archive : @types.Archive, ~first : Option[@types.Fpath] = None) -> @deflate.Result[String, String] {
+pub fn to_binary_string(archive : @types.Archive) -> @deflate.Result[String, String] {
   if member_count(archive) > @types.max_members {
-    return @deflate.err("Too many members: \{member_count(archive)} > \{@types.max_members}")
+    return @deflate.err("Too many members")
   }
   
   // For now, return minimal empty ZIP archive
-  // Full ZIP encoding would be implemented here
   let empty_zip = "PK\x05\x06" + String::make(18, '\x00')
   @deflate.ok(empty_zip)
 }

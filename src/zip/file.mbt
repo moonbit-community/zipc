@@ -1,21 +1,20 @@
 // File operations for ZIP archives
 
 // Create file data from stored (uncompressed) string
-pub fn stored_of_binary_string(s : String, ~start : Int = 0, ~len : Int = -1) -> @deflate.Result[@types.File, String] {
-  let actual_len = if len == -1 { s.length() - start } else { len }
+pub fn stored_of_binary_string(s : String) -> @deflate.Result[@types.File, String] {
+  let actual_len = s.length()
   
   if actual_len > @types.max_file_size {
-    return @deflate.err("File size exceeds maximum: \{actual_len}")
+    return @deflate.err("File size exceeds maximum")
   }
   
-  let data = s.substring(~start, ~end=start + actual_len)
-  let crc32 = @deflate.crc32_string(data)
+  let crc32 = @deflate.crc32_string(s)
   
   let file = @types.File::{
     compression: @types.Compression::Stored,
     start: 0,
     compressed_size: actual_len,
-    compressed_bytes: data,
+    compressed_bytes: s,
     decompressed_size: actual_len,
     decompressed_crc32: crc32,
     version_made_by: 0x314,  // UNIX + PKZIP 2.0
@@ -24,12 +23,6 @@ pub fn stored_of_binary_string(s : String, ~start : Int = 0, ~len : Int = -1) ->
   }
   
   @deflate.ok(file)
-}
-
-// Create file data with deflate compression (placeholder)
-pub fn deflate_of_binary_string(s : String, ~level : @deflate.Level = @deflate.Level::Default, ~start : Int = 0, ~len : Int = -1) -> @deflate.Result[@types.File, String] {
-  // For now, fall back to stored format
-  stored_of_binary_string(s, ~start, ~len)
 }
 
 // Get compression format of file
@@ -73,7 +66,6 @@ pub fn to_binary_string(file : @types.File) -> @deflate.Result[String, String] {
       @deflate.ok(file.compressed_bytes)
     }
     @types.Compression::Deflate => {
-      // Placeholder - would use deflate decompression
       @deflate.err("Deflate decompression not yet implemented")
     }
     _ => @deflate.err("Unsupported compression format")

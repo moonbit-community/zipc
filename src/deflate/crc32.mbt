@@ -1,7 +1,7 @@
 // CRC-32 checksum implementation for ZIP files
 // Uses polynomial 0xedb88320 (reversed 0x04c11db7)
 
-pub typealias Crc32 = Int64
+pub typealias Int64 as Crc32
 
 // CRC-32 lookup table (precomputed for performance)
 let crc32_table : Array[Int64] = [
@@ -50,11 +50,10 @@ pub fn update_byte(crc : Crc32, byte : Int) -> Crc32 {
   (crc >> 8).lxor(crc32_table[index])
 }
 
-// Update CRC-32 with a string slice
-pub fn update_string(crc : Crc32, s : String, ~start : Int = 0, ~len : Int = -1) -> Crc32 {
-  let actual_len = if len == -1 { s.length() - start } else { len }
+// Update CRC-32 with a string
+pub fn update_string(crc : Crc32, s : String) -> Crc32 {
   let mut result = crc
-  for i = start; i < start + actual_len; i = i + 1 {
+  for i = 0; i < s.length(); i = i + 1 {
     result = update_byte(result, s[i].to_int())
   }
   result
@@ -65,10 +64,10 @@ pub fn finalize(crc : Crc32) -> Crc32 {
   crc.lxor(0xffffffffL)
 }
 
-// Compute CRC-32 of a string slice
-pub fn string(s : String, ~start : Int = 0, ~len : Int = -1) -> Crc32 {
+// Compute CRC-32 of a string
+pub fn string(s : String) -> Crc32 {
   let crc = new_crc32()
-  let updated = update_string(crc, s, ~start, ~len)
+  let updated = update_string(crc, s)
   finalize(updated)
 }
 
@@ -78,7 +77,7 @@ pub fn equal(c1 : Crc32, c2 : Crc32) -> Bool {
 }
 
 // Check CRC-32 with error message
-pub fn check(~expect : Crc32, ~found : Crc32) -> @types.Result[Unit, String] {
+pub fn check(expect : Crc32, found : Crc32) -> @types.Result[Unit, String] {
   if equal(expect, found) {
     @types.ok(())
   } else {
