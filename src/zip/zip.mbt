@@ -79,16 +79,16 @@ pub fn remove(path : Fpath, archive : Archive) -> Archive {
 }
 
 // File operations
-pub fn stored_of_binary_string(s : String) -> Result[File, String] {
+pub fn stored_of_binary_string(s : String) -> @deflate.Result[File, String] {
   let len = s.length()
   if len > max_file_size {
-    return Err("File size exceeds maximum allowed (" + max_file_size.to_string() + " bytes)")
+    return @deflate.err("File size exceeds maximum allowed (" + max_file_size.to_string() + " bytes)")
   }
   
-  // Simple CRC-32 calculation (placeholder - would use actual CRC-32 from deflate module)
-  let crc = s.length().to_int64()  // Simplified for now
+  // Calculate actual CRC-32 checksum
+  let crc = @deflate.crc32_string(s)
   
-  Ok({
+  @deflate.ok({
     compression: Compression::Stored,
     start: 0,
     compressed_size: len,
@@ -114,26 +114,26 @@ pub fn file_can_extract(file : File) -> Bool {
   }
 }
 
-pub fn file_to_binary_string(file : File) -> Result[String, String] {
+pub fn file_to_binary_string(file : File) -> @deflate.Result[String, String] {
   if not(file_can_extract(file)) {
-    return Err("Unsupported compression format")
+    return @deflate.err("Unsupported compression format")
   }
   match file.compression {
     Compression::Stored => {
       let data = file.compressed_bytes.substring(start=file.start, end=file.start + file.compressed_size)
-      Ok(data)
+      @deflate.ok(data)
     }
     Compression::Deflate => {
-      Err("Deflate decompression not yet implemented")
+      @deflate.err("Deflate decompression not yet implemented")
     }
-    _ => Err("Unsupported compression format")
+    _ => @deflate.err("Unsupported compression format")
   }
 }
 
 // Member operations
-pub fn member_make(path : Fpath, kind : MemberKind) -> Result[Member, String] {
+pub fn member_make(path : Fpath, kind : MemberKind) -> @deflate.Result[Member, String] {
   if path.length() > max_path_length {
-    return Err("Path length exceeds maximum allowed (" + max_path_length.to_string() + " bytes)")
+    return @deflate.err("Path length exceeds maximum allowed (" + max_path_length.to_string() + " bytes)")
   }
 
   let sanitized_path = path.replace(old="\\", new="/")
@@ -155,7 +155,7 @@ pub fn member_make(path : Fpath, kind : MemberKind) -> Result[Member, String] {
     MemberKind::File(_) => 0o644
   }
 
-  Ok({
+  @deflate.ok({
     path: final_path,
     mtime: dos_epoch, // Default mtime
     mode: default_mode,
@@ -169,17 +169,17 @@ pub fn member_mtime(mem : Member) -> Ptime { mem.mtime }
 pub fn member_kind(mem : Member) -> MemberKind { mem.kind }
 
 // Archive encoding/decoding (simplified placeholders)
-pub fn to_binary_string(archive : Archive) -> Result[String, String] {
+pub fn to_binary_string(archive : Archive) -> @deflate.Result[String, String] {
   if member_count(archive) > max_members {
-    return Err("Archive has too many members (" + member_count(archive).to_string() + "), max is " + max_members.to_string())
+    return @deflate.err("Archive has too many members (" + member_count(archive).to_string() + "), max is " + max_members.to_string())
   }
   
   // Simplified: just return an empty ZIP file signature for now
   let empty_zip = "PK\u{05}\u{06}" + String::make(18, '\u{00}')
-  Ok(empty_zip)
+  @deflate.ok(empty_zip)
 }
 
-pub fn of_binary_string(_s : String) -> Result[Archive, String] {
+pub fn of_binary_string(_s : String) -> @deflate.Result[Archive, String] {
   // Placeholder for actual ZIP decoding logic
-  Err("ZIP decoding not yet implemented")
+  @deflate.err("ZIP decoding not yet implemented")
 }

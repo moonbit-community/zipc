@@ -1,6 +1,6 @@
 {
   "import": [
-    "zipc/zipc"
+    "bobzhang/zipc"
   ],
   "is-main": true
 }
