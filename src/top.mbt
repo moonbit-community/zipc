@@ -23,6 +23,7 @@ pub fn to_binary_string(archive : Archive) -> @deflate.Result[String, String] { 
 
 // File operations
 pub fn stored_of_binary_string(s : String) -> @deflate.Result[File, String] { @zip.stored_of_binary_string(s) }
+pub fn deflate_of_binary_string(s : String, level : @deflate.Level) -> @deflate.Result[File, String] { @zip.deflate_of_binary_string(s, level) }
 pub fn file_compression(file : File) -> Compression { @zip.file_compression(file) }
 pub fn file_compressed_size(file : File) -> Int { @zip.file_compressed_size(file) }
 pub fn file_decompressed_size(file : File) -> Int { @zip.file_decompressed_size(file) }

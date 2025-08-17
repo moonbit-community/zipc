@@ -101,6 +101,35 @@ pub fn stored_of_binary_string(s : String) -> @deflate.Result[File, String] {
   })
 }
 
+// Create deflate-compressed file
+pub fn deflate_of_binary_string(s : String, level : @deflate.Level) -> @deflate.Result[File, String] {
+  let len = s.length()
+  if len > max_file_size {
+    return @deflate.err("File size exceeds maximum allowed (" + max_file_size.to_string() + " bytes)")
+  }
+  
+  // Compress using deflate
+  match @deflate.deflate_of_binary_string(s, level) {
+    @deflate.Ok(compressed_data) => {
+      // Calculate CRC-32 of original data
+      let crc = @deflate.crc32_string(s)
+      
+      @deflate.ok({
+        compression: Compression::Deflate,
+        start: 0,
+        compressed_size: compressed_data.length(),
+        compressed_bytes: compressed_data,
+        decompressed_size: len,
+        decompressed_crc32: crc,
+        version_made_by: 0x314, // UNIX, ZIP 2.0
+        version_needed_to_extract: 20,    // ZIP 2.0
+        gp_flags: 0x800 // UTF-8 filename
+      })
+    }
+    @deflate.Err(error) => @deflate.err("Deflate compression failed: " + error)
+  }
+}
+
 pub fn file_compression(file : File) -> Compression { file.compression }
 pub fn file_compressed_size(file : File) -> Int { file.compressed_size }
 pub fn file_decompressed_size(file : File) -> Int { file.decompressed_size }
@@ -124,7 +153,7 @@ pub fn file_to_binary_string(file : File) -> @deflate.Result[String, String] {
       @deflate.ok(data)
     }
     Compression::Deflate => {
-      @deflate.err("Deflate decompression not yet implemented")
+      @deflate.deflate_decompress_string(file.compressed_bytes, file.decompressed_size)
     }
     _ => @deflate.err("Unsupported compression format")
   }
@@ -168,18 +197,411 @@ pub fn member_mode(mem : Member) -> Mode { mem.mode }
 pub fn member_mtime(mem : Member) -> Ptime { mem.mtime }
 pub fn member_kind(mem : Member) -> MemberKind { mem.kind }
 
-// Archive encoding/decoding (simplified placeholders)
+// Archive encoding/decoding
 pub fn to_binary_string(archive : Archive) -> @deflate.Result[String, String] {
   if member_count(archive) > max_members {
     return @deflate.err("Archive has too many members (" + member_count(archive).to_string() + "), max is " + max_members.to_string())
   }
   
-  // Simplified: just return an empty ZIP file signature for now
-  let empty_zip = "PK\u{05}\u{06}" + String::make(18, '\u{00}')
-  @deflate.ok(empty_zip)
+  if is_empty(archive) {
+    // Empty ZIP file: just EOCD record
+    let eocd = "PK\u{05}\u{06}" + String::make(18, '\u{00}')
+    @deflate.ok(eocd)
+  } else {
+    // Build complete ZIP file
+    build_zip_file(archive)
+  }
 }
 
-pub fn of_binary_string(_s : String) -> @deflate.Result[Archive, String] {
-  // Placeholder for actual ZIP decoding logic
-  @deflate.err("ZIP decoding not yet implemented")
+// Build a complete ZIP file with local headers, central directory, and EOCD
+fn build_zip_file(archive : Archive) -> @deflate.Result[String, String] {
+  let mut zip_data = ""
+  let mut central_directory = ""
+  let local_header_offsets : Array[Int] = []
+  let member_list : Array[Member] = []
+  
+  // Collect all members
+  archive.members.each(fn(_, mem) {
+    member_list.push(mem)
+  })
+  
+  // Write local file headers and data
+  for mem in member_list {
+    let local_header_offset = zip_data.length()
+    local_header_offsets.push(local_header_offset)
+    
+    match write_local_file_header(mem) {
+      @deflate.Ok(local_header_data) => {
+        zip_data = zip_data + local_header_data
+      }
+      @deflate.Err(error) => return @deflate.err("Failed to write local header: " + error)
+    }
+  }
+  
+  // Write central directory
+  let central_directory_offset = zip_data.length()
+  for i = 0; i < member_list.length(); i = i + 1 {
+    let mem = member_list[i]
+    let local_offset = local_header_offsets[i]
+    
+    match write_central_directory_entry(mem, local_offset) {
+      @deflate.Ok(cd_entry) => {
+        central_directory = central_directory + cd_entry
+      }
+      @deflate.Err(error) => return @deflate.err("Failed to write central directory entry: " + error)
+    }
+  }
+  
+  // Write end of central directory record
+  let eocd = write_eocd_record(member_list.length(), central_directory.length(), central_directory_offset)
+  
+  let complete_zip = zip_data + central_directory + eocd
+  @deflate.ok(complete_zip)
+}
+
+// Write local file header
+fn write_local_file_header(mem : Member) -> @deflate.Result[String, String] {
+  let path = mem.path
+  let path_bytes = path  // Assuming UTF-8 encoding
+  
+  match mem.kind {
+    MemberKind::Dir => {
+      // Directory entry
+      let header = write_u32_le(local_file_header_signature) +  // Signature
+                   write_u16_le(20) +                           // Version needed
+                   write_u16_le(0x800) +                        // GP flags (UTF-8)
+                   write_u16_le(0) +                            // Compression method (stored)
+                   write_u16_le(0) +                            // Last mod time
+                   write_u16_le(0) +                            // Last mod date
+                   write_u32_le(0) +                            // CRC-32
+                   write_u32_le(0) +                            // Compressed size
+                   write_u32_le(0) +                            // Uncompressed size
+                   write_u16_le(path_bytes.length()) +          // Filename length
+                   write_u16_le(0)                              // Extra field length
+      
+      @deflate.ok(header + path_bytes)
+    }
+    MemberKind::File(file) => {
+      // File entry
+      let compression_method = match file.compression {
+        Compression::Stored => 0
+        Compression::Deflate => 8
+        Compression::Other(comp_method) => comp_method
+      }
+      
+      let header = write_u32_le(local_file_header_signature) +  // Signature
+                   write_u16_le(file.version_needed_to_extract) + // Version needed
+                   write_u16_le(file.gp_flags) +                // GP flags
+                   write_u16_le(compression_method) +           // Compression method
+                   write_u16_le(0) +                            // Last mod time
+                   write_u16_le(0) +                            // Last mod date
+                   write_u32_le(file.decompressed_crc32.to_int()) + // CRC-32
+                   write_u32_le(file.compressed_size) +         // Compressed size
+                   write_u32_le(file.decompressed_size) +       // Uncompressed size
+                   write_u16_le(path_bytes.length()) +          // Filename length
+                   write_u16_le(0)                              // Extra field length
+      
+      @deflate.ok(header + path_bytes + file.compressed_bytes)
+    }
+  }
+}
+
+// Write central directory entry
+fn write_central_directory_entry(mem : Member, local_header_offset : Int) -> @deflate.Result[String, String] {
+  let path = mem.path
+  let path_bytes = path
+  
+  match mem.kind {
+    MemberKind::Dir => {
+      let entry = write_u32_le(central_directory_signature) +   // Signature
+                   write_u16_le(0x314) +                        // Version made by (Unix, ZIP 2.0)
+                   write_u16_le(20) +                           // Version needed
+                   write_u16_le(0x800) +                        // GP flags (UTF-8)
+                   write_u16_le(0) +                            // Compression method
+                   write_u16_le(0) +                            // Last mod time
+                   write_u16_le(0) +                            // Last mod date
+                   write_u32_le(0) +                            // CRC-32
+                   write_u32_le(0) +                            // Compressed size
+                   write_u32_le(0) +                            // Uncompressed size
+                   write_u16_le(path_bytes.length()) +          // Filename length
+                   write_u16_le(0) +                            // Extra field length
+                   write_u16_le(0) +                            // File comment length
+                   write_u16_le(0) +                            // Disk number start
+                   write_u16_le(0) +                            // Internal file attrs
+                   write_u32_le((mem.mode << 16) | 0x10) +     // External file attrs (directory)
+                   write_u32_le(local_header_offset)            // Local header offset
+      
+      @deflate.ok(entry + path_bytes)
+    }
+    MemberKind::File(file) => {
+      let compression_method = match file.compression {
+        Compression::Stored => 0
+        Compression::Deflate => 8
+        Compression::Other(comp_method) => comp_method
+      }
+      
+      let entry = write_u32_le(central_directory_signature) +   // Signature
+                   write_u16_le(file.version_made_by) +         // Version made by
+                   write_u16_le(file.version_needed_to_extract) + // Version needed
+                   write_u16_le(file.gp_flags) +                // GP flags
+                   write_u16_le(compression_method) +           // Compression method
+                   write_u16_le(0) +                            // Last mod time
+                   write_u16_le(0) +                            // Last mod date
+                   write_u32_le(file.decompressed_crc32.to_int()) + // CRC-32
+                   write_u32_le(file.compressed_size) +         // Compressed size
+                   write_u32_le(file.decompressed_size) +       // Uncompressed size
+                   write_u16_le(path_bytes.length()) +          // Filename length
+                   write_u16_le(0) +                            // Extra field length
+                   write_u16_le(0) +                            // File comment length
+                   write_u16_le(0) +                            // Disk number start
+                   write_u16_le(0) +                            // Internal file attrs
+                   write_u32_le(mem.mode << 16) +            // External file attrs
+                   write_u32_le(local_header_offset)            // Local header offset
+      
+      @deflate.ok(entry + path_bytes)
+    }
+  }
+}
+
+// Write end of central directory record
+fn write_eocd_record(entry_count : Int, cd_size : Int, cd_offset : Int) -> String {
+  write_u32_le(end_of_central_directory_signature) +  // Signature
+  write_u16_le(0) +                                   // Disk number
+  write_u16_le(0) +                                   // Disk with central directory
+  write_u16_le(entry_count) +                         // Entries on this disk
+  write_u16_le(entry_count) +                         // Total entries
+  write_u32_le(cd_size) +                             // Central directory size
+  write_u32_le(cd_offset) +                           // Central directory offset
+  write_u16_le(0)                                     // Comment length
+}
+
+// Binary parsing utilities
+fn read_u16_le(data : String, offset : Int) -> Int {
+  if offset + 1 >= data.length() {
+    return 0
+  }
+  let b0 = data[offset]
+  let b1 = data[offset + 1]
+  b0 + (b1 << 8)
+}
+
+fn read_u32_le(data : String, offset : Int) -> Int {
+  if offset + 3 >= data.length() {
+    return 0
+  }
+  let b0 = data[offset]
+  let b1 = data[offset + 1]
+  let b2 = data[offset + 2]
+  let b3 = data[offset + 3]
+  b0 + (b1 << 8) + (b2 << 16) + (b3 << 24)
+}
+
+fn write_u16_le(value : Int) -> String {
+  let b0 = value.land(0xff)
+  let b1 = (value >> 8).land(0xff)
+  b0.unsafe_to_char().to_string() + b1.unsafe_to_char().to_string()
+}
+
+fn write_u32_le(value : Int) -> String {
+  let b0 = value.land(0xff)
+  let b1 = (value >> 8).land(0xff)
+  let b2 = (value >> 16).land(0xff)
+  let b3 = (value >> 24).land(0xff)
+  b0.unsafe_to_char().to_string() + b1.unsafe_to_char().to_string() + b2.unsafe_to_char().to_string() + b3.unsafe_to_char().to_string()
+}
+
+// ZIP file format constants
+let local_file_header_signature : Int = 0x04034b50
+let central_directory_signature : Int = 0x02014b50
+let end_of_central_directory_signature : Int = 0x06054b50
+
+// Check if string has ZIP magic bytes
+pub fn string_has_magic(s : String) -> Bool {
+  if s.length() < 4 {
+    return false
+  }
+  
+  // Check for local file header signature (PK\u0003\u0004)
+  if s[0] == 0x50 && s[1] == 0x4b && 
+     s[2] == 0x03 && s[3] == 0x04 {
+    return true
+  }
+  
+  // Check for end of central directory signature (PK\u0005\u0006) - empty archive
+  if s[0] == 0x50 && s[1] == 0x4b && 
+     s[2] == 0x05 && s[3] == 0x06 {
+    return true
+  }
+  
+  false
+}
+
+// Find end of central directory record
+fn find_eocd(data : String) -> Option[Int] {
+  let len = data.length()
+  if len < 22 {
+    return None
+  }
+  
+  // Search backwards from end of file
+  for i = len - 22; i >= 0; i = i - 1 {
+    if i + 3 < len {
+      let sig = read_u32_le(data, i)
+      if sig == end_of_central_directory_signature {
+        return Some(i)
+      }
+    }
+  }
+  None
+}
+
+// Parse ZIP file
+pub fn of_binary_string(data : String) -> @deflate.Result[Archive, String] {
+  if data.length() < 22 {
+    return @deflate.err("File too small to be a valid ZIP archive")
+  }
+  
+  // Check for ZIP magic bytes
+  if not(string_has_magic(data)) {
+    return @deflate.err("Not a valid ZIP archive - missing magic bytes")
+  }
+  
+  // Find end of central directory record
+  match find_eocd(data) {
+    None => @deflate.err("Could not find end of central directory record")
+    Some(eocd_offset) => {
+      // Parse EOCD record
+      let cd_entries = read_u16_le(data, eocd_offset + 10)  // Total entries in central directory
+      let cd_size = read_u32_le(data, eocd_offset + 12)     // Size of central directory
+      let cd_offset = read_u32_le(data, eocd_offset + 16)   // Offset of central directory
+      
+      if cd_entries == 0 {
+        // Empty archive
+        @deflate.ok(empty())
+      } else {
+        // Parse central directory entries
+        parse_central_directory(data, cd_offset, cd_entries)
+      }
+    }
+  }
+}
+
+// Parse central directory entries
+fn parse_central_directory(data : String, cd_offset : Int, entry_count : Int) -> @deflate.Result[Archive, String] {
+  let mut archive = empty()
+  let mut offset = cd_offset
+  
+  for i = 0; i < entry_count; i = i + 1 {
+    match parse_central_directory_entry(data, offset) {
+      @deflate.Ok((mem, next_offset)) => {
+        archive = add(mem, archive)
+        offset = next_offset
+      }
+      @deflate.Err(error) => return @deflate.err("Failed to parse central directory entry " + i.to_string() + ": " + error)
+    }
+  }
+  
+  @deflate.ok(archive)
+}
+
+// Parse a single central directory entry
+fn parse_central_directory_entry(data : String, offset : Int) -> @deflate.Result[(Member, Int), String] {
+  if offset + 46 > data.length() {
+    return @deflate.err("Central directory entry extends beyond file")
+  }
+  
+  let signature = read_u32_le(data, offset)
+  if signature != central_directory_signature {
+    return @deflate.err("Invalid central directory entry signature")
+  }
+  
+  let version_made_by = read_u16_le(data, offset + 4)
+  let version_needed = read_u16_le(data, offset + 6)
+  let gp_flags = read_u16_le(data, offset + 8)
+  let compression_method = read_u16_le(data, offset + 10)
+  let last_mod_time = read_u16_le(data, offset + 12)
+  let last_mod_date = read_u16_le(data, offset + 14)
+  let crc32 = read_u32_le(data, offset + 16)
+  let compressed_size = read_u32_le(data, offset + 20)
+  let uncompressed_size = read_u32_le(data, offset + 24)
+  let filename_length = read_u16_le(data, offset + 28)
+  let extra_field_length = read_u16_le(data, offset + 30)
+  let file_comment_length = read_u16_le(data, offset + 32)
+  let external_file_attrs = read_u32_le(data, offset + 38)
+  let local_header_offset = read_u32_le(data, offset + 42)
+  
+  // Read filename
+  let filename_start = offset + 46
+  if filename_start + filename_length > data.length() {
+    return @deflate.err("Filename extends beyond file")
+  }
+  let filename = data.substring(start=filename_start, end=filename_start + filename_length)
+  
+  // Determine compression type
+  let compression = match compression_method {
+    0 => Compression::Stored
+    8 => Compression::Deflate
+    _ => Compression::Other(compression_method)
+  }
+  
+  // Read file data from local header
+  match read_file_data(data, local_header_offset, compressed_size) {
+    @deflate.Ok(file_data) => {
+      // Create file object
+      let file = {
+        compression: compression,
+        start: 0,
+        compressed_size: compressed_size,
+        compressed_bytes: file_data,
+        decompressed_size: uncompressed_size,
+        decompressed_crc32: crc32.to_int64(),
+        version_made_by: version_made_by,
+        version_needed_to_extract: version_needed,
+        gp_flags: gp_flags,
+      }
+      
+      // Determine if it's a directory
+      let is_directory = filename.strip_suffix("/") is Some(_) || (external_file_attrs.land(0x10) != 0)
+      let kind = if is_directory {
+        MemberKind::Dir
+      } else {
+        MemberKind::File(file)
+      }
+      
+      // Create member
+      let mem = {
+        path: filename,
+        mode: if is_directory { 0o755 } else { 0o644 },
+        mtime: dos_epoch, // TODO: Convert DOS time to Unix time
+        kind: kind,
+      }
+      
+      let next_offset = offset + 46 + filename_length + extra_field_length + file_comment_length
+      @deflate.ok((mem, next_offset))
+    }
+    @deflate.Err(error) => @deflate.err("Failed to read file data: " + error)
+  }
+}
+
+// Read file data from local header
+fn read_file_data(data : String, local_header_offset : Int, compressed_size : Int) -> @deflate.Result[String, String] {
+  if local_header_offset + 30 > data.length() {
+    return @deflate.err("Local header extends beyond file")
+  }
+  
+  let signature = read_u32_le(data, local_header_offset)
+  if signature != local_file_header_signature {
+    return @deflate.err("Invalid local file header signature")
+  }
+  
+  let filename_length = read_u16_le(data, local_header_offset + 26)
+  let extra_field_length = read_u16_le(data, local_header_offset + 28)
+  
+  let file_data_offset = local_header_offset + 30 + filename_length + extra_field_length
+  if file_data_offset + compressed_size > data.length() {
+    return @deflate.err("File data extends beyond archive")
+  }
+  
+  let file_data = data.substring(start=file_data_offset, end=file_data_offset + compressed_size)
+  @deflate.ok(file_data)
 }
