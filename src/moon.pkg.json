@@ -1,6 +1,5 @@
 {
   "import": [
-    "zipc/zipc/deflate",
     "zipc/zipc/zip"
   ]
 }
