@@ -1,5 +1,6 @@
 {
   "import": [
     "zipc/zipc"
-  ]
+  ],
+  "is-main": true
 }
