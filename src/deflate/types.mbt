@@ -8,7 +8,13 @@ pub enum Level {
   Fast
   Default
   Best
-}
+} derive(Show)
+
+// Helper functions to create Level values
+pub fn level_none() -> Level { Level::None }
+pub fn level_fast() -> Level { Level::Fast }
+pub fn level_default() -> Level { Level::Default }
+pub fn level_best() -> Level { Level::Best }
 
 // Result type for operations that can fail
 pub enum Result[T, E] {

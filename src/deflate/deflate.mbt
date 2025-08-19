@@ -27,13 +27,19 @@ pub fn deflate_compress(data : String, level : Level) -> Result[DeflateData, Str
 
 // Decompress deflate data
 pub fn deflate_decompress(deflate_data : DeflateData) -> Result[String, String] {
-  // Verify Adler-32 checksum first
-  let computed_adler = adler32_string(deflate_data.compressed_bytes)
-  if not(adler32_equal(computed_adler, deflate_data.adler32_checksum)) {
-    return Err("Adler-32 checksum mismatch")
+  // First decompress the data
+  match decompress_deflate_blocks(deflate_data.compressed_bytes) {
+    Ok(decompressed) => {
+      // Then verify Adler-32 checksum of the decompressed data
+      let computed_adler = adler32_string(decompressed)
+      if adler32_equal(computed_adler, deflate_data.adler32_checksum) {
+        Ok(decompressed)
+      } else {
+        Err("Adler-32 checksum mismatch")
+      }
+    }
+    Err(error) => Err(error)
   }
-  
-  decompress_deflate_blocks(deflate_data.compressed_bytes)
 }
 
 // Compress using uncompressed blocks (Level::None)
@@ -210,11 +216,6 @@ pub fn deflate_of_binary_string(s : String, level : Level) -> Result[String, Str
 
 // Extract deflate-compressed data
 pub fn deflate_decompress_string(compressed_data : String, original_size : Int) -> Result[String, String] {
-  let deflate_data = {
-    compressed_bytes: compressed_data,
-    original_size: original_size,
-    adler32_checksum: adler32_string(compressed_data) // Simplified - should be stored
-  }
-  
-  deflate_decompress(deflate_data)
+  // For now, skip checksum verification in this simplified API
+  decompress_deflate_blocks(compressed_data)
 }

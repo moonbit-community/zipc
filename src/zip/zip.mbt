@@ -5,7 +5,7 @@ pub enum Compression {
   Stored
   Deflate
   Other(Int)
-}
+} derive(Show)
 
 pub typealias String as Fpath
 pub typealias Int as Mode  

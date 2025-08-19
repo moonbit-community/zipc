@@ -43,6 +43,12 @@ pub typealias @deflate.Crc32 as Crc32
 pub typealias @deflate.Adler32 as Adler32
 pub typealias @deflate.Level as Level
 
+// Level constructors
+pub fn level_none() -> Level { @deflate.level_none() }
+pub fn level_fast() -> Level { @deflate.level_fast() }
+pub fn level_default() -> Level { @deflate.level_default() }
+pub fn level_best() -> Level { @deflate.level_best() }
+
 // Checksum functions
 pub fn crc32_string(s : String) -> Crc32 { @deflate.crc32_string(s) }
 pub fn crc32_equal(c1 : Crc32, c2 : Crc32) -> Bool { @deflate.crc32_equal(c1, c2) }
@@ -53,3 +59,7 @@ pub fn adler32_string(s : String) -> Adler32 { @deflate.adler32_string(s) }
 pub fn adler32_equal(a1 : Adler32, a2 : Adler32) -> Bool { @deflate.adler32_equal(a1, a2) }
 pub fn adler32_to_hex(adler : Adler32) -> String { @deflate.adler32_to_hex(adler) }
 pub fn adler32_check(expect : Adler32, found : Adler32) -> @deflate.Result[Unit, String] { @deflate.adler32_check(expect, found) }
+
+// Zlib format support
+pub fn zlib_of_binary_string(s : String, level : @deflate.Level) -> @deflate.Result[String, String] { @deflate.zlib_of_binary_string(s, level) }
+pub fn zlib_to_binary_string(compressed_data : String, original_size : Int) -> @deflate.Result[String, String] { @deflate.zlib_to_binary_string(compressed_data, original_size) }

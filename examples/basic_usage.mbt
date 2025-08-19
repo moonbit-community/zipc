@@ -9,10 +9,10 @@ pub fn create_simple_archive() -> Unit {
   
   // Create file data
   match @zipc.stored_of_binary_string("Hello from MoonBit zipc!") {
-    Ok(file_data) => {
+    @deflate.Ok(file_data) => {
       // Create a member
       match @zipc.member_make("greeting.txt", @zipc.MemberKind::File(file_data)) {
-        Ok(member) => {
+        @deflate.Ok(member) => {
           // Add to archive
           let archive_with_file = @zipc.add(member, archive)
           
@@ -23,10 +23,10 @@ pub fn create_simple_archive() -> Unit {
             println("✓ File 'greeting.txt' found in archive")
           }
         }
-        Err(error) => println("Error creating member: \{error}")
+        @deflate.Err(error) => println("Error creating member: \{error}")
       }
     }
-    Err(error) => println("Error creating file data: \{error}")
+    @deflate.Err(error) => println("Error creating file data: \{error}")
   }
 }
 
