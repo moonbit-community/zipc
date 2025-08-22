@@ -1,0 +1,109 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/zipc/zip"
+
+import(
+  "bobzhang/zipc/deflate"
+)
+
+// Values
+fn add(Member, Archive) -> Archive
+
+fn deflate_of_binary_string(String, @deflate.Level) -> @deflate.Result[File, String]
+
+let dos_epoch : Int
+
+fn empty() -> Archive
+
+fn file_can_extract(File) -> Bool
+
+fn file_compressed_bytes(File) -> String
+
+fn file_compressed_size(File) -> Int
+
+fn file_compression(File) -> Compression
+
+fn file_decompressed_size(File) -> Int
+
+fn file_to_binary_string(File) -> @deflate.Result[String, String]
+
+fn find(String, Archive) -> Member?
+
+fn is_empty(Archive) -> Bool
+
+let max_file_size : Int
+
+let max_members : Int
+
+let max_path_length : Int
+
+fn mem(String, Archive) -> Bool
+
+fn member_count(Archive) -> Int
+
+fn member_kind(Member) -> MemberKind
+
+fn member_make(String, MemberKind) -> @deflate.Result[Member, String]
+
+fn member_mode(Member) -> Int
+
+fn member_mtime(Member) -> Int
+
+fn member_path(Member) -> String
+
+fn of_binary_string(String) -> @deflate.Result[Archive, String]
+
+fn remove(String, Archive) -> Archive
+
+fn stored_of_binary_string(String) -> @deflate.Result[File, String]
+
+fn string_has_magic(String) -> Bool
+
+fn to_binary_string(Archive) -> @deflate.Result[String, String]
+
+// Errors
+
+// Types and methods
+pub struct Archive {
+  members : Map[String, Member]
+}
+
+pub enum Compression {
+  Stored
+  Deflate
+  Other(Int)
+}
+impl Show for Compression
+
+pub struct File {
+  compression : Compression
+  start : Int
+  compressed_size : Int
+  compressed_bytes : String
+  decompressed_size : Int
+  decompressed_crc32 : Int64
+  version_made_by : Int
+  version_needed_to_extract : Int
+  gp_flags : Int
+}
+
+pub struct Member {
+  path : String
+  mode : Int
+  mtime : Int
+  kind : MemberKind
+}
+
+pub enum MemberKind {
+  Dir
+  File(File)
+}
+
+// Type aliases
+pub typealias String as Fpath
+
+pub typealias Int as Mode
+
+pub typealias Int as Ptime
+
+// Traits
+

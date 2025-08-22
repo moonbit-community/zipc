@@ -2,13 +2,16 @@
 // This is a simplified implementation focusing on basic functionality
 
 // Deflate block types
+///|
 enum BlockType {
-  Uncompressed  // No compression (BTYPE = 00)
-  FixedHuffman  // Compressed with fixed Huffman codes (BTYPE = 01)  
+  Uncompressed // No compression (BTYPE = 00)
+  FixedHuffman // Compressed with fixed Huffman codes (BTYPE = 01)  
   DynamicHuffman // Compressed with dynamic Huffman codes (BTYPE = 10)
 }
 
 // Deflate compressed data structure
+
+///|
 pub struct DeflateData {
   compressed_bytes : String
   original_size : Int
@@ -16,7 +19,12 @@ pub struct DeflateData {
 }
 
 // Compress data using deflate algorithm
-pub fn deflate_compress(data : String, level : Level) -> Result[DeflateData, String] {
+
+///|
+pub fn deflate_compress(
+  data : String,
+  level : Level,
+) -> Result[DeflateData, String] {
   match level {
     Level::None => compress_uncompressed(data)
     Level::Fast => compress_basic_deflate(data)
@@ -26,6 +34,8 @@ pub fn deflate_compress(data : String, level : Level) -> Result[DeflateData, Str
 }
 
 // Decompress deflate data
+
+///|
 pub fn deflate_decompress(deflate_data : DeflateData) -> Result[String, String] {
   // First decompress the data
   match decompress_deflate_blocks(deflate_data.compressed_bytes) {
@@ -43,6 +53,8 @@ pub fn deflate_decompress(deflate_data : DeflateData) -> Result[String, String] 
 }
 
 // Compress using uncompressed blocks (Level::None)
+
+///|
 fn compress_uncompressed(data : String) -> Result[DeflateData, String] {
   if data.length() == 0 {
     // Empty data - just return empty compressed data
@@ -50,60 +62,65 @@ fn compress_uncompressed(data : String) -> Result[DeflateData, String] {
     return Ok({
       compressed_bytes: "",
       original_size: 0,
-      adler32_checksum: adler
+      adler32_checksum: adler,
     })
   }
-  
+
   // For uncompressed blocks, we need to create deflate blocks
   // Each block has a 3-bit header: BFINAL (1 bit) + BTYPE (2 bits)
   // For uncompressed: BTYPE = 00
   // Then LEN (16 bits) and NLEN (16 bits, one's complement of LEN)
-  
+
   let mut compressed = ""
   let mut remaining = data
   let mut offset = 0
-  
+
   // Process data in chunks (max 65535 bytes per uncompressed block)
   while remaining.length() > 0 {
-    let chunk_size = if remaining.length() > 65535 { 65535 } else { remaining.length() }
+    let chunk_size = if remaining.length() > 65535 {
+      65535
+    } else {
+      remaining.length()
+    }
     let chunk = remaining.substring(start=0, end=chunk_size)
     let is_final = remaining.length() <= 65535
-    
+
     // Create block header
     let bfinal = if is_final { 1 } else { 0 }
-    let btype = 0  // Uncompressed
-    let header_bits = bfinal | (btype << 1)  // 3 bits total
-    
+    let btype = 0 // Uncompressed
+    let header_bits = bfinal | (btype << 1) // 3 bits total
+
     // For simplicity, we'll store the header as a full byte (padding with zeros)
     let header_byte = header_bits
     compressed = compressed + header_byte.unsafe_to_char().to_string()
-    
+
     // Add LEN (little-endian 16-bit)
     let len = chunk.length()
     let len_bytes = write_u16_le(len)
     compressed = compressed + len_bytes
-    
+
     // Add NLEN (one's complement of LEN)
-    let nlen = len.lxor(0xffff)
+    let nlen = len ^ 0xffff
     let nlen_bytes = write_u16_le(nlen)
     compressed = compressed + nlen_bytes
-    
+
     // Add the actual data
     compressed = compressed + chunk
-    
+
     // Move to next chunk
     remaining = remaining.substring(start=chunk_size, end=remaining.length())
   }
-  
   let adler = adler32_string(data)
   Ok({
     compressed_bytes: compressed,
     original_size: data.length(),
-    adler32_checksum: adler
+    adler32_checksum: adler,
   })
 }
 
 // Basic deflate compression (simplified)
+
+///|
 fn compress_basic_deflate(data : String) -> Result[DeflateData, String] {
   // For now, fall back to uncompressed blocks
   // A full implementation would use LZ77 + Huffman coding
@@ -111,28 +128,25 @@ fn compress_basic_deflate(data : String) -> Result[DeflateData, String] {
 }
 
 // Decompress deflate blocks
+
+///|
 fn decompress_deflate_blocks(compressed : String) -> Result[String, String] {
   if compressed.length() == 0 {
     return Ok("")
   }
-  
   let mut result = ""
   let mut offset = 0
-  
   while offset < compressed.length() {
     // Read block header (3 bits, but we stored as full byte)
     if offset >= compressed.length() {
       return Err("Unexpected end of compressed data")
     }
-    
     let header_byte = compressed[offset]
     offset = offset + 1
-    
-    let bfinal = header_byte.land(1)
-    let btype = (header_byte >> 1).land(3)
-    
+    let bfinal = header_byte & 1
+    let btype = (header_byte >> 1) & 3
     match btype {
-      0 => {
+      0 =>
         // Uncompressed block
         match decompress_uncompressed_block(compressed, offset) {
           Ok((block_data, new_offset)) => {
@@ -141,60 +155,63 @@ fn decompress_deflate_blocks(compressed : String) -> Result[String, String] {
           }
           Err(error) => return Err(error)
         }
-      }
-      1 => {
+      1 =>
         // Fixed Huffman - not implemented yet
         return Err("Fixed Huffman decompression not implemented")
-      }
-      2 => {
+      2 =>
         // Dynamic Huffman - not implemented yet
         return Err("Dynamic Huffman decompression not implemented")
-      }
-      _ => {
-        return Err("Invalid block type: " + btype.to_string())
-      }
+      _ => return Err("Invalid block type: " + btype.to_string())
     }
-    
+
     // If this was the final block, we're done
     if bfinal == 1 {
       break
     }
   }
-  
   Ok(result)
 }
 
 // Decompress an uncompressed block
-fn decompress_uncompressed_block(compressed : String, offset : Int) -> Result[(String, Int), String] {
+
+///|
+fn decompress_uncompressed_block(
+  compressed : String,
+  offset : Int,
+) -> Result[(String, Int), String] {
   if offset + 4 > compressed.length() {
     return Err("Incomplete uncompressed block header")
   }
-  
+
   // Read LEN (16-bit little-endian)
   let len = read_u16_le(compressed, offset)
   let nlen = read_u16_le(compressed, offset + 2)
-  
+
   // Verify NLEN is one's complement of LEN
-  if len.lxor(nlen) != 0xffff {
+  if (len ^ nlen) != 0xffff {
     return Err("Invalid uncompressed block: LEN/NLEN mismatch")
   }
-  
   let data_offset = offset + 4
   if data_offset + len > compressed.length() {
     return Err("Incomplete uncompressed block data")
   }
-  
-  let block_data = compressed.substring(start=data_offset, end=data_offset + len)
+  let block_data = compressed.substring(
+    start=data_offset,
+    end=data_offset + len,
+  )
   Ok((block_data, data_offset + len))
 }
 
 // Helper functions for binary data (reused from zip module)
+
+///|
 fn write_u16_le(value : Int) -> String {
-  let b0 = value.land(0xff)
-  let b1 = (value >> 8).land(0xff)
+  let b0 = value & 0xff
+  let b1 = (value >> 8) & 0xff
   b0.unsafe_to_char().to_string() + b1.unsafe_to_char().to_string()
 }
 
+///|
 fn read_u16_le(data : String, offset : Int) -> Int {
   if offset + 1 >= data.length() {
     return 0
@@ -205,17 +222,25 @@ fn read_u16_le(data : String, offset : Int) -> Int {
 }
 
 // Create deflate-compressed file data for ZIP
-pub fn deflate_of_binary_string(s : String, level : Level) -> Result[String, String] {
+
+///|
+pub fn deflate_of_binary_string(
+  s : String,
+  level : Level,
+) -> Result[String, String] {
   match deflate_compress(s, level) {
-    Ok(deflate_data) => {
-      Ok(deflate_data.compressed_bytes)
-    }
+    Ok(deflate_data) => Ok(deflate_data.compressed_bytes)
     Err(error) => Err("Deflate compression failed: " + error)
   }
 }
 
 // Extract deflate-compressed data
-pub fn deflate_decompress_string(compressed_data : String, original_size : Int) -> Result[String, String] {
+
+///|
+pub fn deflate_decompress_string(
+  compressed_data : String,
+  original_size : Int,
+) -> Result[String, String] {
   // For now, skip checksum verification in this simplified API
   decompress_deflate_blocks(compressed_data)
 }
