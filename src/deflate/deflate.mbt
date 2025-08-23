@@ -3,10 +3,31 @@
 
 // Deflate block types
 ///|
-enum BlockType {
+priv enum BlockType {
   Uncompressed // No compression (BTYPE = 00)
   FixedHuffman // Compressed with fixed Huffman codes (BTYPE = 01)  
   DynamicHuffman // Compressed with dynamic Huffman codes (BTYPE = 10)
+}
+
+// Convert block type to BTYPE value
+///|
+fn block_type_to_btype(block_type : BlockType) -> Int {
+  match block_type {
+    BlockType::Uncompressed => 0
+    BlockType::FixedHuffman => 1
+    BlockType::DynamicHuffman => 2
+  }
+}
+
+// Convert BTYPE value to block type
+///|
+fn btype_to_block_type(btype : Int) -> BlockType? {
+  match btype {
+    0 => Some(BlockType::Uncompressed)
+    1 => Some(BlockType::FixedHuffman)
+    2 => Some(BlockType::DynamicHuffman)
+    _ => None
+  }
 }
 
 // Deflate compressed data structure
@@ -73,7 +94,6 @@ fn compress_uncompressed(data : String) -> Result[DeflateData, String] {
 
   let mut compressed = ""
   let mut remaining = data
-  let mut offset = 0
 
   // Process data in chunks (max 65535 bytes per uncompressed block)
   while remaining.length() > 0 {
@@ -87,7 +107,7 @@ fn compress_uncompressed(data : String) -> Result[DeflateData, String] {
 
     // Create block header
     let bfinal = if is_final { 1 } else { 0 }
-    let btype = 0 // Uncompressed
+    let btype = block_type_to_btype(BlockType::Uncompressed)
     let header_bits = bfinal | (btype << 1) // 3 bits total
 
     // For simplicity, we'll store the header as a full byte (padding with zeros)
@@ -144,9 +164,9 @@ fn decompress_deflate_blocks(compressed : String) -> Result[String, String] {
     let header_byte = compressed[offset]
     offset = offset + 1
     let bfinal = header_byte & 1
-    let btype = (header_byte >> 1) & 3
-    match btype {
-      0 =>
+    let btype_value = (header_byte >> 1) & 3
+    match btype_to_block_type(btype_value) {
+      Some(BlockType::Uncompressed) =>
         // Uncompressed block
         match decompress_uncompressed_block(compressed, offset) {
           Ok((block_data, new_offset)) => {
@@ -155,13 +175,13 @@ fn decompress_deflate_blocks(compressed : String) -> Result[String, String] {
           }
           Err(error) => return Err(error)
         }
-      1 =>
+      Some(BlockType::FixedHuffman) =>
         // Fixed Huffman - not implemented yet
         return Err("Fixed Huffman decompression not implemented")
-      2 =>
+      Some(BlockType::DynamicHuffman) =>
         // Dynamic Huffman - not implemented yet
         return Err("Dynamic Huffman decompression not implemented")
-      _ => return Err("Invalid block type: " + btype.to_string())
+      None => return Err("Invalid block type: " + btype_value.to_string())
     }
 
     // If this was the final block, we're done
@@ -239,8 +259,9 @@ pub fn deflate_of_binary_string(
 ///|
 pub fn deflate_decompress_string(
   compressed_data : String,
-  original_size : Int,
+  _original_size : Int,
 ) -> Result[String, String] {
   // For now, skip checksum verification in this simplified API
+  // TODO: Use original_size for validation
   decompress_deflate_blocks(compressed_data)
 }

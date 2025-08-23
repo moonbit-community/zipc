@@ -354,12 +354,13 @@ fn write_local_file_header(mem : Member) -> @deflate.Result[String, String] {
   match mem.kind {
     MemberKind::Dir => {
       // Directory entry
+      let (dos_time, dos_date) = unix_to_dos_datetime(mem.mtime)
       let header = write_u32_le(local_file_header_signature) + // Signature
         write_u16_le(20) + // Version needed
         write_u16_le(0x800) + // GP flags (UTF-8)
         write_u16_le(0) + // Compression method (stored)
-        write_u16_le(0) + // Last mod time
-        write_u16_le(0) + // Last mod date
+        write_u16_le(dos_time) + // Last mod time
+        write_u16_le(dos_date) + // Last mod date
         write_u32_le(0) + // CRC-32
         write_u32_le(0) + // Compressed size
         write_u32_le(0) + // Uncompressed size
@@ -374,12 +375,13 @@ fn write_local_file_header(mem : Member) -> @deflate.Result[String, String] {
         Compression::Deflate => 8
         Compression::Other(comp_method) => comp_method
       }
+      let (dos_time, dos_date) = unix_to_dos_datetime(mem.mtime)
       let header = write_u32_le(local_file_header_signature) + // Signature
         write_u16_le(file.version_needed_to_extract) + // Version needed
         write_u16_le(file.gp_flags) + // GP flags
         write_u16_le(compression_method) + // Compression method
-        write_u16_le(0) + // Last mod time
-        write_u16_le(0) + // Last mod date
+        write_u16_le(dos_time) + // Last mod time
+        write_u16_le(dos_date) + // Last mod date
         write_u32_le(file.decompressed_crc32.to_int()) + // CRC-32
         write_u32_le(file.compressed_size) + // Compressed size
         write_u32_le(file.decompressed_size) + // Uncompressed size
@@ -401,13 +403,14 @@ fn write_central_directory_entry(
   let path_bytes = path
   match mem.kind {
     MemberKind::Dir => {
+      let (dos_time, dos_date) = unix_to_dos_datetime(mem.mtime)
       let entry = write_u32_le(central_directory_signature) + // Signature
         write_u16_le(0x314) + // Version made by (Unix, ZIP 2.0)
         write_u16_le(20) + // Version needed
         write_u16_le(0x800) + // GP flags (UTF-8)
         write_u16_le(0) + // Compression method
-        write_u16_le(0) + // Last mod time
-        write_u16_le(0) + // Last mod date
+        write_u16_le(dos_time) + // Last mod time
+        write_u16_le(dos_date) + // Last mod date
         write_u32_le(0) + // CRC-32
         write_u32_le(0) + // Compressed size
         write_u32_le(0) + // Uncompressed size
@@ -426,13 +429,14 @@ fn write_central_directory_entry(
         Compression::Deflate => 8
         Compression::Other(comp_method) => comp_method
       }
+      let (dos_time, dos_date) = unix_to_dos_datetime(mem.mtime)
       let entry = write_u32_le(central_directory_signature) + // Signature
         write_u16_le(file.version_made_by) + // Version made by
         write_u16_le(file.version_needed_to_extract) + // Version needed
         write_u16_le(file.gp_flags) + // GP flags
         write_u16_le(compression_method) + // Compression method
-        write_u16_le(0) + // Last mod time
-        write_u16_le(0) + // Last mod date
+        write_u16_le(dos_time) + // Last mod time
+        write_u16_le(dos_date) + // Last mod date
         write_u32_le(file.decompressed_crc32.to_int()) + // CRC-32
         write_u32_le(file.compressed_size) + // Compressed size
         write_u32_le(file.decompressed_size) + // Uncompressed size
@@ -580,7 +584,7 @@ pub fn of_binary_string(data : String) -> @deflate.Result[Archive, String] {
     Some(eocd_offset) => {
       // Parse EOCD record
       let cd_entries = read_u16_le(data, eocd_offset + 10) // Total entries in central directory
-      let cd_size = read_u32_le(data, eocd_offset + 12) // Size of central directory
+      let _cd_size = read_u32_le(data, eocd_offset + 12) // Size of central directory (unused for now)
       let cd_offset = read_u32_le(data, eocd_offset + 16) // Offset of central directory
       if cd_entries == 0 {
         // Empty archive
@@ -639,8 +643,8 @@ fn parse_central_directory_entry(
   let version_needed = read_u16_le(data, offset + 6)
   let gp_flags = read_u16_le(data, offset + 8)
   let compression_method = read_u16_le(data, offset + 10)
-  let last_mod_time = read_u16_le(data, offset + 12)
-  let last_mod_date = read_u16_le(data, offset + 14)
+  let _last_mod_time = read_u16_le(data, offset + 12) // TODO: Convert DOS time to Unix time
+  let _last_mod_date = read_u16_le(data, offset + 14) // TODO: Convert DOS date to Unix time
   let crc32 = read_u32_le(data, offset + 16)
   let compressed_size = read_u32_le(data, offset + 20)
   let uncompressed_size = read_u32_le(data, offset + 24)
@@ -700,7 +704,7 @@ fn parse_central_directory_entry(
         } else {
           0o644
         },
-        mtime: dos_epoch, // TODO: Convert DOS time to Unix time
+        mtime: dos_datetime_to_unix(_last_mod_time, _last_mod_date),
         kind,
       }
       let next_offset = offset +

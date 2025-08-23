@@ -94,4 +94,18 @@ test "compression levels api" {
       inspect(compressed.length() > 0, content="true")
     @deflate.Err(error) => fail("Level Fast compression failed: " + error)
   }
+  
+  // Test default and best levels as well
+  match @deflate.deflate_of_binary_string(test_data, default_level) {
+    @deflate.Ok(compressed) =>
+      // Snapshot: Should produce compressed data
+      inspect(compressed.length() > 0, content="true")
+    @deflate.Err(error) => fail("Level Default compression failed: " + error)
+  }
+  match @deflate.deflate_of_binary_string(test_data, best_level) {
+    @deflate.Ok(compressed) =>
+      // Snapshot: Should produce compressed data
+      inspect(compressed.length() > 0, content="true")
+    @deflate.Err(error) => fail("Level Best compression failed: " + error)
+  }
 }
