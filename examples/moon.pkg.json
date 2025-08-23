@@ -1,6 +1,7 @@
 {
   "import": [
-    "bobzhang/zipc"
+    "bobzhang/zipc",
+    "bobzhang/zipc/deflate"
   ],
   "is-main": true
 }

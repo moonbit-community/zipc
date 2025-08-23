@@ -1,6 +1,0 @@
-{
-  "import": [
-    "bobzhang/zipc/deflate",
-    "bobzhang/zipc/zip"
-  ]
-}

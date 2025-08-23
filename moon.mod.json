@@ -5,6 +5,5 @@
   "repository": "https://github.com/dbuenzli/zipc",
   "license": "ISC",
   "keywords": ["zip", "compression", "deflate", "archive"],
-  "description": "ZIP archive and deflate codec for MoonBit - ported from OCaml zipc library",
-  "source": "src"
+  "description": "ZIP archive and deflate codec for MoonBit - ported from OCaml zipc library"
 }
