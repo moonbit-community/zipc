@@ -36,12 +36,31 @@ fn adler32_update_string(adler : Adler32, s : String) -> Adler32 {
   result
 }
 
+// Update Adler-32 with bytes (more efficient for binary data)
+
+///|
+fn adler32_update_bytes(adler : Adler32, data : Bytes) -> Adler32 {
+  let mut result = adler
+  for i = 0; i < data.length(); i = i + 1 {
+    result = adler32_update_byte(result, data[i].to_int())
+  }
+  result
+}
+
 // Compute Adler-32 of a string
 
 ///|
 pub fn adler32_string(s : String) -> Adler32 {
   let adler = new_adler32()
   adler32_update_string(adler, s)
+}
+
+// Compute Adler-32 of bytes (more efficient for binary data)
+
+///|
+pub fn adler32_bytes(data : Bytes) -> Adler32 {
+  let adler = new_adler32()
+  adler32_update_bytes(adler, data)
 }
 
 // Check if two Adler-32 values are equal

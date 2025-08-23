@@ -73,6 +73,17 @@ fn crc32_update_string(crc : Crc32, s : String) -> Crc32 {
   result
 }
 
+// Update CRC-32 with bytes (more efficient for binary data)
+
+///|
+fn crc32_update_bytes(crc : Crc32, data : Bytes) -> Crc32 {
+  let mut result = crc
+  for i = 0; i < data.length(); i = i + 1 {
+    result = crc32_update_byte(result, data[i].to_int())
+  }
+  result
+}
+
 // Finalize CRC-32 (XOR with 0xffffffff)
 
 ///|
@@ -86,6 +97,15 @@ fn finalize(crc : Crc32) -> Crc32 {
 pub fn crc32_string(s : String) -> Crc32 {
   let crc = new_crc32()
   let updated = crc32_update_string(crc, s)
+  finalize(updated)
+}
+
+// Compute CRC-32 of bytes (more efficient for binary data)
+
+///|
+pub fn crc32_bytes(data : Bytes) -> Crc32 {
+  let crc = new_crc32()
+  let updated = crc32_update_bytes(crc, data)
   finalize(updated)
 }
 

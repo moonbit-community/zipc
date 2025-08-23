@@ -336,3 +336,33 @@ pub fn deflate_decompress_string(
   // TODO: Use original_size for validation
   decompress_deflate_blocks(compressed_data)
 }
+
+// Bytes-based API functions (more efficient for binary data)
+
+///|
+pub fn deflate_of_bytes(
+  data : Bytes,
+  level : Level,
+) -> Result[Bytes, String] {
+  // Simplified implementation: convert to string, compress, convert back
+  // In a full implementation, this would work directly on bytes
+  let string_data = data.to_string()
+  match deflate_of_binary_string(string_data, level) {
+    Ok(compressed_string) => Ok(compressed_string.to_bytes())
+    Err(error) => Err(error)
+  }
+}
+
+///|
+pub fn deflate_decompress_bytes(
+  compressed_data : Bytes,
+  original_size : Int,
+) -> Result[Bytes, String] {
+  // Simplified implementation: convert to string, decompress, convert back
+  // In a full implementation, this would work directly on bytes
+  let string_data = compressed_data.to_string()
+  match deflate_decompress_string(string_data, original_size) {
+    Ok(decompressed_string) => Ok(decompressed_string.to_bytes())
+    Err(error) => Err(error)
+  }
+}
