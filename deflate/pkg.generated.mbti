@@ -2,6 +2,8 @@
 package "bobzhang/zipc/deflate"
 
 // Values
+fn adler32_bytes(Bytes) -> Int64
+
 fn adler32_check(Int64, Int64) -> Result[Unit, String]
 
 fn adler32_equal(Int64, Int64) -> Bool
@@ -9,6 +11,14 @@ fn adler32_equal(Int64, Int64) -> Bool
 fn adler32_string(String) -> Int64
 
 fn adler32_to_hex(Int64) -> String
+
+fn build_fixed_distance_tree() -> HuffmanNode
+
+fn build_fixed_literal_tree() -> HuffmanNode
+
+fn build_huffman_tree_from_lengths(Array[Int]) -> HuffmanNode
+
+fn crc32_bytes(Bytes) -> Int64
 
 fn crc32_check(Int64, Int64) -> Result[Unit, String]
 
@@ -18,15 +28,53 @@ fn crc32_string(String) -> Int64
 
 fn crc32_to_hex(Int64) -> String
 
-fn deflate_compress(String, Level) -> Result[DeflateData, String]
+fn decode_huffman_symbol(HuffmanNode, String, Int) -> (Int, Int)?
 
-fn deflate_decompress(DeflateData) -> Result[String, String]
+fn decompress_fixed_huffman_block(String, Int) -> Result[(String, Int), String]
 
-fn deflate_decompress_string(String, Int) -> Result[String, String]
+fn deflate_compress(Bytes, Level) -> Result[DeflateData, String]
+
+fn deflate_compress_string(String, Level) -> Result[DeflateData, String]
+
+fn deflate_decompress(DeflateData) -> Result[Bytes, String]
+
+fn deflate_decompress_bytes(Bytes, Int) -> Result[Bytes, String]
+
+fn deflate_decompress_raw_string(String, Int) -> Result[String, String]
+
+fn deflate_decompress_string(DeflateData) -> Result[String, String]
 
 fn deflate_of_binary_string(String, Level) -> Result[String, String]
 
+fn deflate_of_bytes(Bytes, Level) -> Result[Bytes, String]
+
 fn[T, E] err(E) -> Result[T, E]
+
+fn get_distance_from_code(Int, Int) -> Int
+
+fn get_length_from_code(Int, Int) -> Int
+
+fn gzip_compress(String, Level, String?, String?, Int) -> Result[GzipData, String]
+
+fn gzip_decompress(GzipData) -> Result[String, String]
+
+fn gzip_extract_metadata(String) -> Result[GzipData, String]
+
+fn gzip_of_binary_string(String, Level, String?, String?) -> Result[String, String]
+
+fn gzip_of_bytes(Bytes, Level, String?, String?) -> Result[Bytes, String]
+
+fn gzip_to_binary_string(String) -> Result[String, String]
+
+fn gzip_to_bytes(Bytes) -> Result[Bytes, String]
+
+let huffman_invalid_distance : String
+
+let huffman_invalid_length : String
+
+let huffman_invalid_symbol : String
+
+let huffman_premature_end : String
 
 fn level_best() -> Level
 
@@ -36,15 +84,27 @@ fn level_fast() -> Level
 
 fn level_none() -> Level
 
+let max_code_length : Int
+
+let max_distance_codes : Int
+
+let max_literal_length_codes : Int
+
 fn new_adler32() -> Int64
 
 fn new_crc32() -> Int64
 
 fn[T, E] ok(T) -> Result[T, E]
 
+fn read_bits(String, Int, Int) -> (Int, Int)
+
+fn reverse_bits(Int, Int) -> Int
+
 fn[T, E] unwrap(Result[T, E]) -> T
 
 fn[T, E] unwrap_or(Result[T, E], T) -> T
+
+fn validate_huffman_lengths(Array[Int]) -> Bool
 
 fn zlib_compress(String, Level) -> Result[ZlibData, String]
 
@@ -52,17 +112,33 @@ fn zlib_decompress(ZlibData) -> Result[String, String]
 
 fn zlib_of_binary_string(String, Level) -> Result[String, String]
 
+fn zlib_of_bytes(Bytes, Level) -> Result[Bytes, String]
+
 fn zlib_to_binary_string(String, Int) -> Result[String, String]
+
+fn zlib_to_bytes(Bytes, Int) -> Result[Bytes, String]
 
 // Errors
 
 // Types and methods
-type BlockType
-
 pub struct DeflateData {
-  compressed_bytes : String
+  compressed_bytes : Bytes
   original_size : Int
   adler32_checksum : Int64
+}
+
+pub struct GzipData {
+  compressed_bytes : String
+  original_size : Int
+  crc32_checksum : Int64
+  filename : String?
+  comment : String?
+  modification_time : Int
+}
+
+pub enum HuffmanNode {
+  Leaf(Int)
+  Branch(HuffmanNode, HuffmanNode)
 }
 
 pub enum Level {

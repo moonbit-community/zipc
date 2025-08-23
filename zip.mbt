@@ -144,13 +144,18 @@ pub fn stored_of_bytes(data : Bytes) -> @deflate.Result[File, String] {
     )
   }
 
-  // Calculate CRC-32 checksum directly on bytes (more efficient)
-  let crc = @deflate.crc32_bytes(data)
+  // Convert to string for storage (required by current File struct)
+  let data_as_string = data.to_string()
+  
+  // Calculate CRC-32 checksum on the string that will actually be stored
+  // This ensures consistency between storage and extraction
+  let crc = @deflate.crc32_string(data_as_string)
+  
   @deflate.ok({
     compression: Compression::Stored,
     start: 0,
     compressed_size: len,
-    compressed_bytes: data.to_string(), // Convert to string for storage compatibility
+    compressed_bytes: data_as_string,
     decompressed_size: len,
     decompressed_crc32: crc,
     version_made_by: 0x314, // UNIX, PKZIP 2.0
@@ -214,13 +219,19 @@ pub fn deflate_of_bytes(
   // Compress using deflate directly on bytes (more efficient)
   match @deflate.deflate_of_bytes(data, level) {
     @deflate.Ok(compressed_data) => {
-      // Calculate CRC-32 of original data directly on bytes
-      let crc = @deflate.crc32_bytes(data)
+      // Convert to string for storage (required by current File struct)
+      let compressed_as_string = compressed_data.to_string()
+      let data_as_string = data.to_string()
+      
+      // Calculate CRC-32 on the string representation that will be stored/extracted
+      // This ensures consistency between storage and extraction
+      let crc = @deflate.crc32_string(data_as_string)
+      
       @deflate.ok({
         compression: Compression::Deflate,
         start: 0,
-        compressed_size: compressed_data.length(),
-        compressed_bytes: compressed_data.to_string(), // Convert to string for storage compatibility
+        compressed_size: compressed_as_string.length(),
+        compressed_bytes: compressed_as_string,
         decompressed_size: len,
         decompressed_crc32: crc,
         version_made_by: 0x314, // UNIX, ZIP 2.0

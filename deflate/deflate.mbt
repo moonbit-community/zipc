@@ -224,39 +224,52 @@ fn compress_fixed_huffman(data : String) -> Result[DeflateData, String] {
 
 ///|
 fn decompress_deflate_blocks(compressed : String) -> Result[String, String] {
-  if compressed.length() == 0 {
-    return Ok("")
+  // Convert to bytes for proper binary data handling
+  let compressed_bytes = compressed.to_bytes()
+  match decompress_deflate_blocks_bytes(compressed_bytes) {
+    Ok(result_bytes) => Ok(result_bytes.to_string())
+    Err(error) => Err(error)
   }
-  let mut result = ""
+}
+
+// Decompress deflate blocks from bytes (handles binary data correctly)
+///|
+fn decompress_deflate_blocks_bytes(compressed : Bytes) -> Result[Bytes, String] {
+  if compressed.length() == 0 {
+    return Ok(Bytes::from_array([]))
+  }
+  let mut result = Bytes::from_array([])
   let mut offset = 0
   while offset < compressed.length() {
     // Read block header (3 bits, but we stored as full byte)
     if offset >= compressed.length() {
       return Err("Unexpected end of compressed data")
     }
-    let header_byte = compressed[offset]
+    let header_byte = compressed[offset].to_int()
     offset = offset + 1
     let bfinal = header_byte & 1
     let btype_value = (header_byte >> 1) & 3
     match btype_to_block_type(btype_value) {
       Some(BlockType::Uncompressed) =>
         // Uncompressed block
-        match decompress_uncompressed_block(compressed, offset) {
+        match decompress_uncompressed_block_bytes(compressed, offset) {
           Ok((block_data, new_offset)) => {
             result = result + block_data
             offset = new_offset
           }
           Err(error) => return Err(error)
         }
-      Some(BlockType::FixedHuffman) =>
-        // Fixed Huffman block
-        match decompress_fixed_huffman_block(compressed, offset) {
+      Some(BlockType::FixedHuffman) => {
+        // Fixed Huffman block - convert to string for existing implementation
+        let compressed_string = compressed.to_string()
+        match decompress_fixed_huffman_block(compressed_string, offset) {
           Ok((block_data, new_offset)) => {
-            result = result + block_data
+            result = result + block_data.to_bytes()
             offset = new_offset
           }
           Err(error) => return Err(error)
         }
+      }
       Some(BlockType::DynamicHuffman) =>
         // Dynamic Huffman - not implemented yet
         return Err("Dynamic Huffman decompression not implemented")
@@ -301,6 +314,34 @@ fn decompress_uncompressed_block(
   Ok((block_data, data_offset + len))
 }
 
+// Decompress an uncompressed block from bytes (handles binary data correctly)
+///|
+fn decompress_uncompressed_block_bytes(
+  compressed : Bytes,
+  offset : Int,
+) -> Result[(Bytes, Int), String] {
+  if offset + 4 > compressed.length() {
+    return Err("Incomplete uncompressed block header")
+  }
+
+  // Read LEN (16-bit little-endian) from bytes
+  let len = read_u16_le_bytes(compressed, offset)
+  let nlen = read_u16_le_bytes(compressed, offset + 2)
+
+  // Verify NLEN is one's complement of LEN
+  if (len ^ nlen) != 0xffff {
+    return Err("Invalid uncompressed block: LEN/NLEN mismatch")
+  }
+  let data_offset = offset + 4
+  if data_offset + len > compressed.length() {
+    return Err("Incomplete uncompressed block data")
+  }
+  
+  // Extract the block data as bytes
+  let block_data = compressed[data_offset:data_offset + len].to_bytes()
+  Ok((block_data, data_offset + len))
+}
+
 // Helper functions for binary data (reused from zip module)
 
 ///|
@@ -324,6 +365,16 @@ fn read_u16_le(data : String, offset : Int) -> Int {
   }
   let b0 = data[offset]
   let b1 = data[offset + 1]
+  b0 + (b1 << 8)
+}
+
+///|
+fn read_u16_le_bytes(data : Bytes, offset : Int) -> Int {
+  if offset + 1 >= data.length() {
+    return 0
+  }
+  let b0 = data[offset].to_int()
+  let b1 = data[offset + 1].to_int()
   b0 + (b1 << 8)
 }
 

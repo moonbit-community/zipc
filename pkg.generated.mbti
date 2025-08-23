@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "bobzhang/zipc/zip"
+package "bobzhang/zipc"
 
 import(
   "bobzhang/zipc/deflate"
@@ -8,11 +8,33 @@ import(
 // Values
 fn add(Member, Archive) -> Archive
 
+fn bytes_from_ints(Array[Int]) -> Bytes
+
+fn compare_string_vs_bytes_write_u32() -> String
+
+fn concat_bytes(Array[Bytes]) -> Bytes
+
+fn create_unicode_path_field(String, Int) -> ExtraField
+
+fn create_unix_timestamp_field(Int, Int?, Int?) -> ExtraField
+
+fn current_unix_timestamp() -> Int
+
 fn deflate_of_binary_string(String, @deflate.Level) -> @deflate.Result[File, String]
+
+fn deflate_of_bytes(Bytes, @deflate.Level) -> @deflate.Result[File, String]
+
+fn demonstrate_migration_success() -> String
+
+fn dos_datetime_components(Int, Int) -> (Int, Int, Int, Int, Int, Int)
+
+fn dos_datetime_to_unix(Int, Int) -> Int
 
 let dos_epoch : Int
 
 fn empty() -> Archive
+
+fn extra_fields_size(Array[ExtraField]) -> Int
 
 fn file_can_extract(File) -> Bool
 
@@ -26,9 +48,19 @@ fn file_decompressed_size(File) -> Int
 
 fn file_to_binary_string(File) -> @deflate.Result[String, String]
 
+fn file_to_bytes(File) -> @deflate.Result[Bytes, String]
+
 fn find(String, Archive) -> Member?
 
+fn find_extra_field(Array[ExtraField], Int) -> ExtraField?
+
+fn format_dos_datetime(Int, Int) -> String
+
+let info_zip_unix_id : Int
+
 fn is_empty(Archive) -> Bool
+
+fn make_dos_datetime(Int, Int, Int, Int, Int, Int) -> (Int, Int)
 
 let max_file_size : Int
 
@@ -50,15 +82,71 @@ fn member_mtime(Member) -> Int
 
 fn member_path(Member) -> String
 
+let ntfs_extra_field_id : Int
+
 fn of_binary_string(String) -> @deflate.Result[Archive, String]
+
+fn of_bytes(Bytes) -> @deflate.Result[Archive, String]
+
+fn parse_extra_fields(String) -> Array[ExtraField]
+
+fn parse_unicode_path_field(ExtraField) -> (String, Int)?
+
+fn parse_unix_timestamp_field(ExtraField) -> (Int, Int?, Int?)?
+
+fn read_u16_be_bytes(Bytes, Int) -> Int
+
+fn read_u16_le_bytes(Bytes, Int) -> Int
+
+fn read_u16_le_extra(String, Int) -> Int
+
+fn read_u32_be_bytes(Bytes, Int) -> Int
+
+fn read_u32_le_bytes(Bytes, Int) -> Int
+
+fn read_u32_le_extra(String, Int) -> Int
 
 fn remove(String, Archive) -> Archive
 
+fn remove_extra_field(Array[ExtraField], Int) -> Array[ExtraField]
+
+fn serialize_extra_fields(Array[ExtraField]) -> String
+
+fn set_extra_field(Array[ExtraField], ExtraField) -> Array[ExtraField]
+
 fn stored_of_binary_string(String) -> @deflate.Result[File, String]
+
+fn stored_of_bytes(Bytes) -> @deflate.Result[File, String]
 
 fn string_has_magic(String) -> Bool
 
 fn to_binary_string(Archive) -> @deflate.Result[String, String]
+
+fn to_bytes(Archive) -> @deflate.Result[Bytes, String]
+
+let unicode_comment_id : Int
+
+let unicode_path_id : Int
+
+let unix_extra_field_id : Int
+
+fn unix_to_dos_datetime(Int) -> (Int, Int)
+
+fn validate_extra_field(ExtraField) -> Bool
+
+fn write_u16_be_bytes(Int) -> Bytes
+
+fn write_u16_le_bytes(Int) -> Bytes
+
+fn write_u16_le_extra(Int) -> String
+
+fn write_u32_be_bytes(Int) -> Bytes
+
+fn write_u32_le_bytes(Int) -> Bytes
+
+fn write_u32_le_extra(Int) -> String
+
+let zip64_extra_field_id : Int
 
 // Errors
 
@@ -73,6 +161,12 @@ pub enum Compression {
   Other(Int)
 }
 impl Show for Compression
+
+pub struct ExtraField {
+  header_id : Int
+  data_size : Int
+  data : String
+}
 
 pub struct File {
   compression : Compression
