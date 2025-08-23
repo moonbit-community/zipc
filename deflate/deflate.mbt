@@ -34,7 +34,7 @@ fn btype_to_block_type(btype : Int) -> BlockType? {
 
 ///|
 pub struct DeflateData {
-  compressed_bytes : String
+  compressed_bytes : Bytes
   original_size : Int
   adler32_checksum : Adler32
 }
@@ -43,7 +43,7 @@ pub struct DeflateData {
 
 ///|
 pub fn deflate_compress(
-  data : String,
+  data : Bytes,
   level : Level,
 ) -> Result[DeflateData, String] {
   match level {
@@ -54,15 +54,24 @@ pub fn deflate_compress(
   }
 }
 
+// Legacy string-based API for backward compatibility
+///|
+pub fn deflate_compress_string(
+  data : String,
+  level : Level,
+) -> Result[DeflateData, String] {
+  deflate_compress(data.to_bytes(), level)
+}
+
 // Decompress deflate data
 
 ///|
-pub fn deflate_decompress(deflate_data : DeflateData) -> Result[String, String] {
+pub fn deflate_decompress(deflate_data : DeflateData) -> Result[Bytes, String] {
   // First decompress the data
   match decompress_deflate_blocks(deflate_data.compressed_bytes) {
     Ok(decompressed) => {
       // Then verify Adler-32 checksum of the decompressed data
-      let computed_adler = adler32_string(decompressed)
+      let computed_adler = adler32_bytes(decompressed)
       if adler32_equal(computed_adler, deflate_data.adler32_checksum) {
         Ok(decompressed)
       } else {
@@ -73,15 +82,24 @@ pub fn deflate_decompress(deflate_data : DeflateData) -> Result[String, String] 
   }
 }
 
+// Legacy string-based API for backward compatibility
+///|
+pub fn deflate_decompress_string(deflate_data : DeflateData) -> Result[String, String] {
+  match deflate_decompress(deflate_data) {
+    Ok(bytes) => Ok(bytes.to_string())
+    Err(error) => Err(error)
+  }
+}
+
 // Compress using uncompressed blocks (Level::None)
 
 ///|
-fn compress_uncompressed(data : String) -> Result[DeflateData, String] {
+fn compress_uncompressed(data : Bytes) -> Result[DeflateData, String] {
   if data.length() == 0 {
     // Empty data - just return empty compressed data
-    let adler = adler32_string(data)
+    let adler = adler32_bytes(data)
     return Ok({
-      compressed_bytes: "",
+      compressed_bytes: Bytes::new(),
       original_size: 0,
       adler32_checksum: adler,
     })
