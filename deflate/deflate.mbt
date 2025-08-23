@@ -69,12 +69,10 @@ pub fn deflate_compress_string(
 
 ///|
 pub fn deflate_decompress(deflate_data : DeflateData) -> Result[Bytes, String] {
-  // First decompress the data (returns String)
-  match decompress_deflate_blocks(deflate_data.compressed_bytes.to_string()) {
-    Ok(decompressed) => {
-      // Convert to bytes for checksum verification
-      let decompressed_bytes = decompressed.to_bytes()
-      // Then verify Adler-32 checksum of the decompressed data
+  // Decompress using bytes-based function to avoid String conversion corruption
+  match decompress_deflate_blocks_bytes(deflate_data.compressed_bytes) {
+    Ok(decompressed_bytes) => {
+      // Verify Adler-32 checksum of the decompressed data
       let computed_adler = adler32_bytes(decompressed_bytes)
       if adler32_equal(computed_adler, deflate_data.adler32_checksum) {
         Ok(decompressed_bytes)
@@ -424,11 +422,9 @@ pub fn deflate_decompress_bytes(
   compressed_data : Bytes,
   original_size : Int,
 ) -> Result[Bytes, String] {
-  // Simplified implementation: convert to string, decompress, convert back
-  // In a full implementation, this would work directly on bytes
-  let string_data = compressed_data.to_string()
-  match deflate_decompress_raw_string(string_data, original_size) {
-    Ok(decompressed_string) => Ok(decompressed_string.to_bytes())
+  // Use bytes-based decompression to avoid String conversion corruption
+  match decompress_deflate_blocks_bytes(compressed_data) {
+    Ok(decompressed_bytes) => Ok(decompressed_bytes)
     Err(error) => Err(error)
   }
 }

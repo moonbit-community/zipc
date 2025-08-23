@@ -196,9 +196,10 @@ pub fn gzip_decompress(gzip_data : GzipData) -> Result[String, String] {
     adler32_checksum: 0L, // Gzip uses CRC-32, not Adler-32
   }
   
-  // Use deflate decompression without Adler-32 check
-  match decompress_deflate_blocks(deflate_bytes) {
-    Ok(decompressed) => {
+  // Use bytes-based deflate decompression to avoid String conversion corruption
+  match decompress_deflate_blocks_bytes(deflate_bytes.to_bytes()) {
+    Ok(decompressed_bytes) => {
+      let decompressed = decompressed_bytes.to_string()
       // Verify size
       if decompressed.length() != expected_size {
         return Err("Gzip size mismatch: expected " + expected_size.to_string() + 
