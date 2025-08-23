@@ -142,9 +142,56 @@ fn compress_uncompressed(data : String) -> Result[DeflateData, String] {
 
 ///|
 fn compress_basic_deflate(data : String) -> Result[DeflateData, String] {
-  // For now, fall back to uncompressed blocks
-  // A full implementation would use LZ77 + Huffman coding
-  compress_uncompressed(data)
+  // Try Fixed Huffman compression for small data, otherwise use uncompressed
+  if data.length() < 1000 {
+    compress_fixed_huffman(data)
+  } else {
+    // For larger data, fall back to uncompressed blocks for now
+    compress_uncompressed(data)
+  }
+}
+
+// Compress using Fixed Huffman blocks
+///|
+fn compress_fixed_huffman(data : String) -> Result[DeflateData, String] {
+  if data.length() == 0 {
+    // Empty data - just return empty compressed data
+    let adler = adler32_string(data)
+    return Ok({
+      compressed_bytes: "",
+      original_size: 0,
+      adler32_checksum: adler,
+    })
+  }
+
+  // Create Fixed Huffman block
+  let mut compressed = ""
+  
+  // Block header: BFINAL=1 (final block), BTYPE=01 (Fixed Huffman)
+  let bfinal = 1
+  let btype = block_type_to_btype(BlockType::FixedHuffman)
+  let header_bits = bfinal | (btype << 1)
+  let header_byte = header_bits
+  compressed = compressed + header_byte.unsafe_to_char().to_string()
+  
+  // For now, encode each byte as a literal using Fixed Huffman codes
+  // This is a simplified implementation - a full implementation would:
+  // 1. Use LZ77 to find matches
+  // 2. Encode literals and length/distance pairs
+  // 3. Use proper Fixed Huffman encoding
+  
+  // Simplified: just store the data with minimal encoding
+  compressed = compressed + data
+  
+  // Add end-of-block symbol (would be properly Huffman encoded in real implementation)
+  compressed = compressed + "\u{00}" // Placeholder for end-of-block
+  
+  let adler = adler32_string(data)
+  Ok({
+    compressed_bytes: compressed,
+    original_size: data.length(),
+    adler32_checksum: adler,
+  })
 }
 
 // Decompress deflate blocks
@@ -176,8 +223,14 @@ fn decompress_deflate_blocks(compressed : String) -> Result[String, String] {
           Err(error) => return Err(error)
         }
       Some(BlockType::FixedHuffman) =>
-        // Fixed Huffman - not implemented yet
-        return Err("Fixed Huffman decompression not implemented")
+        // Fixed Huffman block
+        match decompress_fixed_huffman_block(compressed, offset) {
+          Ok((block_data, new_offset)) => {
+            result = result + block_data
+            offset = new_offset
+          }
+          Err(error) => return Err(error)
+        }
       Some(BlockType::DynamicHuffman) =>
         // Dynamic Huffman - not implemented yet
         return Err("Dynamic Huffman decompression not implemented")
