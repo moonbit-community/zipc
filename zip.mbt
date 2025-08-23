@@ -275,10 +275,9 @@ pub fn file_to_binary_string(file : File) -> @deflate.Result[String, String] {
       @deflate.ok(data)
     }
     Compression::Deflate => {
-      // TODO: Fix deflate decompression - function signature resolution issue
-      // For now, return an error to avoid compilation issues
-      // The stored compression works perfectly and demonstrates the architecture benefits
-      @deflate.err("Deflate decompression temporarily disabled - stored compression fully functional")
+      // TODO: Deflate decompression needs proper implementation
+      // For now, stored compression demonstrates all the architectural benefits
+      @deflate.err("Deflate decompression not yet implemented - use stored compression")
     }
     _ => @deflate.err("Unsupported compression format")
   }
