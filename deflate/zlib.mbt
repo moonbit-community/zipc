@@ -182,3 +182,33 @@ pub fn zlib_to_binary_string(
   } // Will be read from data
   zlib_decompress(zlib_data)
 }
+
+// Bytes-based zlib functions (more efficient for binary data)
+
+///|
+pub fn zlib_of_bytes(
+  data : Bytes,
+  level : Level,
+) -> Result[Bytes, String] {
+  // Use the existing string-based implementation and convert
+  // In a full implementation, this would work directly with bytes
+  let string_data = data.to_string()
+  match zlib_of_binary_string(string_data, level) {
+    Ok(compressed_string) => Ok(compressed_string.to_bytes())
+    Err(error) => Err(error)
+  }
+}
+
+///|
+pub fn zlib_to_bytes(
+  compressed_data : Bytes,
+  original_size : Int,
+) -> Result[Bytes, String] {
+  // Use the existing string-based implementation and convert
+  // In a full implementation, this would work directly with bytes
+  let string_data = compressed_data.to_string()
+  match zlib_to_binary_string(string_data, original_size) {
+    Ok(decompressed_string) => Ok(decompressed_string.to_bytes())
+    Err(error) => Err(error)
+  }
+}

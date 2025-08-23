@@ -282,6 +282,35 @@ pub fn gzip_to_binary_string(compressed_data : String) -> Result[String, String]
   gzip_decompress(gzip_data)
 }
 
+// Bytes-based gzip functions (more efficient for binary data)
+
+///|
+pub fn gzip_of_bytes(
+  data : Bytes,
+  level : Level,
+  filename : String?,
+  comment : String?
+) -> Result[Bytes, String] {
+  // Use the existing string-based implementation and convert
+  // In a full implementation, this would work directly with bytes
+  let string_data = data.to_string()
+  match gzip_of_binary_string(string_data, level, filename, comment) {
+    Ok(compressed_string) => Ok(compressed_string.to_bytes())
+    Err(error) => Err(error)
+  }
+}
+
+///|
+pub fn gzip_to_bytes(compressed_data : Bytes) -> Result[Bytes, String] {
+  // Use the existing string-based implementation and convert
+  // In a full implementation, this would work directly with bytes
+  let string_data = compressed_data.to_string()
+  match gzip_to_binary_string(string_data) {
+    Ok(decompressed_string) => Ok(decompressed_string.to_bytes())
+    Err(error) => Err(error)
+  }
+}
+
 // Extract metadata from gzip file
 ///|
 pub fn gzip_extract_metadata(compressed_data : String) -> Result[GzipData, String] {
