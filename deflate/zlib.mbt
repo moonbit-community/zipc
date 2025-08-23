@@ -17,7 +17,7 @@ pub fn zlib_compress(data : String, level : Level) -> Result[ZlibData, String] {
   let adler = adler32_string(data)
 
   // Compress using deflate
-  match deflate_compress(data, level) {
+  match deflate_compress(data.to_bytes(), level) {
     Ok(deflate_data) => {
       // Create zlib header (2 bytes)
       let compression_method = 8 // Deflate
@@ -41,7 +41,7 @@ pub fn zlib_compress(data : String, level : Level) -> Result[ZlibData, String] {
       // Build zlib data: header + deflate data + adler32
       let header = write_u16_be(cmf * 256 + flg_final)
       let adler_bytes = write_u32_be(adler.to_int())
-      let zlib_bytes = header + deflate_data.compressed_bytes + adler_bytes
+      let zlib_bytes = header + deflate_data.compressed_bytes.to_string() + adler_bytes
       Ok({
         compressed_bytes: zlib_bytes,
         original_size: data.length(),
@@ -100,16 +100,16 @@ pub fn zlib_decompress(zlib_data : ZlibData) -> Result[String, String] {
 
   // Decompress deflate data
   let deflate_data : DeflateData = {
-    compressed_bytes: deflate_bytes,
+    compressed_bytes: deflate_bytes.to_bytes(),
     original_size: zlib_data.original_size,
     adler32_checksum: expected_adler,
   }
   match deflate_decompress(deflate_data) {
     Ok(decompressed) => {
       // Verify Adler-32 checksum
-      let computed_adler = adler32_string(decompressed)
+      let computed_adler = adler32_bytes(decompressed)
       if adler32_equal(computed_adler, expected_adler) {
-        Ok(decompressed)
+        Ok(decompressed.to_string())
       } else {
         Err("Adler-32 checksum mismatch in zlib data")
       }

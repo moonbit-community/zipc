@@ -88,7 +88,7 @@ pub fn write_u32_be_bytes(value : Int) -> Bytes {
 // Concatenate multiple bytes
 ///|
 pub fn concat_bytes(parts : Array[Bytes]) -> Bytes {
-  let mut result = Bytes::new()
+  let mut result = Bytes::from_array([])
   for part in parts {
     result = result + part
   }

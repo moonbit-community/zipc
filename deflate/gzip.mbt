@@ -32,7 +32,7 @@ pub fn gzip_compress(
   let crc = crc32_string(data)
   
   // Compress using deflate
-  match deflate_compress(data, level) {
+  match deflate_compress(data.to_bytes(), level) {
     Ok(deflate_data) => {
       // Build gzip header
       let mut header = ""
@@ -85,7 +85,7 @@ pub fn gzip_compress(
       let trailer = write_u32_le(crc.to_int()) + write_u32_le(data.length())
       
       // Combine header + deflate data + trailer
-      let gzip_bytes = header + deflate_data.compressed_bytes + trailer
+      let gzip_bytes = header + deflate_data.compressed_bytes.to_string() + trailer
       
       Ok({
         compressed_bytes: gzip_bytes,
@@ -191,7 +191,7 @@ pub fn gzip_decompress(gzip_data : GzipData) -> Result[String, String] {
   
   // Decompress deflate data
   let deflate_data : DeflateData = {
-    compressed_bytes: deflate_bytes,
+    compressed_bytes: deflate_bytes.to_bytes(),
     original_size: expected_size,
     adler32_checksum: 0L, // Gzip uses CRC-32, not Adler-32
   }

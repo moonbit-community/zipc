@@ -46,11 +46,13 @@ pub fn deflate_compress(
   data : Bytes,
   level : Level,
 ) -> Result[DeflateData, String] {
+  // Convert bytes to string for internal processing
+  let string_data = data.to_string()
   match level {
-    Level::None => compress_uncompressed(data)
-    Level::Fast => compress_basic_deflate(data)
-    Level::Default => compress_basic_deflate(data)
-    Level::Best => compress_basic_deflate(data)
+    Level::None => compress_uncompressed(string_data.to_bytes())
+    Level::Fast => compress_basic_deflate(string_data)
+    Level::Default => compress_basic_deflate(string_data)
+    Level::Best => compress_basic_deflate(string_data)
   }
 }
 
@@ -67,13 +69,15 @@ pub fn deflate_compress_string(
 
 ///|
 pub fn deflate_decompress(deflate_data : DeflateData) -> Result[Bytes, String] {
-  // First decompress the data
-  match decompress_deflate_blocks(deflate_data.compressed_bytes) {
+  // First decompress the data (returns String)
+  match decompress_deflate_blocks(deflate_data.compressed_bytes.to_string()) {
     Ok(decompressed) => {
+      // Convert to bytes for checksum verification
+      let decompressed_bytes = decompressed.to_bytes()
       // Then verify Adler-32 checksum of the decompressed data
-      let computed_adler = adler32_bytes(decompressed)
+      let computed_adler = adler32_bytes(decompressed_bytes)
       if adler32_equal(computed_adler, deflate_data.adler32_checksum) {
-        Ok(decompressed)
+        Ok(decompressed_bytes)
       } else {
         Err("Adler-32 checksum mismatch")
       }
@@ -99,7 +103,7 @@ fn compress_uncompressed(data : Bytes) -> Result[DeflateData, String] {
     // Empty data - just return empty compressed data
     let adler = adler32_bytes(data)
     return Ok({
-      compressed_bytes: Bytes::new(),
+      compressed_bytes: Bytes::from_array([]),
       original_size: 0,
       adler32_checksum: adler,
     })
@@ -110,7 +114,7 @@ fn compress_uncompressed(data : Bytes) -> Result[DeflateData, String] {
   // For uncompressed: BTYPE = 00
   // Then LEN (16 bits) and NLEN (16 bits, one's complement of LEN)
 
-  let mut compressed = ""
+  let mut compressed = Bytes::from_array([])
   let mut remaining = data
 
   // Process data in chunks (max 65535 bytes per uncompressed block)
@@ -120,7 +124,7 @@ fn compress_uncompressed(data : Bytes) -> Result[DeflateData, String] {
     } else {
       remaining.length()
     }
-    let chunk = remaining.substring(start=0, end=chunk_size)
+    let chunk = remaining[0:chunk_size].to_bytes()
     let is_final = remaining.length() <= 65535
 
     // Create block header
@@ -130,25 +134,26 @@ fn compress_uncompressed(data : Bytes) -> Result[DeflateData, String] {
 
     // For simplicity, we'll store the header as a full byte (padding with zeros)
     let header_byte = header_bits
-    compressed = compressed + header_byte.unsafe_to_char().to_string()
+    let header_bytes = Bytes::from_array([header_byte.to_byte()])
+    compressed = compressed + header_bytes
 
     // Add LEN (little-endian 16-bit)
     let len = chunk.length()
-    let len_bytes = write_u16_le(len)
+    let len_bytes = write_u16_le_bytes(len)
     compressed = compressed + len_bytes
 
     // Add NLEN (one's complement of LEN)
     let nlen = len ^ 0xffff
-    let nlen_bytes = write_u16_le(nlen)
+    let nlen_bytes = write_u16_le_bytes(nlen)
     compressed = compressed + nlen_bytes
 
     // Add the actual data
     compressed = compressed + chunk
 
     // Move to next chunk
-    remaining = remaining.substring(start=chunk_size, end=remaining.length())
+    remaining = remaining[chunk_size:remaining.length()].to_bytes()
   }
-  let adler = adler32_string(data)
+  let adler = adler32_bytes(data)
   Ok({
     compressed_bytes: compressed,
     original_size: data.length(),
@@ -165,7 +170,7 @@ fn compress_basic_deflate(data : String) -> Result[DeflateData, String] {
     compress_fixed_huffman(data)
   } else {
     // For larger data, fall back to uncompressed blocks for now
-    compress_uncompressed(data)
+    compress_uncompressed(data.to_bytes())
   }
 }
 
@@ -176,21 +181,22 @@ fn compress_fixed_huffman(data : String) -> Result[DeflateData, String] {
     // Empty data - just return empty compressed data
     let adler = adler32_string(data)
     return Ok({
-      compressed_bytes: "",
+      compressed_bytes: Bytes::from_array([]),
       original_size: 0,
       adler32_checksum: adler,
     })
   }
 
   // Create Fixed Huffman block
-  let mut compressed = ""
+  let mut compressed = Bytes::from_array([])
   
   // Block header: BFINAL=1 (final block), BTYPE=01 (Fixed Huffman)
   let bfinal = 1
   let btype = block_type_to_btype(BlockType::FixedHuffman)
   let header_bits = bfinal | (btype << 1)
   let header_byte = header_bits
-  compressed = compressed + header_byte.unsafe_to_char().to_string()
+  let header_bytes = Bytes::from_array([header_byte.to_byte()])
+  compressed = compressed + header_bytes
   
   // For now, encode each byte as a literal using Fixed Huffman codes
   // This is a simplified implementation - a full implementation would:
@@ -199,10 +205,12 @@ fn compress_fixed_huffman(data : String) -> Result[DeflateData, String] {
   // 3. Use proper Fixed Huffman encoding
   
   // Simplified: just store the data with minimal encoding
-  compressed = compressed + data
+  compressed = compressed + data.to_bytes()
   
   // Add end-of-block symbol (would be properly Huffman encoded in real implementation)
-  compressed = compressed + "\u{00}" // Placeholder for end-of-block
+  let end_block_byte : Int = 0
+  let end_block = Bytes::from_array([end_block_byte.to_byte()]) // Placeholder for end-of-block
+  compressed = compressed + end_block
   
   let adler = adler32_string(data)
   Ok({
@@ -303,6 +311,13 @@ fn write_u16_le(value : Int) -> String {
 }
 
 ///|
+fn write_u16_le_bytes(value : Int) -> Bytes {
+  let b0 = value & 0xff
+  let b1 = (value >> 8) & 0xff
+  Bytes::from_array([b0.to_byte(), b1.to_byte()])
+}
+
+///|
 fn read_u16_le(data : String, offset : Int) -> Int {
   if offset + 1 >= data.length() {
     return 0
@@ -319,8 +334,8 @@ pub fn deflate_of_binary_string(
   s : String,
   level : Level,
 ) -> Result[String, String] {
-  match deflate_compress(s, level) {
-    Ok(deflate_data) => Ok(deflate_data.compressed_bytes)
+  match deflate_compress(s.to_bytes(), level) {
+    Ok(deflate_data) => Ok(deflate_data.compressed_bytes.to_string())
     Err(error) => Err("Deflate compression failed: " + error)
   }
 }
@@ -328,7 +343,7 @@ pub fn deflate_of_binary_string(
 // Extract deflate-compressed data
 
 ///|
-pub fn deflate_decompress_string(
+pub fn deflate_decompress_raw_string(
   compressed_data : String,
   _original_size : Int,
 ) -> Result[String, String] {
@@ -361,7 +376,7 @@ pub fn deflate_decompress_bytes(
   // Simplified implementation: convert to string, decompress, convert back
   // In a full implementation, this would work directly on bytes
   let string_data = compressed_data.to_string()
-  match deflate_decompress_string(string_data, original_size) {
+  match deflate_decompress_raw_string(string_data, original_size) {
     Ok(decompressed_string) => Ok(decompressed_string.to_bytes())
     Err(error) => Err(error)
   }

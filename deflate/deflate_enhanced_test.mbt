@@ -12,7 +12,7 @@ test "block type conversion functions" {
   match @deflate.deflate_of_binary_string(test_data, level) {
     @deflate.Ok(compressed) => {
       // Verify we can decompress data that was compressed with Uncompressed blocks
-      match @deflate.deflate_decompress_string(compressed, test_data.length()) {
+      match @deflate.deflate_decompress_raw_string(compressed, test_data.length()) {
         @deflate.Ok(decompressed) => {
           inspect(decompressed, content=test_data)
           // Snapshot: Uncompressed blocks should work correctly
@@ -34,7 +34,7 @@ test "deflate error handling edge cases" {
       inspect(compressed.length(), content="0")
       
       // And decompress back to empty
-      match @deflate.deflate_decompress_string(compressed, 0) {
+      match @deflate.deflate_decompress_raw_string(compressed, 0) {
         @deflate.Ok(decompressed) => {
           inspect(decompressed, content="")
           inspect(decompressed.length(), content="0")
@@ -46,7 +46,7 @@ test "deflate error handling edge cases" {
   }
   
   // Test decompression with invalid data
-  match @deflate.deflate_decompress_string("invalid_deflate_data", 10) {
+  match @deflate.deflate_decompress_raw_string("invalid_deflate_data", 10) {
     @deflate.Ok(_) => fail("Should have failed on invalid deflate data")
     @deflate.Err(error) => {
       // Should get a meaningful error message
@@ -66,7 +66,7 @@ test "large data handling" {
       inspect(compressed.length() > 0, content="true")
       
       // Should decompress correctly
-      match @deflate.deflate_decompress_string(compressed, large_data.length()) {
+      match @deflate.deflate_decompress_raw_string(compressed, large_data.length()) {
         @deflate.Ok(decompressed) => {
           inspect(decompressed.length(), content="70000")
           inspect(decompressed == large_data, content="true")
@@ -98,7 +98,7 @@ test "compression level consistency" {
         inspect(compressed.length() >= 0, content="true")
         
         // All should decompress correctly
-        match @deflate.deflate_decompress_string(compressed, test_data.length()) {
+        match @deflate.deflate_decompress_raw_string(compressed, test_data.length()) {
           @deflate.Ok(decompressed) => {
             inspect(decompressed == test_data, content="true")
           }
@@ -116,7 +116,7 @@ test "deflate data structure integrity" {
   let level = @deflate.level_none()
   
   // Test the full deflate_compress -> deflate_decompress cycle
-  match @deflate.deflate_compress(test_data, level) {
+  match @deflate.deflate_compress(test_data.to_bytes(), level) {
     @deflate.Ok(deflate_data) => {
       // Verify the structure has the expected fields
       inspect(deflate_data.original_size, content=test_data.length().to_string())
@@ -125,8 +125,8 @@ test "deflate data structure integrity" {
       // Test decompression with the full structure
       match @deflate.deflate_decompress(deflate_data) {
         @deflate.Ok(decompressed) => {
-          inspect(decompressed, content=test_data)
-          inspect(decompressed == test_data, content="true")
+          inspect(decompressed.to_string(), content=test_data)
+          inspect(decompressed.to_string() == test_data, content="true")
         }
         @deflate.Err(error) => fail("Full deflate decompression failed: " + error)
       }
@@ -142,7 +142,7 @@ test "binary data handling" {
   
   match @deflate.deflate_of_binary_string(binary_data, @deflate.level_none()) {
     @deflate.Ok(compressed) => {
-      match @deflate.deflate_decompress_string(compressed, binary_data.length()) {
+      match @deflate.deflate_decompress_raw_string(compressed, binary_data.length()) {
         @deflate.Ok(decompressed) => {
           // Binary data should be preserved exactly
           inspect(decompressed == binary_data, content="true")
