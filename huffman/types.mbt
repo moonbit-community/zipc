@@ -7,18 +7,12 @@ pub enum HuffmanNode {
   Branch(HuffmanNode, HuffmanNode) // Left and right children
 } derive(Show, Eq)
 
-// Huffman code representation
-priv struct HuffmanCode {
-  code : Int    // The binary code
-  length : Int  // Number of bits in the code
-} derive(Show, Eq)
-
 // Symbol with code information for tree building
-struct SymbolCode {
+priv struct SymbolCode {
   symbol : Int  // The symbol value
   code : Int    // The Huffman code
   length : Int  // Code length in bits
-} derive(Show, Eq)
+}
 
 // Block types for DEFLATE compression
 ///|

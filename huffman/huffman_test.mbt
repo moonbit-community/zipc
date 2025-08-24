@@ -244,7 +244,7 @@ test "huffman_performance_large_data" {
   // Test reading many bits efficiently
   let mut total_bits_read = 0
   while not(reader.is_at_end()) && total_bits_read < 8000 {
-    let bits = reader.read_bits(8)  // Read byte by byte
+    let _bits = reader.read_bits(8)  // Read byte by byte
     total_bits_read += 8
   }
   
@@ -276,7 +276,7 @@ test "huffman_stress_test_repeated_patterns" {
 test "huffman_boundary_conditions" {
   // Test single byte
   match {
-    let (decompressed, bytes_consumed) = @huffman.decompress_fixed_huffman_block_bytes("A".to_bytes(), 0)
+    let (_decompressed, bytes_consumed) = @huffman.decompress_fixed_huffman_block_bytes("A".to_bytes(), 0)
     inspect(bytes_consumed == 1, content="true")
     inspect("Single byte processed", content="Single byte processed")
   } {

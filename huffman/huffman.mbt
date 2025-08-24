@@ -125,6 +125,9 @@ fn build_simple_huffman_tree(symbols : Array[SymbolCode], count : Int) -> Huffma
   let mut eob_found = false
   for i = 0; i < count; i = i + 1 {
     if symbols[i].symbol == 256 {
+      // Note: code and length fields are available for future canonical tree implementation
+      let _ = symbols[i].code
+      let _ = symbols[i].length
       eob_found = true
       break
     }

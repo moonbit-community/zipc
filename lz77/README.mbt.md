@@ -161,7 +161,7 @@ test {
   
   inspect(decompressed == data, content="true")
   
-  let (literals, references, ratio) = @lz77.get_compression_stats(data.length(), @lz77.encode_default(data))
+  let (_literals, _references, ratio) = @lz77.get_compression_stats(data.length(), @lz77.encode_default(data))
   println("Compression ratio: " + ratio.to_string())
 }
 ```

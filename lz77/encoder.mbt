@@ -38,11 +38,11 @@
 ///    c. Update hash tables with new position
 /// 3. Return the complete token sequence
 ///
-/// # Example
-/// ```moonbit
-/// let data = b"Hello World Hello World"
-/// let config = default_config()
-/// let tokens = encode(data, config)
+  /// # Example
+  /// ```moonbit
+  /// let data = b"Hello World Hello World"
+  /// let config = @lz77.default_config()
+  /// let tokens = @lz77.encode(data, config)
 /// @json.inspect(tokens, content=[
 ///   ["Literal", 72],
 ///   ["Literal", 101],
@@ -302,7 +302,7 @@ fn update_hash_tables(data : Bytes, state : EncoderState, config : LZ77Config) -
 /// # Example
 /// ```moonbit
 /// let data = "Hello World Hello World".to_bytes()
-/// let tokens = encode_default(data)
+/// let _tokens = @lz77.encode_default(data)
 /// ```
 pub fn encode_default(data : Bytes) -> Array[LZ77Token] {
   encode(data, default_config())
@@ -333,7 +333,7 @@ pub fn encode_default(data : Bytes) -> Array[LZ77Token] {
 /// # Example
 /// ```moonbit
 /// let data = "Hello World".to_bytes()
-/// let compressed = encode_to_bytes(data, default_config())
+/// let _compressed = @lz77.encode_to_bytes(data, @lz77.default_config())
 /// ```
 pub fn encode_to_bytes(data : Bytes, config : LZ77Config) -> Bytes {
   // First, encode to token format
