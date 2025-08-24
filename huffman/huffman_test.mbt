@@ -3,12 +3,15 @@
 
 // Test BitReader functionality
 test "bit_reader_basic_operations" {
-  let data = "Hello".to_bytes()
+  let buffer = @buffer.new()
+  buffer.write_byte(b'H')  // 0x48 = 01001000
+  buffer.write_byte(b'e')  // 0x65 = 01100101
+  let data = buffer.to_bytes()
   let reader = @huffman.new_bit_reader(data)
   
-  // Test reading single bits
+  // Test reading single bits (LSB first)
   let first_bit = reader.read_bits(1)
-  inspect(first_bit, content="0")  // First bit of 'H' (0x48 = 01001000)
+  inspect(first_bit, content="0")  // First bit of 'H' (0x48 = 01001000, LSB=0)
   
   // Test reading multiple bits
   let next_7_bits = reader.read_bits(7)
@@ -21,12 +24,14 @@ test "bit_reader_basic_operations" {
 
 test "bit_reader_edge_cases" {
   // Test empty data
-  let empty_reader = @huffman.new_bit_reader("".to_bytes())
+  let empty_buffer = @buffer.new()
+  let empty_reader = @huffman.new_bit_reader(empty_buffer.to_bytes())
   inspect(empty_reader.is_at_end(), content="true")
   
   // Test reading beyond data
-  let small_data = "A".to_bytes()
-  let reader = @huffman.new_bit_reader(small_data)
+  let small_buffer = @buffer.new()
+  small_buffer.write_byte(b'A')  // 0x41
+  let reader = @huffman.new_bit_reader(small_buffer.to_bytes())
   let _ = reader.read_bits(8)  // Read the byte
   inspect(reader.is_at_end(), content="true")
   
@@ -36,13 +41,17 @@ test "bit_reader_edge_cases" {
 }
 
 test "bit_reader_large_reads" {
-  let data = "ABCD".to_bytes()
+  let buffer = @buffer.new()
+  buffer.write_byte(b'A')  // 0x41
+  buffer.write_byte(b'B')  // 0x42
+  let data = buffer.to_bytes()
   let reader = @huffman.new_bit_reader(data)
   
   // Test reading 16 bits (2 bytes)
   let two_bytes = reader.read_bits(16)
-  // 'A' = 0x41, 'B' = 0x42, so 16-bit little-endian = 0x4241
-  inspect(two_bytes, content="16961")  // 0x4241 = 16961
+  // A=0x41=01000001, B=0x42=01000010
+  // LSB first: 01000001 01000010 -> 0100001001000001 = 16961
+  inspect(two_bytes, content="16961")  // LSB first 16-bit value
 }
 
 // Test Huffman tree construction
@@ -100,7 +109,12 @@ test "length_distance_decoding" {
 }
 
 test "length_distance_edge_cases" {
-  let reader = @huffman.new_bit_reader("".to_bytes())
+  // Use a BitReader with zero data for predictable extra bit reading
+  let zero_buffer = @buffer.new()
+  for i = 0; i < 10; i = i + 1 {
+    zero_buffer.write_byte(b'\x00')
+  }
+  let reader = @huffman.new_bit_reader(zero_buffer.to_bytes())
   
   // Test invalid length codes
   let invalid_length = @huffman.get_length_from_code(reader, 300)

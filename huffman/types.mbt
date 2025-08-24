@@ -13,6 +13,13 @@ priv struct HuffmanCode {
   length : Int  // Number of bits in the code
 } derive(Show, Eq)
 
+// Symbol with code information for tree building
+struct SymbolCode {
+  symbol : Int  // The symbol value
+  code : Int    // The Huffman code
+  length : Int  // Code length in bits
+} derive(Show, Eq)
+
 // Block types for DEFLATE compression
 ///|
 pub enum BlockType {
