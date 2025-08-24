@@ -41,7 +41,7 @@ pub fn zlib_compress(data : String, level : Level) -> Result[ZlibData, String] {
 
       // Build zlib data: header + deflate data + adler32
       let header = write_u16_be(cmf * 256 + flg_final)
-      let adler_bytes = write_u32_be(adler.to_int())
+      let adler_bytes = write_u32_be(adler.0.to_int())
       let zlib_bytes = header +
         deflate_data.compressed_bytes.to_string() +
         adler_bytes

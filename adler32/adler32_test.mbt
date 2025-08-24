@@ -79,3 +79,19 @@ test "adler32_binary_data" {
   let same_binary_adler = @adler32.bytes(binary_data)
   assert_eq(binary_adler, same_binary_adler)
 }
+
+test "bytes" {
+  // Verified test against Python's zlib.adler32()
+  inspect(
+    @adler32.bytes("hello world hgoho xx yy zz aa bb cc dd ee ff"),
+    content="0x545410050481025150",
+  )
+  inspect(
+    @adler32.bytes("hello world hgoho xx yy zz aa bb cc dd ee ff").0,
+    content="1725042482",
+  )
+  inspect(
+    @adler32.bytes("hello world hgoho xx yy zz aa bb cc dd ee").0,
+    content="980291142",
+  )
+}

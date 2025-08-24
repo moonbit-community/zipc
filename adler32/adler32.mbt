@@ -4,10 +4,7 @@
 ///|
 pub(all) struct Adler32(Int64) derive(Eq)
 
-///|
-pub fn to_int(self : Adler32) -> Int {
-  self.0.to_int()
-}
+
 
 ///|
 let adler32_base : Int64 = 65521L // Largest prime smaller than 65536
@@ -30,16 +27,7 @@ fn adler32_update_byte(adler : Adler32, byte : Int) -> Adler32 {
   Adler32((new_b << 16) | new_a)
 }
 
-// Update Adler-32 with a string
 
-///|
-fn adler32_update_string(adler : Adler32, s : String) -> Adler32 {
-  let mut result = adler
-  for i = 0; i < s.length(); i = i + 1 {
-    result = adler32_update_byte(result, s[i])
-  }
-  result
-}
 
 // Update Adler-32 with bytes (more efficient for binary data)
 
@@ -52,35 +40,19 @@ fn adler32_update_bytes(adler : Adler32, data : Bytes) -> Adler32 {
   result
 }
 
-// Compute Adler-32 of a string (private - legacy support)
-
-///|
-fn adler32_string(s : String) -> Adler32 {
-  let adler = new_adler32()
-  adler32_update_string(adler, s)
-}
 
 // Compute Adler-32 of bytes (private - legacy support)
 
 ///|
-fn adler32_bytes(data : Bytes) -> Adler32 {
+pub fn bytes(data : Bytes) -> Adler32 {
   let adler = new_adler32()
   adler32_update_bytes(adler, data)
 }
 
-// Modern API - compute Adler-32 of bytes (preferred interface)
-
-///|
-pub fn bytes(data : Bytes) -> Adler32 {
-  adler32_bytes(data)
-}
 
 // Check if two Adler-32 values are equal (private - use == operator instead)
 
-///|
-fn adler32_equal(a1 : Adler32, a2 : Adler32) -> Bool {
-  a1 == a2
-}
+
 
 ///|
 pub impl Show for Adler32 with output(adler, logger) {

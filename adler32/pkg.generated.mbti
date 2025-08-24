@@ -9,7 +9,6 @@ fn bytes(Bytes) -> Adler32
 // Types and methods
 pub(all) struct Adler32(Int64)
 fn Adler32::inner(Self) -> Int64
-fn Adler32::to_int(Self) -> Int
 impl Eq for Adler32
 impl Show for Adler32
 
