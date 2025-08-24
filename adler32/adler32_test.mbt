@@ -3,15 +3,17 @@
 ///|
 test "adler32_empty_string" {
   let adler = @adler32.adler32_string("")
+  let expected = @adler32.new_adler32() // Adler32(1L)
   // Empty string should have Adler-32 of 1
-  assert_eq(adler, 1L)
+  assert_eq(adler, expected)
 }
 
 ///|
 test "adler32_hello_world" {
   let adler = @adler32.adler32_string("Hello, World!")
+  let initial = @adler32.new_adler32()
   // Test that we get some Adler value (exact value may vary)
-  assert_true(adler != 1L)
+  assert_true(adler != initial)
 }
 
 ///|
@@ -32,8 +34,9 @@ test "adler32_bytes_vs_string" {
 
   // Note: These may not be equal due to String vs Bytes encoding differences
   // This test documents the behavior rather than asserting equality
-  assert_true(adler_string != 1L)
-  assert_true(adler_bytes != 1L)
+  let initial = @adler32.new_adler32()
+  assert_true(adler_string != initial)
+  assert_true(adler_bytes != initial)
 }
 
 ///|
@@ -51,4 +54,21 @@ test "adler32_incremental_vs_direct" {
 
   // Should be equal
   assert_eq(@adler32.adler32_equal(direct, incremental), true)
+}
+
+///|
+test "modern_bytes_api" {
+  let test_data = "Modern API test"
+  let test_bytes = test_data.to_bytes()
+  
+  // Test the new modern bytes() API
+  let modern_result = @adler32.bytes(test_bytes)
+  let legacy_result = @adler32.adler32_bytes(test_bytes)
+  
+  // Should produce the same result
+  assert_eq(modern_result, legacy_result)
+  
+  // Test Show implementation
+  let initial = @adler32.new_adler32()
+  assert_true(modern_result != initial)
 }
