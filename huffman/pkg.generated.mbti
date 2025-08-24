@@ -6,17 +6,41 @@ fn block_type_to_btype(BlockType) -> Int
 
 fn btype_to_block_type(Int) -> BlockType?
 
+fn build_fixed_distance_tree() -> HuffmanNode?
+
+fn build_fixed_literal_tree() -> HuffmanNode?
+
+fn create_fixed_distance_tree() -> HuffmanNode
+
+fn create_fixed_huffman_tree() -> HuffmanNode
+
+fn decode_symbol(BitReader, HuffmanNode) -> Int?
+
 fn decompress_fixed_huffman_block_bytes(Bytes, Int) -> (Bytes, Int) raise
 
 fn dynamic_huffman_block_type() -> BlockType
 
 fn fixed_huffman_block_type() -> BlockType
 
+fn get_distance_from_code(BitReader, Int) -> Int?
+
+fn get_length_from_code(BitReader, Int) -> Int?
+
+fn new_bit_reader(Bytes) -> BitReader
+
 fn uncompressed_block_type() -> BlockType
 
 // Errors
 
 // Types and methods
+pub struct BitReader {
+  data : Bytes
+  mut bit_offset : Int
+}
+fn BitReader::is_at_end(Self) -> Bool
+fn BitReader::read_bits(Self, Int) -> Int
+impl Show for BitReader
+
 pub enum BlockType {
   Uncompressed
   FixedHuffman
@@ -24,6 +48,17 @@ pub enum BlockType {
 }
 impl Eq for BlockType
 impl Show for BlockType
+
+pub enum HuffmanNode {
+  Leaf(Int)
+  Branch(HuffmanNode, HuffmanNode)
+}
+impl Eq for HuffmanNode
+impl Show for HuffmanNode
+
+type SymbolCode
+impl Eq for SymbolCode
+impl Show for SymbolCode
 
 // Type aliases
 

@@ -5,7 +5,7 @@
 pub enum LZ77Token {
   Literal(Byte)                    // Single literal byte
   Reference(Int, Int)              // (length, distance) back-reference
-} derive(Show, Eq)
+} derive(Show, Eq, ToJson(style="flat"))
 
 // LZ77 compression parameters
 pub struct LZ77Config {

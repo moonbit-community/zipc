@@ -40,43 +40,65 @@
 ///
 /// # Example
 /// ```moonbit
-/// let data = "Hello World Hello World".to_bytes()
+/// let data = b"Hello World Hello World"
 /// let config = default_config()
 /// let tokens = encode(data, config)
+/// @json.inspect(tokens, content=[
+///   ["Literal", 72],
+///   ["Literal", 101],
+///   ["Literal", 108],
+///   ["Literal", 108],
+///   ["Literal", 111],
+///   ["Literal", 32],
+///   ["Literal", 87],
+///   ["Literal", 111],
+///   ["Literal", 114],
+///   ["Literal", 108],
+///   ["Literal", 100],
+///   ["Literal", 32],
+///   ["Literal", 72],
+///   ["Literal", 101],
+///   ["Literal", 108],
+///   ["Literal", 108],
+///   ["Literal", 111],
+///   ["Literal", 32],
+///   ["Literal", 87],
+///   ["Literal", 111],
+///   ["Literal", 114],
+///   ["Literal", 108],
+///   ["Literal", 100],
+/// ])
 /// ```
 pub fn encode(data : Bytes, config : LZ77Config) -> Array[LZ77Token] {
   // Handle empty input - no compression needed
   if data.length() == 0 {
     return []
   }
-  
+
   // Initialize encoder state with hash tables and sliding window
   let state = new_encoder_state(config)
   let mut result = []
-  
+
   // Main encoding loop - process each position in the input
   while state.position < data.length() {
     // Find the best match (literal or reference) at current position
     let token = find_best_match(data, state, config)
     result = result + [token]
-    
+
     // Advance position based on token type
     match token {
-      LZ77Token::Literal(_) => {
+      LZ77Token::Literal(_) =>
         // Literal: advance by 1 byte
         state.position += 1
-      }
-      LZ77Token::Reference(length, _) => {
+      LZ77Token::Reference(length, _) =>
         // Reference: advance by match length (skip matched bytes)
         state.position += length
-      }
     }
-    
+
     // Update hash tables with newly processed position(s)
     // This maintains the sliding window and hash chains for future matches
     update_hash_tables(data, state, config)
   }
-  
   result
 }
 
