@@ -1,6 +1,7 @@
 {
   "is-main": false,
   "import": [
-    "bobzhang/zipc/crc32"
+    "bobzhang/zipc/crc32",
+    "bobzhang/zipc/adler32"
   ]
 }

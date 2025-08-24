@@ -95,7 +95,7 @@ test {
   inspect(@crc32.crc32_to_hex(crc).length() > 0, content="true")
   
   // Adler-32 checksums  
-  inspect(@deflate.adler32_equal(@deflate.adler32_string(""), 1), content="true")
+  inspect(@adler32.adler32_equal(@adler32.adler32_string(""), 1), content="true")
 }
 ```
 

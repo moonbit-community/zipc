@@ -1,0 +1,18 @@
+{
+  "is-main": false,
+  "import": [],
+  "link": {
+    "wasm": {
+      "exports": [],
+      "export-memory-name": "memory",
+      "import-memory": {
+        "module": "env",
+        "name": "memory"
+      }
+    },
+    "wasm-gc": {
+      "exports": [],
+      "export-memory-name": "memory"
+    }
+  }
+}

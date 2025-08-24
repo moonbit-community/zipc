@@ -36,7 +36,7 @@ fn btype_to_block_type(btype : Int) -> BlockType? {
 pub struct DeflateData {
   compressed_bytes : Bytes
   original_size : Int
-  adler32_checksum : Adler32
+  adler32_checksum : @adler32.Adler32
 }
 
 // Compress data using deflate algorithm
@@ -72,8 +72,8 @@ pub fn deflate_decompress(deflate_data : DeflateData) -> Result[Bytes, String] {
   match decompress_deflate_blocks_bytes(deflate_data.compressed_bytes) {
     Ok(decompressed_bytes) => {
       // Verify Adler-32 checksum of the decompressed data
-      let computed_adler = adler32_bytes(decompressed_bytes)
-      if adler32_equal(computed_adler, deflate_data.adler32_checksum) {
+      let computed_adler = @adler32.adler32_bytes(decompressed_bytes)
+      if @adler32.adler32_equal(computed_adler, deflate_data.adler32_checksum) {
         Ok(decompressed_bytes)
       } else {
         Err("Adler-32 checksum mismatch")
@@ -98,7 +98,7 @@ pub fn deflate_decompress_string(deflate_data : DeflateData) -> Result[String, S
 fn compress_uncompressed(data : Bytes) -> Result[DeflateData, String] {
   if data.length() == 0 {
     // Empty data - just return empty compressed data
-    let adler = adler32_bytes(data)
+    let adler = @adler32.adler32_bytes(data)
     return Ok({
       compressed_bytes: Bytes::from_array([]),
       original_size: 0,
@@ -150,7 +150,7 @@ fn compress_uncompressed(data : Bytes) -> Result[DeflateData, String] {
     // Move to next chunk
     remaining = remaining[chunk_size:remaining.length()].to_bytes()
   }
-  let adler = adler32_bytes(data)
+  let adler = @adler32.adler32_bytes(data)
   Ok({
     compressed_bytes: compressed,
     original_size: data.length(),
@@ -188,7 +188,7 @@ fn compress_basic_deflate_bytes(data : Bytes) -> Result[DeflateData, String] {
 fn compress_fixed_huffman(data : String) -> Result[DeflateData, String] {
   if data.length() == 0 {
     // Empty data - just return empty compressed data
-    let adler = adler32_string(data)
+    let adler = @adler32.adler32_string(data)
     return Ok({
       compressed_bytes: Bytes::from_array([]),
       original_size: 0,
@@ -221,7 +221,7 @@ fn compress_fixed_huffman(data : String) -> Result[DeflateData, String] {
   let end_block = Bytes::from_array([end_block_byte.to_byte()]) // Placeholder for end-of-block
   compressed = compressed + end_block
   
-  let adler = adler32_string(data)
+  let adler = @adler32.adler32_string(data)
   Ok({
     compressed_bytes: compressed,
     original_size: data.length(),
@@ -234,7 +234,7 @@ fn compress_fixed_huffman(data : String) -> Result[DeflateData, String] {
 fn compress_fixed_huffman_bytes(data : Bytes) -> Result[DeflateData, String] {
   if data.length() == 0 {
     // Empty data - just return empty compressed data
-    let adler = adler32_bytes(data)
+    let adler = @adler32.adler32_bytes(data)
     return Ok({
       compressed_bytes: Bytes::from_array([]),
       original_size: 0,
@@ -267,7 +267,7 @@ fn compress_fixed_huffman_bytes(data : Bytes) -> Result[DeflateData, String] {
   let end_block = Bytes::from_array([end_block_byte.to_byte()]) // Placeholder for end-of-block
   compressed = compressed + end_block
   
-  let adler = adler32_bytes(data)
+  let adler = @adler32.adler32_bytes(data)
   Ok({
     compressed_bytes: compressed,
     original_size: data.length(),

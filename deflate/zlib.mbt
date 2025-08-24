@@ -6,7 +6,7 @@
 pub struct ZlibData {
   compressed_bytes : String
   original_size : Int
-  adler32_checksum : Adler32
+  adler32_checksum : @adler32.Adler32
 }
 
 // Compress data using zlib format (deflate + headers + checksum)
@@ -14,7 +14,7 @@ pub struct ZlibData {
 ///|
 pub fn zlib_compress(data : String, level : Level) -> Result[ZlibData, String] {
   // Calculate Adler-32 of original data
-  let adler = adler32_string(data)
+  let adler = @adler32.adler32_string(data)
 
   // Compress using deflate
   match deflate_compress(data.to_bytes(), level) {
@@ -107,8 +107,8 @@ pub fn zlib_decompress(zlib_data : ZlibData) -> Result[String, String] {
   match deflate_decompress(deflate_data) {
     Ok(decompressed) => {
       // Verify Adler-32 checksum
-      let computed_adler = adler32_bytes(decompressed)
-      if adler32_equal(computed_adler, expected_adler) {
+      let computed_adler = @adler32.adler32_bytes(decompressed)
+      if @adler32.adler32_equal(computed_adler, expected_adler) {
         Ok(decompressed.to_string())
       } else {
         Err("Adler-32 checksum mismatch in zlib data")

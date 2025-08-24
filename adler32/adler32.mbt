@@ -17,7 +17,7 @@ pub fn new_adler32() -> Adler32 {
 // Update Adler-32 with a single byte
 
 ///|
-fn adler32_update_byte(adler : Adler32, byte : Int) -> Adler32 {
+pub fn adler32_update_byte(adler : Adler32, byte : Int) -> Adler32 {
   let a = adler & 0xffffL
   let b = adler >> 16
   let new_a = (a + (byte.to_int64() & 0xffL)) % adler32_base
