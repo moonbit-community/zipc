@@ -453,10 +453,10 @@ fn read_u16_le_bytes(data : Bytes, offset : Int) -> Int {
   b0 + (b1 << 8)
 }
 
-// Create deflate-compressed file data for ZIP
+// Create deflate-compressed file data for ZIP (DEPRECATED - use deflate_of_bytes)
 
 ///|
-pub fn deflate_of_binary_string(
+fn deflate_of_binary_string(
   s : String,
   level : Level,
 ) -> Result[String, String] {
@@ -472,10 +472,10 @@ pub fn deflate_of_binary_string(
   }
 }
 
-// Extract deflate-compressed data
+// Extract deflate-compressed data (DEPRECATED - use deflate_decompress_bytes)
 
 ///|
-pub fn deflate_decompress_raw_string(
+fn deflate_decompress_raw_string(
   compressed_data : String,
   _original_size : Int,
 ) -> Result[String, String] {
@@ -502,6 +502,20 @@ pub fn deflate_of_bytes(data : Bytes, level : Level) -> Result[Bytes, String] {
 
 ///|
 pub fn deflate_decompress_bytes(
+  compressed_data : Bytes,
+  _original_size : Int,
+) -> Result[Bytes, String] {
+  // Use bytes-based decompression to avoid String conversion corruption
+  match decompress_deflate_blocks_bytes(compressed_data) {
+    Ok(decompressed_bytes) => Ok(decompressed_bytes)
+    Err(error) => Err(error)
+  }
+}
+
+// Raw deflate decompression from bytes (modern API)
+
+///|
+pub fn deflate_decompress_raw_bytes(
   compressed_data : Bytes,
   _original_size : Int,
 ) -> Result[Bytes, String] {
