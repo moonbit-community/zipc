@@ -1,38 +1,6 @@
 // Deflate compression/decompression implementation
 // This is a simplified implementation focusing on basic functionality
 
-// Deflate block types
-
-///|
-priv enum BlockType {
-  Uncompressed // No compression (BTYPE = 00)
-  FixedHuffman // Compressed with fixed Huffman codes (BTYPE = 01)  
-  DynamicHuffman // Compressed with dynamic Huffman codes (BTYPE = 10)
-}
-
-// Convert block type to BTYPE value
-
-///|
-fn block_type_to_btype(block_type : BlockType) -> Int {
-  match block_type {
-    BlockType::Uncompressed => 0
-    BlockType::FixedHuffman => 1
-    BlockType::DynamicHuffman => 2
-  }
-}
-
-// Convert BTYPE value to block type
-
-///|
-fn btype_to_block_type(btype : Int) -> BlockType? {
-  match btype {
-    0 => Some(BlockType::Uncompressed)
-    1 => Some(BlockType::FixedHuffman)
-    2 => Some(BlockType::DynamicHuffman)
-    _ => None
-  }
-}
-
 
 // Deflate compressed data structure
 
@@ -112,7 +80,7 @@ fn compress_uncompressed(data : Bytes) -> DeflateData {
 
     // Create block header
     let bfinal = if is_final { 1 } else { 0 }
-    let btype = block_type_to_btype(BlockType::Uncompressed)
+    let btype = @huffman.block_type_to_btype(@huffman.uncompressed_block_type())
     let header_bits = bfinal | (btype << 1) // 3 bits total
 
     // For simplicity, we'll store the header as a full byte (padding with zeros)
@@ -181,7 +149,7 @@ fn compress_fixed_huffman_bytes(data : Bytes) -> DeflateData  {
 
   // Block header: BFINAL=1 (final block), BTYPE=01 (Fixed Huffman)
   let bfinal = 1
-  let btype = block_type_to_btype(BlockType::FixedHuffman)
+  let btype = @huffman.block_type_to_btype(@huffman.fixed_huffman_block_type())
   let header_bits = bfinal | (btype << 1)
   let header_byte = header_bits
   let header_bytes = Bytes::from_array([header_byte.to_byte()])
@@ -228,22 +196,25 @@ fn decompress_deflate_blocks_bytes(compressed : Bytes) -> Bytes raise {
     offset = offset + 1
     let bfinal = header_byte & 1
     let btype_value = (header_byte >> 1) & 3
-    match btype_to_block_type(btype_value) {
-      Some(BlockType::Uncompressed) => {
-        // Uncompressed block
-        let (block_data, new_offset) = decompress_uncompressed_block_bytes(compressed, offset)
-        result = result + block_data
-        offset = new_offset
+    match @huffman.btype_to_block_type(btype_value) {
+      Some(block_type) => {
+        if block_type == @huffman.uncompressed_block_type() {
+          // Uncompressed block
+          let (block_data, new_offset) = decompress_uncompressed_block_bytes(compressed, offset)
+          result = result + block_data
+          offset = new_offset
+        } else if block_type == @huffman.fixed_huffman_block_type() {
+          // Fixed Huffman block - use bytes-based decompression
+          let (block_data, new_offset) = @huffman.decompress_fixed_huffman_block_bytes(compressed, offset)
+          result = result + block_data
+          offset = new_offset
+        } else if block_type == @huffman.dynamic_huffman_block_type() {
+          // Dynamic Huffman - not implemented yet
+          fail("Dynamic Huffman decompression not implemented")
+        } else {
+          fail("Unknown block type")
+        }
       }
-      Some(BlockType::FixedHuffman) => {
-        // Fixed Huffman block - use bytes-based decompression
-        let (block_data, new_offset) = decompress_fixed_huffman_block_bytes(compressed, offset)
-        result = result + block_data
-        offset = new_offset
-      }
-      Some(BlockType::DynamicHuffman) =>
-        // Dynamic Huffman - not implemented yet
-        fail("Dynamic Huffman decompression not implemented")
       None => fail("Invalid block type: " + btype_value.to_string())
     }
 
@@ -286,29 +257,7 @@ fn decompress_uncompressed_block_bytes(
   (block_data, data_offset + len)
 }
 
-// Decompress Fixed Huffman block from bytes (no String conversion)
 
-///|
-fn decompress_fixed_huffman_block_bytes(
-  compressed : Bytes,
-  offset : Int,
-) -> (Bytes, Int) raise {
-  // This is a simplified implementation that matches the String version
-  // but works directly with bytes to avoid corruption
-
-  if offset >= compressed.length() {
-    fail("Unexpected end of Fixed Huffman block")
-  }
-
-  // For now, return a simple placeholder that copies some data
-  let remaining = compressed.length() - offset
-  let block_size = if remaining > 100 { 100 } else { remaining }
-
-  // In a real implementation, this would be the decompressed output
-  // For now, use a placeholder that matches the String version
-  let decompressed = "Fixed Huffman decompressed data placeholder".to_bytes()
-  (decompressed, offset + block_size)
-}
 
 // Helper functions for binary data (reused from zip module)
 
