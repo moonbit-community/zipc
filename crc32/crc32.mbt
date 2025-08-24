@@ -50,7 +50,7 @@ let crc32_table : Array[Int64] = [
 // Create a new CRC-32 checksum (initial value)
 
 ///|
-pub fn new_crc32() -> Crc32 {
+fn new_crc32() -> Crc32 {
   0xffffffffL
 }
 
@@ -116,18 +116,6 @@ pub fn crc32_equal(c1 : Crc32, c2 : Crc32) -> Bool {
   c1 == c2
 }
 
-// Check CRC-32 with error message
-
-///|
-pub fn crc32_check(expect : Crc32, found : Crc32) -> Result[Unit, String] {
-  if crc32_equal(expect, found) {
-    Ok(())
-  } else {
-    Err(
-      "CRC-32 mismatch: expected \{crc32_to_hex(expect)}, found \{crc32_to_hex(found)}",
-    )
-  }
-}
 
 // Format CRC-32 as hex string
 
