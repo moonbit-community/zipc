@@ -2,7 +2,11 @@
 package "bobzhang/zipc/adler32"
 
 // Values
+
+
 fn bytes(Bytes) -> Adler32
+
+
 
 // Errors
 
@@ -12,8 +16,3 @@ fn Adler32::inner(Self) -> Int64
 fn Adler32::to_int(Self) -> Int
 impl Eq for Adler32
 impl Show for Adler32
-
-// Type aliases
-
-// Traits
-

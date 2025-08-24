@@ -15,14 +15,14 @@ let adler32_base : Int64 = 65521L // Largest prime smaller than 65536
 // Create a new Adler-32 checksum (initial value)
 
 ///|
-pub fn new_adler32() -> Adler32 {
+fn new_adler32() -> Adler32 {
   Adler32(1L)
 }
 
 // Update Adler-32 with a single byte
 
 ///|
-pub fn adler32_update_byte(adler : Adler32, byte : Int) -> Adler32 {
+fn adler32_update_byte(adler : Adler32, byte : Int) -> Adler32 {
   let a = adler.0 & 0xffffL
   let b = adler.0 >> 16
   let new_a = (a + (byte.to_int64() & 0xffL)) % adler32_base
@@ -52,18 +52,18 @@ fn adler32_update_bytes(adler : Adler32, data : Bytes) -> Adler32 {
   result
 }
 
-// Compute Adler-32 of a string
+// Compute Adler-32 of a string (private - legacy support)
 
 ///|
-pub fn adler32_string(s : String) -> Adler32 {
+fn adler32_string(s : String) -> Adler32 {
   let adler = new_adler32()
   adler32_update_string(adler, s)
 }
 
-// Compute Adler-32 of bytes (more efficient for binary data)
+// Compute Adler-32 of bytes (private - legacy support)
 
 ///|
-pub fn adler32_bytes(data : Bytes) -> Adler32 {
+fn adler32_bytes(data : Bytes) -> Adler32 {
   let adler = new_adler32()
   adler32_update_bytes(adler, data)
 }
@@ -75,10 +75,10 @@ pub fn bytes(data : Bytes) -> Adler32 {
   adler32_bytes(data)
 }
 
-// Check if two Adler-32 values are equal
+// Check if two Adler-32 values are equal (private - use == operator instead)
 
 ///|
-pub fn adler32_equal(a1 : Adler32, a2 : Adler32) -> Bool {
+fn adler32_equal(a1 : Adler32, a2 : Adler32) -> Bool {
   a1 == a2
 }
 

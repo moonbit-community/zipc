@@ -180,7 +180,7 @@ pub fn demonstrate_migration_success() -> String {
     "   • 2-4x performance improvements delivered", "   • 100% type safety enforced",
     "   • Complete backward compatibility maintained", "", "✅ New Bytes-based Functions Working:",
     "   • stored_of_bytes() - Create files from bytes", "   • file_to_bytes() - Extract files as bytes",
-    "   • to_bytes() / of_bytes() - Archive operations", "   • crc32_bytes() / adler32_bytes() - Fast checksums",
+    "   • to_bytes() / of_bytes() - Archive operations", "   • @crc32.bytes() / @adler32.bytes() - Fast checksums",
     "   • deflate_of_bytes() - Compress bytes data", "", "✅ Performance Improvements:",
     "   • CRC32 calculation: 2-4x faster on bytes", "   • Memory usage: 30-50% reduction for binary data",
     "   • Safety: 100% elimination of unsafe operations", "   • Clarity: Perfect separation of text vs binary APIs",

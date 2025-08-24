@@ -52,11 +52,11 @@ test "checksum consistency" {
   let test_data = "Checksum test data"
 
   // Test Adler-32 consistency  
-  let adler1 = @adler32.adler32_string(test_data)
-  let adler2 = @adler32.adler32_string(test_data)
-  inspect(@adler32.adler32_equal(adler1, adler2), content="true")
+  let adler1 = @adler32.bytes(test_data.to_bytes())
+  let adler2 = @adler32.bytes(test_data.to_bytes())
+  inspect(adler1 == adler2, content="true")
 
   // Snapshot: Known values - let's see what they actually are
-  let empty_adler = @adler32.adler32_string("")
+  let empty_adler = @adler32.bytes("".to_bytes())
   inspect(empty_adler, content="1")
 }
