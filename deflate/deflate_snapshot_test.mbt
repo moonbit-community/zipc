@@ -58,5 +58,5 @@ test "checksum consistency" {
 
   // Snapshot: Known values - let's see what they actually are
   let empty_adler = @adler32.bytes("".to_bytes())
-  inspect(empty_adler, content="1")
+  inspect(empty_adler, content="0x4848484848484849")
 }

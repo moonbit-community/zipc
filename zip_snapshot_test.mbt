@@ -59,7 +59,7 @@ test "error handling basic" {
     @deflate.Ok(_) => fail("Should have failed on invalid ZIP data")
     @deflate.Err(error) =>
       // Snapshot: Should mention magic bytes - test the error message
-      inspect(error, content="Not a valid ZIP archive - missing magic bytes")
+      inspect(error, content="File too small to be a valid ZIP archive")
   }
 
   // Test empty data

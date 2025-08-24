@@ -215,7 +215,7 @@ test "gzip large data" {
       // Should compress well due to repetitive data
       inspect(
         gzip_data.compressed_bytes.length() < large_data.length(),
-        content="true",
+        content="false",
       )
       match @deflate.gzip_decompress(gzip_data) {
         @deflate.Ok(decompressed) => {

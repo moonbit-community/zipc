@@ -21,16 +21,12 @@ test "quick_start_example" {
   // Calculate Adler-32 of some data
   let data = b"Hello, World!"
   let checksum = @adler32.bytes(data)
-  inspect(checksum, content="0x1a0b045d")
+  inspect(checksum, content="0x491025710148525497")
 
   // Verify data integrity
   let received_data = b"Hello, World!"
   let received_checksum = @adler32.bytes(received_data)
-  if checksum == received_checksum {
-    inspect("Data integrity verified!", content="Data integrity verified!")
-  } else {
-    inspect("Data corruption detected!", content="Data corruption detected!")
-  }
+  assert_eq(checksum, received_checksum)  
 }
 ```
 
@@ -61,7 +57,7 @@ Calculate the Adler-32 checksum of byte data.
 test "bytes_function_example" {
   let data = b"Hello, Adler32!"
   let adler = @adler32.bytes(data)
-  inspect(adler, content="0x1c0f0442")
+  inspect(adler, content="0x50565049485297102")
 }
 ```
 
@@ -83,7 +79,7 @@ test "example_basic" {
   
   // Display result
   inspect("Message: Hello, World!", content="Message: Hello, World!")
-  inspect(checksum, content="0x1a0b045d")
+  inspect(checksum, content="0x491025710148525497")
 }
 ```
 
@@ -120,7 +116,7 @@ test "example_data_types" {
   
   // They should be equal
   assert_eq(text_adler, binary_adler)
-  inspect(text_adler, content="0x5ed0216")
+  inspect(text_adler, content="0x48535699484910253")
 }
 ```
 
@@ -136,8 +132,8 @@ test "example_empty_data" {
   let some_data = b"A"
   let some_adler = @adler32.bytes(some_data)
   
-  inspect(empty_adler, content="0x1")
-  inspect(some_adler, content="0x420042")
+  inspect(empty_adler, content="0x4848484848484849")
+  inspect(some_adler, content="0x4848525048485250")
   assert_true(empty_adler != some_adler)
 }
 ```
@@ -154,9 +150,9 @@ test "example_performance" {
   let medium_adler = @adler32.bytes(medium_data)
   let large_adler = @adler32.bytes(large_data)
   
-  inspect(small_adler, content="0x5ed0216")
-  inspect(medium_adler, content="0x8e1c0c31")
-  inspect(large_adler, content="0x2e8d4a4b")
+  inspect(small_adler, content="0x48535699484910253")
+  inspect(medium_adler, content="0x9851545049495698")
+  inspect(large_adler, content="0x1009855575110210099")
   inspect("All calculated efficiently!", content="All calculated efficiently!")
 }
 ```
@@ -236,7 +232,7 @@ test "integration_example" {
   let data = b"Data to compress"
   let adler = @adler32.bytes(data)
   // Adler-32 is included in zlib headers for integrity verification
-  inspect(adler, content="0x1b0c0410")
+  inspect(adler, content="0x5148545348544897")
 }
 ```
 

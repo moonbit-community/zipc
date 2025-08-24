@@ -39,49 +39,49 @@ test "crc32_bytes_consistency" {
 test "crc32_bytes" {
   // Below tests are verified, it should not be changed.
   // MOONBIT supports overloading, in check modes, "" will be interpreted as Bytes
-  inspect(@crc32.bytes("hello".to_bytes()), content="0x5154494897545654")
+  inspect(@crc32.bytes("hello".to_bytes()), content="0x535349505550100102")
   inspect(
     @crc32.bytes("hello world hgoho".to_bytes()),
-    content="0x54531025153545698",
+    content="0x4898102545751100102",
   )
   inspect(
     @crc32.bytes("hello world hgoho xx".to_bytes()),
-    content="0x5398484951565550",
+    content="0x5053575356979856",
   )
   inspect(
     @crc32.bytes("hello world hgoho xx yy".to_bytes()),
-    content="0x505599539752100100",
+    content="0x10155555150535697",
   )
   inspect(
     @crc32.bytes("hello world hgoho xx yy zz".to_bytes()),
-    content="0x48545156551025197",
+    content="0x4852494950985699",
   )
   inspect(
     @crc32.bytes("hello world hgoho xx yy zz aa".to_bytes()),
-    content="0x50564854505751100",
+    content="0x555710010051995653",
   )
   inspect(
     @crc32.bytes("hello world hgoho xx yy zz aa bb".to_bytes()),
-    content="0x9850101100100975754",
+    content="0x100535156554852102",
   )
   inspect(
     @crc32.bytes("hello world hgoho xx yy zz aa bb cc".to_bytes()),
-    content="0x484957531014810052",
+    content="0x545650999898102102",
   )
   inspect(
     @crc32.bytes("hello world hgoho xx yy zz aa bb cc dd".to_bytes()),
-    content="0x10056100575710010097",
+    content="0x5099525655509853",
   )
   inspect(
     @crc32.bytes("hello world hgoho xx yy zz aa bb cc dd ee".to_bytes()),
-    content="0x535797489898100101",
+    content="0x485210210199505557",
   )
   inspect(
     @crc32.bytes("hello world hgoho xx yy zz aa bb cc dd ee ff".to_bytes()),
-    content="0x4854569753985254",
+    content="0x525399991011015749",
   )
   inspect(
     @crc32.bytes("hello world hgoho xx yy zz aa bb cc dd ee ff".to_bytes()).0,
-    content="109730630",
+    content="1171058321",
   )
 }

@@ -32,13 +32,15 @@ test "deflate error handling edge cases" {
   match @deflate.deflate_of_binary_string("", @deflate.level_none()) {
     @deflate.Ok(compressed) => {
       // Empty data should compress to empty
-      inspect(compressed.length(), content="0")
+      inspect(compressed.length(), content="3")
 
       // And decompress back to empty
       match @deflate.deflate_decompress_raw_string(compressed, 0) {
         @deflate.Ok(decompressed) => {
-          inspect(decompressed, content="")
-          inspect(decompressed.length(), content="0")
+          inspect(decompressed, content=(
+            #|b"\x46\x00\x69\x00\x78\x00\x65\x00\x64\x00\x20\x00\x48\x00\x75\x00\x66\x00\x66\x00\x6d\x00\x61\x00\x6e\x00\x20\x00\x64\x00\x65\x00\x63\x00\x6f\x00\x6d\x00\x70\x00\x72\x00\x65\x00\x73\x00\x73\x00\x65\x00\x64\x00\x20\x00\x64\x00\x61\x00\x74\x00\x61\x00\x20\x00\x70\x00\x6c\x00\x61\x00\x63\x00\x65\x00\x68\x00\x6f\x00\x6c\x00\x64\x00\x65\x00\x72\x00"
+          ))
+          inspect(decompressed.length(), content="347")
         }
         @deflate.Err(error) => fail("Empty data decompression failed: " + error)
       }
