@@ -48,7 +48,7 @@ fn file_decompressed_size(File) -> Int
 
 fn file_to_binary_string(File) -> @deflate.Result[String, String]
 
-fn file_to_bytes(File) -> @deflate.Result[Bytes, String]
+fn file_to_bytes(File) -> Bytes raise
 
 fn find(String, Archive) -> Member?
 
@@ -114,9 +114,9 @@ fn serialize_extra_fields(Array[ExtraField]) -> String
 
 fn set_extra_field(Array[ExtraField], ExtraField) -> Array[ExtraField]
 
-fn stored_of_binary_string(String) -> @deflate.Result[File, String]
+fn stored_of_binary_string(String) -> File raise
 
-fn stored_of_bytes(Bytes) -> @deflate.Result[File, String]
+fn stored_of_bytes(Bytes) -> File raise
 
 fn string_has_magic(String) -> Bool
 

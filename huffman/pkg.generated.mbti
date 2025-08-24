@@ -1,0 +1,31 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/zipc/huffman"
+
+// Values
+fn block_type_to_btype(BlockType) -> Int
+
+fn btype_to_block_type(Int) -> BlockType?
+
+fn decompress_fixed_huffman_block_bytes(Bytes, Int) -> (Bytes, Int) raise
+
+fn dynamic_huffman_block_type() -> BlockType
+
+fn fixed_huffman_block_type() -> BlockType
+
+fn uncompressed_block_type() -> BlockType
+
+// Errors
+
+// Types and methods
+pub enum BlockType {
+  Uncompressed
+  FixedHuffman
+  DynamicHuffman
+}
+impl Eq for BlockType
+impl Show for BlockType
+
+// Type aliases
+
+// Traits
+

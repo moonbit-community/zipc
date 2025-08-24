@@ -7,27 +7,27 @@ import(
 )
 
 // Values
-fn deflate_compress(Bytes, Level) -> Result[DeflateData, String]
+fn deflate_compress(Bytes, Level) -> DeflateData
 
-fn deflate_decompress(DeflateData) -> Result[Bytes, String]
+fn deflate_decompress(DeflateData) -> Bytes raise
 
-fn deflate_decompress_bytes(Bytes, Int) -> Result[Bytes, String]
+fn deflate_decompress_bytes(Bytes, Int) -> Bytes raise
 
-fn deflate_decompress_raw_bytes(Bytes, Int) -> Result[Bytes, String]
+fn deflate_decompress_raw_bytes(Bytes, Int) -> Bytes raise
 
-fn deflate_of_bytes(Bytes, Level) -> Result[Bytes, String]
+fn deflate_of_bytes(Bytes, Level) -> Bytes
 
 fn[T, E] err(E) -> Result[T, E]
 
-fn gzip_compress_bytes(Bytes, Level, String?, String?, Int) -> Result[GzipData, String]
+fn gzip_compress_bytes(Bytes, Level, String?, String?, Int) -> GzipData
 
-fn gzip_decompress_bytes(GzipData) -> Result[Bytes, String]
+fn gzip_decompress_bytes(GzipData) -> Bytes raise
 
 fn gzip_extract_metadata_bytes(Bytes) -> Result[GzipData, String]
 
-fn gzip_of_bytes(Bytes, Level, String?, String?) -> Result[Bytes, String]
+fn gzip_of_bytes(Bytes, Level, String?, String?) -> Bytes
 
-fn gzip_to_bytes(Bytes) -> Result[Bytes, String]
+fn gzip_to_bytes(Bytes) -> Bytes raise
 
 fn level_best() -> Level
 
@@ -43,13 +43,13 @@ fn[T, E] unwrap(Result[T, E]) -> T
 
 fn[T, E] unwrap_or(Result[T, E], T) -> T
 
-fn zlib_compress_bytes(Bytes, Level) -> Result[ZlibData, String]
+fn zlib_compress_bytes(Bytes, Level) -> ZlibData
 
-fn zlib_decompress_bytes(ZlibData) -> Result[Bytes, String]
+fn zlib_decompress_bytes(ZlibData) -> Bytes raise
 
-fn zlib_of_bytes(Bytes, Level) -> Result[Bytes, String]
+fn zlib_of_bytes(Bytes, Level) -> Bytes
 
-fn zlib_to_bytes(Bytes, Int) -> Result[Bytes, String]
+fn zlib_to_bytes(Bytes, Int) -> Bytes raise
 
 // Errors
 
@@ -67,11 +67,6 @@ pub struct GzipData {
   filename : String?
   comment : String?
   modification_time : Int
-}
-
-pub enum HuffmanNode {
-  Leaf(Int)
-  Branch(HuffmanNode, HuffmanNode)
 }
 
 pub enum Level {
@@ -94,8 +89,6 @@ pub struct ZlibData {
 }
 
 // Type aliases
-pub typealias Int as UInt16
-
 pub typealias Int64 as UInt32
 
 // Traits

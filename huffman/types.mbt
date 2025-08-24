@@ -1,12 +1,7 @@
 // Huffman coding types and constants for DEFLATE
 // RFC 1951: Fixed and Dynamic Huffman codes
 
-// Huffman tree node
-///|
-pub enum HuffmanNode {
-  Leaf(Int) // Symbol value
-  Branch(HuffmanNode, HuffmanNode) // Left and right children
-} derive(Show)
+
 
 // Block types for DEFLATE compression
 ///|
@@ -53,25 +48,4 @@ pub fn dynamic_huffman_block_type() -> BlockType {
   BlockType::DynamicHuffman
 }
 
-// Constants for Fixed Huffman implementation
-///|
-pub let max_literal_length_codes : Int = 288
 
-///|
-pub let max_distance_codes : Int = 32
-
-///|
-pub let max_code_length : Int = 15
-
-// Error messages
-///|
-pub let huffman_invalid_symbol : String = "Invalid Huffman symbol"
-
-///|
-pub let huffman_invalid_length : String = "Invalid length code"
-
-///|
-pub let huffman_invalid_distance : String = "Invalid distance code"
-
-///|
-pub let huffman_premature_end : String = "Premature end of Huffman data"
