@@ -54,7 +54,7 @@ test "bytes_api_working_demo" {
   println("   ✓ Bytes-based CRC32: " + bytes_crc.to_string())
   
   // Both should produce the same result
-  if @crc32.crc32_equal(string_crc, bytes_crc) {
+  if string_crc == bytes_crc {
     println("   ✓ Both methods produce identical results")
     println("   ✓ But bytes method is 2-4x faster! 🚀")
   } else {
@@ -124,19 +124,19 @@ test "bytes_vs_string_performance_demo" {
   let small_string_crc = @crc32.crc32_bytes(small_data.to_bytes())
   let small_bytes_crc = @crc32.crc32_bytes(small_data.to_bytes())
   println("   Small (" + small_data.length().to_string() + " bytes): ✓ Results match: " + 
-          @crc32.crc32_equal(small_string_crc, small_bytes_crc).to_string())
+          (small_string_crc == small_bytes_crc).to_string())
   
   // Test medium data
   let medium_string_crc = @crc32.crc32_bytes(medium_data.to_bytes())
   let medium_bytes_crc = @crc32.crc32_bytes(medium_data.to_bytes())
   println("   Medium (" + medium_data.length().to_string() + " bytes): ✓ Results match: " + 
-          @crc32.crc32_equal(medium_string_crc, medium_bytes_crc).to_string())
+          (medium_string_crc == medium_bytes_crc).to_string())
   
   // Test large data
   let large_string_crc = @crc32.crc32_bytes(large_data.to_bytes())
   let large_bytes_crc = @crc32.crc32_bytes(large_data.to_bytes())
   println("   Large (" + large_data.length().to_string() + " bytes): ✓ Results match: " + 
-          @crc32.crc32_equal(large_string_crc, large_bytes_crc).to_string())
+          (large_string_crc == large_bytes_crc).to_string())
   
   println("\n🚀 Performance Benefits:")
   println("   ✓ Bytes-based CRC32 is 2-4x faster")

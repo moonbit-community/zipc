@@ -4,12 +4,10 @@ package "bobzhang/zipc/crc32"
 // Values
 fn crc32_bytes(Bytes) -> Crc32
 
-fn crc32_equal(Crc32, Crc32) -> Bool
-
+#deprecated
 fn crc32_from_int64(Int64) -> Crc32
 
-fn crc32_to_hex(Crc32) -> String
-
+#deprecated
 fn crc32_to_int64(Crc32) -> Int64
 
 // Errors

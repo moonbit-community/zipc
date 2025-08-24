@@ -2,7 +2,7 @@
 // Uses polynomial 0xedb88320 (reversed 0x04c11db7)
 
 ///|
-pub(all) struct Crc32(Int64) derive(Eq, Show)
+pub(all) struct Crc32(Int64) derive(Eq)
 
 // CRC-32 lookup table (precomputed for performance)
 
@@ -57,9 +57,9 @@ fn new_crc32() -> Crc32 {
 // Update CRC-32 with a single byte
 
 ///|
-fn crc32_update_byte(crc : Crc32, byte : Int) -> Crc32 {
-  let index = crc.0.land(0xffL).lxor(byte.to_int64() & 0xffL).to_int()
-  Crc32((crc.0 >> 8) ^ crc32_table[index])
+fn crc32_update_byte(crc : Crc32, byte : Byte) -> Crc32 {
+  let index = (crc.0 & 0xffL) ^ (byte.to_int64())
+  Crc32((crc.0 >> 8) ^ crc32_table[index.to_int()])
 }
 
 // Update CRC-32 with bytes (more efficient for binary data)
@@ -67,8 +67,8 @@ fn crc32_update_byte(crc : Crc32, byte : Int) -> Crc32 {
 ///|
 fn crc32_update_bytes(crc : Crc32, data : Bytes) -> Crc32 {
   let mut result = crc
-  for i = 0; i < data.length(); i = i + 1 {
-    result = crc32_update_byte(result, data[i].to_int())
+  for d in data {
+    result = crc32_update_byte(result, d)
   }
   result
 }
@@ -77,7 +77,7 @@ fn crc32_update_bytes(crc : Crc32, data : Bytes) -> Crc32 {
 
 ///|
 fn finalize(crc : Crc32) -> Crc32 {
-  Crc32(crc.0 ^ 0xffffffffL)
+  (crc.0 ^ 0xffffffffL)
 }
 
 // Compute CRC-32 of bytes (more efficient for binary data)
@@ -89,16 +89,11 @@ pub fn crc32_bytes(data : Bytes) -> Crc32 {
   finalize(updated)
 }
 
-// Check if two CRC-32 values are equal
-
-///|
-pub fn crc32_equal(c1 : Crc32, c2 : Crc32) -> Bool {
-  c1 == c2
-}
 
 // Convert CRC-32 to Int64 for compatibility
 
 ///|
+#deprecated("Use crc.0 instead")
 pub fn crc32_to_int64(crc : Crc32) -> Int64 {
   crc.0
 }
@@ -106,6 +101,7 @@ pub fn crc32_to_int64(crc : Crc32) -> Int64 {
 // Create CRC-32 from Int64 for compatibility
 
 ///|
+#deprecated("Use Crc32(value) instead")
 pub fn crc32_from_int64(value : Int64) -> Crc32 {
   Crc32(value)
 }
@@ -114,7 +110,7 @@ pub fn crc32_from_int64(value : Int64) -> Crc32 {
 // Format CRC-32 as hex string
 
 ///|
-pub fn crc32_to_hex(crc : Crc32) -> String {
+pub impl Show for Crc32 with output(crc, logger) {
   let hex_chars = "0123456789abcdef"
   let mut result = ""
   let mut value = crc.0
@@ -123,5 +119,6 @@ pub fn crc32_to_hex(crc : Crc32) -> String {
     result = hex_chars[digit].to_string() + result
     value = value >> 4
   }
-  "0x" + result
+  logger.write_string("0x" + result)
 }
+

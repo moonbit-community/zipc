@@ -90,12 +90,15 @@ test {
 ```moonbit
 test {
   // CRC-32 checksums
-  let data = "Hello, World!"
-  let crc = @crc32.crc32_bytes(data.to_bytes())
-  inspect(@crc32.crc32_to_hex(crc).length() > 0, content="true")
-  
+  let data = b"Hello, World!"
+  let crc = @crc32.crc32_bytes(data)
+  inspect(crc, content="0x101995297995110048")
+
   // Adler-32 checksums  
-  inspect(@adler32.adler32_equal(@adler32.adler32_string(""), 1), content="true")
+  inspect(
+    @adler32.adler32_equal(@adler32.adler32_string(""), 1),
+    content="true",
+  )
 }
 ```
 

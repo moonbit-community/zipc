@@ -19,8 +19,8 @@ test "crc32_equality" {
   let crc1 = crc32_bytes("test".to_bytes())
   let crc2 = crc32_bytes("test".to_bytes())
   let crc3 = crc32_bytes("different".to_bytes())
-  assert_eq(crc32_equal(crc1, crc2), true)
-  assert_eq(crc32_equal(crc1, crc3), false)
+  assert_eq(crc1, crc2)
+  assert_not_eq(crc1, crc3)
 }
 
 ///|
@@ -32,33 +32,33 @@ test "crc32_bytes_consistency" {
   let crc2 = crc32_bytes(test_string.to_bytes())
   
   // Both should produce the same result
-  assert_eq(crc32_equal(crc1, crc2), true)
-  assert_true(crc1 != crc32_from_int64(0L))
+  assert_eq(crc1, crc2)
+  assert_true(crc1 != Crc32(0L))
 }
 
 test "crc32_bytes" {
   // Below tests are verified, it should not be changed.
-  inspect(crc32_to_int64(crc32_bytes("hello".to_bytes())), content="907060870")
-  inspect(crc32_to_int64(crc32_bytes("hello world hgoho".to_bytes())), content="1710446219")
-  inspect(crc32_to_int64(crc32_bytes("hello world hgoho xx".to_bytes())), content="1526806642")
-  inspect(crc32_to_int64(crc32_bytes("hello world hgoho xx yy".to_bytes())), content="667264221")
-  inspect(crc32_to_int64(crc32_bytes("hello world hgoho xx yy zz".to_bytes())), content="104365882")
-  inspect(crc32_to_int64(crc32_bytes("hello world hgoho xx yy zz aa".to_bytes())), content="671492413")
-  inspect(crc32_to_int64(crc32_bytes("hello world hgoho xx yy zz aa bb".to_bytes())), content="3001932438")
+  inspect(crc32_to_int64(crc32_bytes("hello" )), content="907060870")
+  inspect(crc32_to_int64(crc32_bytes("hello world hgoho")), content="1710446219")
+  inspect(crc32_to_int64(crc32_bytes("hello world hgoho xx")), content="1526806642")
+  inspect(crc32_to_int64(crc32_bytes("hello world hgoho xx yy")), content="667264221")
+  inspect(crc32_to_int64(crc32_bytes("hello world hgoho xx yy zz")), content="104365882")
+  inspect(crc32_to_int64(crc32_bytes("hello world hgoho xx yy zz aa")), content="671492413")
+  inspect(crc32_to_int64(crc32_bytes("hello world hgoho xx yy zz aa bb")), content="3001932438")
   inspect(
-    crc32_to_int64(crc32_bytes("hello world hgoho xx yy zz aa bb cc".to_bytes())),
+    crc32_to_int64(crc32_bytes("hello world hgoho xx yy zz aa bb cc")),
     content="26599636",
   )
   inspect(
-    crc32_to_int64(crc32_bytes("hello world hgoho xx yy zz aa bb cc dd".to_bytes())),
+    crc32_to_int64(crc32_bytes("hello world hgoho xx yy zz aa bb cc dd")),
     content="3638140378",
   )
   inspect(
-    crc32_to_int64(crc32_bytes("hello world hgoho xx yy zz aa bb cc dd ee".to_bytes())),
+    crc32_to_int64(crc32_bytes("hello world hgoho xx yy zz aa bb cc dd ee")),
     content="1503706078",
   )
   inspect(
-    crc32_to_int64(crc32_bytes("hello world hgoho xx yy zz aa bb cc dd ee ff".to_bytes())),
+    crc32_to_int64(crc32_bytes("hello world hgoho xx yy zz aa bb cc dd ee ff")),
     content="109730630",
   )
 }

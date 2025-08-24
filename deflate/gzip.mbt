@@ -208,7 +208,7 @@ pub fn gzip_decompress(gzip_data : GzipData) -> Result[String, String] {
       
       // Verify CRC-32 checksum
       let computed_crc = @crc32.crc32_bytes(decompressed.to_bytes())
-      if not(@crc32.crc32_equal(computed_crc, @crc32.crc32_from_int64(expected_crc))) {
+      if computed_crc != expected_crc {
         return Err("Gzip CRC-32 checksum mismatch")
       }
       
