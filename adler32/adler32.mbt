@@ -19,10 +19,10 @@ fn new_adler32() -> Adler32 {
 // Update Adler-32 with a single byte
 
 ///|
-fn adler32_update_byte(adler : Adler32, byte : Int) -> Adler32 {
+fn adler32_update_byte(adler : Adler32, byte : Byte) -> Adler32 {
   let a = adler.0 & 0xffffL
   let b = adler.0 >> 16
-  let new_a = (a + (byte.to_int64() & 0xffL)) % adler32_base
+  let new_a = (a + byte.to_int64()) % adler32_base
   let new_b = (b + new_a) % adler32_base
   Adler32((new_b << 16) | new_a)
 }
@@ -34,8 +34,8 @@ fn adler32_update_byte(adler : Adler32, byte : Int) -> Adler32 {
 ///|
 fn adler32_update_bytes(adler : Adler32, data : Bytes) -> Adler32 {
   let mut result = adler
-  for i = 0; i < data.length(); i = i + 1 {
-    result = adler32_update_byte(result, data[i].to_int())
+  for d in data {
+    result = adler32_update_byte(result, d)
   }
   result
 }
