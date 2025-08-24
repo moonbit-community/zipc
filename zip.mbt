@@ -1,6 +1,7 @@
 // Simplified ZIP module - self-contained implementation
 
 // Basic ZIP types
+
 ///|
 pub enum Compression {
   Stored
@@ -118,7 +119,7 @@ pub fn stored_of_binary_string(s : String) -> @deflate.Result[File, String] {
   }
 
   // Calculate actual CRC-32 checksum
-  let crc = @crc32.crc32_bytes(s.to_bytes())
+  let crc = @crc32.bytes(s.to_bytes())
   @deflate.ok({
     compression: Compression::Stored,
     start: 0,
@@ -133,6 +134,7 @@ pub fn stored_of_binary_string(s : String) -> @deflate.Result[File, String] {
 }
 
 // Create stored file from bytes (more efficient for binary data)
+
 ///|
 pub fn stored_of_bytes(data : Bytes) -> @deflate.Result[File, String] {
   let len = data.length()
@@ -146,11 +148,10 @@ pub fn stored_of_bytes(data : Bytes) -> @deflate.Result[File, String] {
 
   // Convert to string for storage (required by current File struct)
   let data_as_string = data.to_string()
-  
+
   // Calculate CRC-32 checksum on the string that will actually be stored
   // This ensures consistency between storage and extraction
-  let crc = @crc32.crc32_bytes(data_as_string.to_bytes())
-  
+  let crc = @crc32.bytes(data_as_string.to_bytes())
   @deflate.ok({
     compression: Compression::Stored,
     start: 0,
@@ -184,7 +185,7 @@ pub fn deflate_of_binary_string(
   match @deflate.deflate_of_binary_string(s, level) {
     @deflate.Ok(compressed_data) => {
       // Calculate CRC-32 of original data
-      let crc = @crc32.crc32_bytes(s.to_bytes())
+      let crc = @crc32.bytes(s.to_bytes())
       @deflate.ok({
         compression: Compression::Deflate,
         start: 0,
@@ -202,6 +203,7 @@ pub fn deflate_of_binary_string(
 }
 
 // Create deflate-compressed file from bytes (more efficient for binary data)
+
 ///|
 pub fn deflate_of_bytes(
   data : Bytes,
@@ -222,11 +224,10 @@ pub fn deflate_of_bytes(
       // Convert to string for storage (required by current File struct)
       let compressed_as_string = compressed_data.to_string()
       let data_as_string = data.to_string()
-      
+
       // Calculate CRC-32 on the string representation that will be stored/extracted
       // This ensures consistency between storage and extraction
-      let crc = @crc32.crc32_bytes(data_as_string.to_bytes())
-      
+      let crc = @crc32.bytes(data_as_string.to_bytes())
       @deflate.ok({
         compression: Compression::Deflate,
         start: 0,
@@ -285,16 +286,18 @@ pub fn file_to_binary_string(file : File) -> @deflate.Result[String, String] {
       )
       @deflate.ok(data)
     }
-    Compression::Deflate => {
+    Compression::Deflate =>
       // TODO: Deflate decompression needs proper implementation
       // For now, stored compression demonstrates all the architectural benefits
-      @deflate.err("Deflate decompression not yet implemented - use stored compression")
-    }
+      @deflate.err(
+        "Deflate decompression not yet implemented - use stored compression",
+      )
     _ => @deflate.err("Unsupported compression format")
   }
 }
 
 // Extract file content as bytes (more efficient for binary data)
+
 ///|
 pub fn file_to_bytes(file : File) -> @deflate.Result[Bytes, String] {
   if not(file_can_extract(file)) {
@@ -304,7 +307,8 @@ pub fn file_to_bytes(file : File) -> @deflate.Result[Bytes, String] {
     Compression::Stored => {
       // Convert string to bytes first, then slice
       let compressed_bytes = file.compressed_bytes.to_bytes()
-      let data_view = compressed_bytes[file.start:file.start + file.compressed_size]
+      let data_view = compressed_bytes[file.start:file.start +
+        file.compressed_size]
       // Convert view back to bytes
       @deflate.ok(data_view.to_bytes())
     }
@@ -401,6 +405,7 @@ pub fn to_binary_string(archive : Archive) -> @deflate.Result[String, String] {
 }
 
 // Convert archive to bytes (more efficient for binary data)
+
 ///|
 pub fn to_bytes(archive : Archive) -> @deflate.Result[Bytes, String] {
   // Use the existing string-based implementation and convert to bytes
@@ -709,6 +714,7 @@ pub fn of_binary_string(data : String) -> @deflate.Result[Archive, String] {
 }
 
 // Parse archive from bytes (more efficient for binary data)
+
 ///|
 pub fn of_bytes(data : Bytes) -> @deflate.Result[Archive, String] {
   // Use the existing string-based implementation by converting bytes to string

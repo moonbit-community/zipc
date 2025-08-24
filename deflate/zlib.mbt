@@ -2,6 +2,7 @@
 // RFC 1950: ZLIB Compressed Data Format Specification
 
 // Zlib compressed data structure
+
 ///|
 pub struct ZlibData {
   compressed_bytes : String
@@ -41,7 +42,9 @@ pub fn zlib_compress(data : String, level : Level) -> Result[ZlibData, String] {
       // Build zlib data: header + deflate data + adler32
       let header = write_u16_be(cmf * 256 + flg_final)
       let adler_bytes = write_u32_be(adler.to_int())
-      let zlib_bytes = header + deflate_data.compressed_bytes.to_string() + adler_bytes
+      let zlib_bytes = header +
+        deflate_data.compressed_bytes.to_string() +
+        adler_bytes
       Ok({
         compressed_bytes: zlib_bytes,
         original_size: data.length(),
@@ -186,10 +189,7 @@ pub fn zlib_to_binary_string(
 // Bytes-based zlib functions (more efficient for binary data)
 
 ///|
-pub fn zlib_of_bytes(
-  data : Bytes,
-  level : Level,
-) -> Result[Bytes, String] {
+pub fn zlib_of_bytes(data : Bytes, level : Level) -> Result[Bytes, String] {
   // Use the existing string-based implementation and convert
   // In a full implementation, this would work directly with bytes
   let string_data = data.to_string()

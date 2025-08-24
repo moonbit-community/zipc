@@ -12,7 +12,8 @@ test "deflate api basic functionality" {
       inspect(compressed.length() > 0, content="true")
 
       // Test decompression API
-      match @deflate.deflate_decompress_raw_string(compressed, test_data.length()) {
+      match
+        @deflate.deflate_decompress_raw_string(compressed, test_data.length()) {
         @deflate.Ok(decompressed) =>
           // Snapshot: Should recover original data
           inspect(decompressed, content=test_data)

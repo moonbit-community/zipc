@@ -2,84 +2,92 @@
 // Extra fields provide extensible metadata for ZIP entries
 
 // Extra field structure
+
 ///|
 pub struct ExtraField {
-  header_id : Int    // 2 bytes - identifies the field type
-  data_size : Int    // 2 bytes - size of data
-  data : String      // Variable length data
+  header_id : Int // 2 bytes - identifies the field type
+  data_size : Int // 2 bytes - size of data
+  data : String // Variable length data
 }
 
 // Common extra field header IDs
-pub let zip64_extra_field_id : Int = 0x0001      // ZIP64 extended information
-pub let ntfs_extra_field_id : Int = 0x000a       // NTFS timestamps
-pub let unix_extra_field_id : Int = 0x000d       // Unix timestamps
-pub let info_zip_unix_id : Int = 0x5455          // Info-ZIP Unix timestamp
-pub let unicode_path_id : Int = 0x7075           // Unicode path extra field
-pub let unicode_comment_id : Int = 0x6375        // Unicode comment extra field
+
+///|
+pub let zip64_extra_field_id : Int = 0x0001 // ZIP64 extended information
+
+///|
+pub let ntfs_extra_field_id : Int = 0x000a // NTFS timestamps
+
+///|
+pub let unix_extra_field_id : Int = 0x000d // Unix timestamps
+
+///|
+pub let info_zip_unix_id : Int = 0x5455 // Info-ZIP Unix timestamp
+
+///|
+pub let unicode_path_id : Int = 0x7075 // Unicode path extra field
+
+///|
+pub let unicode_comment_id : Int = 0x6375 // Unicode comment extra field
 
 // Parse extra fields from binary data
+
 ///|
 pub fn parse_extra_fields(data : String) -> Array[ExtraField] {
   let fields : Array[ExtraField] = []
   let mut offset = 0
-  
   while offset + 4 <= data.length() {
     // Read header ID (2 bytes, little-endian)
     let header_id = read_u16_le_extra(data, offset)
     offset = offset + 2
-    
+
     // Read data size (2 bytes, little-endian)
     let data_size = read_u16_le_extra(data, offset)
     offset = offset + 2
-    
+
     // Read data
     if offset + data_size <= data.length() {
       let field_data = data.substring(start=offset, end=offset + data_size)
-      fields.push({
-        header_id,
-        data_size,
-        data: field_data,
-      })
+      fields.push({ header_id, data_size, data: field_data })
       offset = offset + data_size
     } else {
       // Truncated field, stop parsing
       break
     }
   }
-  
   fields
 }
 
 // Serialize extra fields to binary data
+
 ///|
 pub fn serialize_extra_fields(fields : Array[ExtraField]) -> String {
   let mut result = ""
-  
   for i = 0; i < fields.length(); i = i + 1 {
     let field = fields[i]
-    
+
     // Write header ID (2 bytes, little-endian)
     result = result + write_u16_le_extra(field.header_id)
-    
+
     // Write data size (2 bytes, little-endian)
     result = result + write_u16_le_extra(field.data.length())
-    
+
     // Write data
     result = result + field.data
   }
-  
   result
 }
 
 // Create Unix timestamp extra field (Info-ZIP format)
+
 ///|
 pub fn create_unix_timestamp_field(
   modification_time : Int,
   access_time : Int?,
-  creation_time : Int?
+  creation_time : Int?,
 ) -> ExtraField {
   let mut data = ""
-  
+
   // Flags byte (which timestamps are present)
   let mut flags = 1 // Modification time is always present
   match access_time {
@@ -90,48 +98,42 @@ pub fn create_unix_timestamp_field(
     Some(_) => flags = flags | 4
     None => ()
   }
-  
   data = data + flags.unsafe_to_char().to_string()
-  
+
   // Modification time (4 bytes, little-endian)
   data = data + write_u32_le_extra(modification_time)
-  
+
   // Access time (if present)
   match access_time {
     Some(time) => data = data + write_u32_le_extra(time)
     None => ()
   }
-  
+
   // Creation time (if present)
   match creation_time {
     Some(time) => data = data + write_u32_le_extra(time)
     None => ()
   }
-  
-  {
-    header_id: info_zip_unix_id,
-    data_size: data.length(),
-    data,
-  }
+  { header_id: info_zip_unix_id, data_size: data.length(), data }
 }
 
 // Parse Unix timestamp extra field
+
 ///|
 pub fn parse_unix_timestamp_field(field : ExtraField) -> (Int, Int?, Int?)? {
   if field.header_id != info_zip_unix_id || field.data.length() < 5 {
     return None
   }
-  
   let flags = field.data[0]
   let mut offset = 1
-  
+
   // Modification time (always present)
   if offset + 4 > field.data.length() {
     return None
   }
   let modification_time = read_u32_le_extra(field.data, offset)
   offset = offset + 4
-  
+
   // Access time (if flag bit 1 is set)
   let access_time = if (flags & 2) != 0 {
     if offset + 4 > field.data.length() {
@@ -144,7 +146,7 @@ pub fn parse_unix_timestamp_field(field : ExtraField) -> (Int, Int?, Int?)? {
   } else {
     None
   }
-  
+
   // Creation time (if flag bit 2 is set)
   let creation_time = if (flags & 4) != 0 {
     if offset + 4 > field.data.length() {
@@ -156,52 +158,52 @@ pub fn parse_unix_timestamp_field(field : ExtraField) -> (Int, Int?, Int?)? {
   } else {
     None
   }
-  
   Some((modification_time, access_time, creation_time))
 }
 
 // Create Unicode path extra field
+
 ///|
-pub fn create_unicode_path_field(unicode_path : String, crc32 : Int) -> ExtraField {
+pub fn create_unicode_path_field(
+  unicode_path : String,
+  crc32 : Int,
+) -> ExtraField {
   let mut data = ""
-  
+
   // Version (1 byte)
   data = data + "\u{01}"
-  
+
   // CRC-32 of original path (4 bytes, little-endian)
   data = data + write_u32_le_extra(crc32)
-  
+
   // Unicode path (UTF-8)
   data = data + unicode_path
-  
-  {
-    header_id: unicode_path_id,
-    data_size: data.length(),
-    data,
-  }
+  { header_id: unicode_path_id, data_size: data.length(), data }
 }
 
 // Parse Unicode path extra field
+
 ///|
 pub fn parse_unicode_path_field(field : ExtraField) -> (String, Int)? {
   if field.header_id != unicode_path_id || field.data.length() < 6 {
     return None
   }
-  
   let version = field.data[0]
   if version != 1 {
     return None // Unsupported version
   }
-  
   let crc32 = read_u32_le_extra(field.data, 1)
   let unicode_path = field.data.substring(start=5, end=field.data.length())
-  
   Some((unicode_path, crc32))
 }
 
 // Find extra field by header ID
+
 ///|
-pub fn find_extra_field(fields : Array[ExtraField], header_id : Int) -> ExtraField? {
+pub fn find_extra_field(
+  fields : Array[ExtraField],
+  header_id : Int,
+) -> ExtraField? {
   for i = 0; i < fields.length(); i = i + 1 {
     let field = fields[i]
     if field.header_id == header_id {
@@ -212,29 +214,36 @@ pub fn find_extra_field(fields : Array[ExtraField], header_id : Int) -> ExtraFie
 }
 
 // Remove extra field by header ID
+
 ///|
-pub fn remove_extra_field(fields : Array[ExtraField], header_id : Int) -> Array[ExtraField] {
+pub fn remove_extra_field(
+  fields : Array[ExtraField],
+  header_id : Int,
+) -> Array[ExtraField] {
   let result : Array[ExtraField] = []
-  
   for i = 0; i < fields.length(); i = i + 1 {
     let field = fields[i]
     if field.header_id != header_id {
       result.push(field)
     }
   }
-  
   result
 }
 
 // Add or replace extra field
+
 ///|
-pub fn set_extra_field(fields : Array[ExtraField], new_field : ExtraField) -> Array[ExtraField] {
+pub fn set_extra_field(
+  fields : Array[ExtraField],
+  new_field : ExtraField,
+) -> Array[ExtraField] {
   let result = remove_extra_field(fields, new_field.header_id)
   result.push(new_field)
   result
 }
 
 // Calculate total size of extra fields
+
 ///|
 pub fn extra_fields_size(fields : Array[ExtraField]) -> Int {
   let mut total = 0
@@ -246,6 +255,7 @@ pub fn extra_fields_size(fields : Array[ExtraField]) -> Int {
 }
 
 // Validate extra field
+
 ///|
 pub fn validate_extra_field(field : ExtraField) -> Bool {
   // Check that data size matches actual data length

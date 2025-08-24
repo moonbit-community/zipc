@@ -91,11 +91,11 @@ test {
 test {
   // CRC-32 checksums
   let data = b"Hello, World!"
-  let crc = @crc32.crc32_bytes(data)
+  let crc = @crc32.bytes(data)
   inspect(crc.0 > 0L, content="true") // CRC should be non-zero for non-empty data
   
   // Test CRC equality
-  let crc2 = @crc32.crc32_bytes(data)
+  let crc2 = @crc32.bytes(data)
   inspect(crc == crc2, content="true") // Same data should produce same CRC
 }
 ```

@@ -27,10 +27,9 @@ test "adler32_equality" {
 test "adler32_bytes_vs_string" {
   let test_string = "Hello, Adler32!"
   let test_bytes = test_string.to_bytes()
-  
   let adler_string = adler32_string(test_string)
   let adler_bytes = adler32_bytes(test_bytes)
-  
+
   // Note: These may not be equal due to String vs Bytes encoding differences
   // This test documents the behavior rather than asserting equality
   assert_true(adler_string != 1L)
@@ -40,16 +39,16 @@ test "adler32_bytes_vs_string" {
 ///|
 test "adler32_incremental_vs_direct" {
   let data = "Incremental test"
-  
+
   // Direct calculation
   let direct = adler32_string(data)
-  
+
   // Incremental calculation
   let mut incremental = new_adler32()
   for i = 0; i < data.length(); i = i + 1 {
     incremental = adler32_update_byte(incremental, data[i])
   }
-  
+
   // Should be equal
   assert_eq(adler32_equal(direct, incremental), true)
 }

@@ -2,6 +2,7 @@
 // This is a simplified implementation focusing on basic functionality
 
 // Deflate block types
+
 ///|
 priv enum BlockType {
   Uncompressed // No compression (BTYPE = 00)
@@ -10,6 +11,7 @@ priv enum BlockType {
 }
 
 // Convert block type to BTYPE value
+
 ///|
 fn block_type_to_btype(block_type : BlockType) -> Int {
   match block_type {
@@ -20,6 +22,7 @@ fn block_type_to_btype(block_type : BlockType) -> Int {
 }
 
 // Convert BTYPE value to block type
+
 ///|
 fn btype_to_block_type(btype : Int) -> BlockType? {
   match btype {
@@ -56,6 +59,7 @@ pub fn deflate_compress(
 }
 
 // Legacy string-based API for backward compatibility
+
 ///|
 pub fn deflate_compress_string(
   data : String,
@@ -84,8 +88,11 @@ pub fn deflate_decompress(deflate_data : DeflateData) -> Result[Bytes, String] {
 }
 
 // Legacy string-based API for backward compatibility
+
 ///|
-pub fn deflate_decompress_string(deflate_data : DeflateData) -> Result[String, String] {
+pub fn deflate_decompress_string(
+  deflate_data : DeflateData,
+) -> Result[String, String] {
   match deflate_decompress(deflate_data) {
     Ok(bytes) => Ok(bytes.to_string())
     Err(error) => Err(error)
@@ -158,9 +165,8 @@ fn compress_uncompressed(data : Bytes) -> Result[DeflateData, String] {
   })
 }
 
-
-
 // Bytes-based basic deflate compression (no String conversion)
+
 ///|
 fn compress_basic_deflate_bytes(data : Bytes) -> Result[DeflateData, String] {
   // Try Fixed Huffman compression for small data, otherwise use uncompressed
@@ -173,6 +179,7 @@ fn compress_basic_deflate_bytes(data : Bytes) -> Result[DeflateData, String] {
 }
 
 // Compress using Fixed Huffman blocks
+
 ///|
 fn compress_fixed_huffman(data : String) -> Result[DeflateData, String] {
   if data.length() == 0 {
@@ -187,7 +194,7 @@ fn compress_fixed_huffman(data : String) -> Result[DeflateData, String] {
 
   // Create Fixed Huffman block
   let mut compressed = Bytes::from_array([])
-  
+
   // Block header: BFINAL=1 (final block), BTYPE=01 (Fixed Huffman)
   let bfinal = 1
   let btype = block_type_to_btype(BlockType::FixedHuffman)
@@ -195,21 +202,20 @@ fn compress_fixed_huffman(data : String) -> Result[DeflateData, String] {
   let header_byte = header_bits
   let header_bytes = Bytes::from_array([header_byte.to_byte()])
   compressed = compressed + header_bytes
-  
+
   // For now, encode each byte as a literal using Fixed Huffman codes
   // This is a simplified implementation - a full implementation would:
   // 1. Use LZ77 to find matches
   // 2. Encode literals and length/distance pairs
   // 3. Use proper Fixed Huffman encoding
-  
+
   // Simplified: just store the data with minimal encoding
   compressed = compressed + data.to_bytes()
-  
+
   // Add end-of-block symbol (would be properly Huffman encoded in real implementation)
   let end_block_byte : Int = 0
   let end_block = Bytes::from_array([end_block_byte.to_byte()]) // Placeholder for end-of-block
   compressed = compressed + end_block
-  
   let adler = @adler32.adler32_string(data)
   Ok({
     compressed_bytes: compressed,
@@ -219,6 +225,7 @@ fn compress_fixed_huffman(data : String) -> Result[DeflateData, String] {
 }
 
 // Bytes-based Fixed Huffman compression (no String conversion)
+
 ///|
 fn compress_fixed_huffman_bytes(data : Bytes) -> Result[DeflateData, String] {
   if data.length() == 0 {
@@ -233,7 +240,7 @@ fn compress_fixed_huffman_bytes(data : Bytes) -> Result[DeflateData, String] {
 
   // Create Fixed Huffman block
   let mut compressed = Bytes::from_array([])
-  
+
   // Block header: BFINAL=1 (final block), BTYPE=01 (Fixed Huffman)
   let bfinal = 1
   let btype = block_type_to_btype(BlockType::FixedHuffman)
@@ -241,21 +248,20 @@ fn compress_fixed_huffman_bytes(data : Bytes) -> Result[DeflateData, String] {
   let header_byte = header_bits
   let header_bytes = Bytes::from_array([header_byte.to_byte()])
   compressed = compressed + header_bytes
-  
+
   // For now, encode each byte as a literal using Fixed Huffman codes
   // This is a simplified implementation - a full implementation would:
   // 1. Use LZ77 to find matches
   // 2. Encode literals and length/distance pairs
   // 3. Use proper Fixed Huffman encoding
-  
+
   // Simplified: just store the data with minimal encoding
   compressed = compressed + data
-  
+
   // Add end-of-block symbol (would be properly Huffman encoded in real implementation)
   let end_block_byte : Int = 0
   let end_block = Bytes::from_array([end_block_byte.to_byte()]) // Placeholder for end-of-block
   compressed = compressed + end_block
-  
   let adler = @adler32.adler32_bytes(data)
   Ok({
     compressed_bytes: compressed,
@@ -277,6 +283,7 @@ fn decompress_deflate_blocks(compressed : String) -> Result[String, String] {
 }
 
 // Decompress deflate blocks from bytes (handles binary data correctly)
+
 ///|
 fn decompress_deflate_blocks_bytes(compressed : Bytes) -> Result[Bytes, String] {
   if compressed.length() == 0 {
@@ -303,7 +310,7 @@ fn decompress_deflate_blocks_bytes(compressed : Bytes) -> Result[Bytes, String] 
           }
           Err(error) => return Err(error)
         }
-      Some(BlockType::FixedHuffman) => {
+      Some(BlockType::FixedHuffman) =>
         // Fixed Huffman block - use bytes-based decompression
         match decompress_fixed_huffman_block_bytes(compressed, offset) {
           Ok((block_data, new_offset)) => {
@@ -312,7 +319,6 @@ fn decompress_deflate_blocks_bytes(compressed : Bytes) -> Result[Bytes, String] 
           }
           Err(error) => return Err(error)
         }
-      }
       Some(BlockType::DynamicHuffman) =>
         // Dynamic Huffman - not implemented yet
         return Err("Dynamic Huffman decompression not implemented")
@@ -358,6 +364,7 @@ fn decompress_uncompressed_block(
 }
 
 // Decompress an uncompressed block from bytes (handles binary data correctly)
+
 ///|
 fn decompress_uncompressed_block_bytes(
   compressed : Bytes,
@@ -379,33 +386,33 @@ fn decompress_uncompressed_block_bytes(
   if data_offset + len > compressed.length() {
     return Err("Incomplete uncompressed block data")
   }
-  
+
   // Extract the block data as bytes
   let block_data = compressed[data_offset:data_offset + len].to_bytes()
   Ok((block_data, data_offset + len))
 }
 
 // Decompress Fixed Huffman block from bytes (no String conversion)
+
 ///|
 fn decompress_fixed_huffman_block_bytes(
   compressed : Bytes,
-  offset : Int
+  offset : Int,
 ) -> Result[(Bytes, Int), String] {
   // This is a simplified implementation that matches the String version
   // but works directly with bytes to avoid corruption
-  
+
   if offset >= compressed.length() {
     return Err("Unexpected end of Fixed Huffman block")
   }
-  
+
   // For now, return a simple placeholder that copies some data
   let remaining = compressed.length() - offset
   let block_size = if remaining > 100 { 100 } else { remaining }
-  
+
   // In a real implementation, this would be the decompressed output
   // For now, use a placeholder that matches the String version
   let decompressed = "Fixed Huffman decompressed data placeholder".to_bytes()
-  
   Ok((decompressed, offset + block_size))
 }
 
@@ -456,11 +463,10 @@ pub fn deflate_of_binary_string(
   // The old approach of .to_string() corrupts LEN/NLEN values in deflate blocks
   // Instead, we'll use a different approach that maintains data integrity
   match deflate_compress(s.to_bytes(), level) {
-    Ok(deflate_data) => {
+    Ok(deflate_data) =>
       // For now, return the bytes as a string representation that preserves binary data
       // This is a compatibility layer - ideally all callers should use bytes-based APIs
       Ok(deflate_data.compressed_bytes.to_string())
-    }
     Err(error) => Err("Deflate compression failed: " + error)
   }
 }
@@ -483,10 +489,7 @@ pub fn deflate_decompress_raw_string(
 // Bytes-based API functions (more efficient for binary data)
 
 ///|
-pub fn deflate_of_bytes(
-  data : Bytes,
-  level : Level,
-) -> Result[Bytes, String] {
+pub fn deflate_of_bytes(data : Bytes, level : Level) -> Result[Bytes, String] {
   // Simplified implementation: convert to string, compress, convert back
   // In a full implementation, this would work directly on bytes
   let string_data = data.to_string()

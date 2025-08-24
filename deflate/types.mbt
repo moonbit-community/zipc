@@ -1,4 +1,5 @@
 // Core types for deflate module
+
 ///|
 pub typealias Int as UInt16
 
@@ -52,7 +53,7 @@ pub fn[T, E] ok(value : T) -> Result[T, E] {
   Ok(value)
 }
 
-// Helper function to create Err result  
+// Helper function to create Err result
 
 ///|
 pub fn[T, E] err(error : E) -> Result[T, E] {

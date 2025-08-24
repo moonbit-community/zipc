@@ -58,7 +58,7 @@ fn new_crc32() -> Crc32 {
 
 ///|
 fn crc32_update_byte(crc : Crc32, byte : Byte) -> Crc32 {
-  let index = (crc.0 & 0xffL) ^ (byte.to_int64())
+  let index = (crc.0 & 0xffL) ^ byte.to_int64()
   Crc32((crc.0 >> 8) ^ crc32_table[index.to_int()])
 }
 
@@ -77,18 +77,24 @@ fn crc32_update_bytes(crc : Crc32, data : Bytes) -> Crc32 {
 
 ///|
 fn finalize(crc : Crc32) -> Crc32 {
-  (crc.0 ^ 0xffffffffL)
+  crc.0 ^ 0xffffffffL
 }
 
 // Compute CRC-32 of bytes (more efficient for binary data)
 
 ///|
-pub fn crc32_bytes(data : Bytes) -> Crc32 {
+pub fn bytes(data : Bytes) -> Crc32 {
   let crc = new_crc32()
   let updated = crc32_update_bytes(crc, data)
   finalize(updated)
 }
 
+// Deprecated: Use bytes() instead
+///|
+#deprecated("Use bytes() instead")
+pub fn crc32_bytes(data : Bytes) -> Crc32 {
+  bytes(data)
+}
 
 // Convert CRC-32 to Int64 for compatibility
 
@@ -106,7 +112,6 @@ pub fn crc32_from_int64(value : Int64) -> Crc32 {
   Crc32(value)
 }
 
-
 // Format CRC-32 as hex string
 
 ///|
@@ -121,4 +126,3 @@ pub impl Show for Crc32 with output(crc, logger) {
   }
   logger.write_string("0x" + result)
 }
-
