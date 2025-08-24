@@ -456,6 +456,18 @@ fn read_u16_le_bytes(data : Bytes, offset : Int) -> Int {
 // Create deflate-compressed file data for ZIP (DEPRECATED - use deflate_of_bytes)
 
 ///|
+pub fn deflate_of_bytes(
+  data : Bytes,
+  level : Level,
+) -> Result[Bytes, String] {
+  match deflate_compress(data, level) {
+    Ok(deflate_data) => Ok(deflate_data.compressed_bytes)
+    Err(error) => Err("Deflate compression failed: " + error)
+  }
+}
+
+// DEPRECATED - use deflate_of_bytes
+///|
 fn deflate_of_binary_string(
   s : String,
   level : Level,
@@ -488,17 +500,6 @@ fn deflate_decompress_raw_string(
 }
 
 // Bytes-based API functions (more efficient for binary data)
-
-///|
-pub fn deflate_of_bytes(data : Bytes, level : Level) -> Result[Bytes, String] {
-  // Simplified implementation: convert to string, compress, convert back
-  // In a full implementation, this would work directly on bytes
-  let string_data = data.to_string()
-  match deflate_of_binary_string(string_data, level) {
-    Ok(compressed_string) => Ok(compressed_string.to_bytes())
-    Err(error) => Err(error)
-  }
-}
 
 ///|
 pub fn deflate_decompress_bytes(

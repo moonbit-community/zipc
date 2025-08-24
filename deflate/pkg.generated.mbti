@@ -1,2 +1,102 @@
-failed: moonc check -error-format json /Users/hongbozhang/git/moonbit-community/zipc/deflate/deflate_snapshot_test.mbt /Users/hongbozhang/git/moonbit-community/zipc/deflate/huffman_test.mbt /Users/hongbozhang/git/moonbit-community/zipc/deflate/deflate_enhanced_test.mbt /Users/hongbozhang/git/moonbit-community/zipc/deflate/gzip_test.mbt -doctest-only /Users/hongbozhang/git/moonbit-community/zipc/deflate/huffman.mbt -doctest-only /Users/hongbozhang/git/moonbit-community/zipc/deflate/types.mbt -doctest-only /Users/hongbozhang/git/moonbit-community/zipc/deflate/deflate.mbt -doctest-only /Users/hongbozhang/git/moonbit-community/zipc/deflate/zlib.mbt -doctest-only /Users/hongbozhang/git/moonbit-community/zipc/deflate/gzip.mbt -include-doctests -alert +test_import_all -o /Users/hongbozhang/git/moonbit-community/zipc/target/wasm-gc/release/check/deflate/deflate.blackbox_test.mi -pkg bobzhang/zipc/deflate_blackbox_test -std-path /Users/hongbozhang/.moon/lib/core/target/wasm-gc/release/bundle -i /Users/hongbozhang/git/moonbit-community/zipc/target/wasm-gc/release/check/deflate/deflate.mi:deflate -i /Users/hongbozhang/git/moonbit-community/zipc/target/wasm-gc/release/check/crc32/crc32.mi:crc32 -i /Users/hongbozhang/git/moonbit-community/zipc/target/wasm-gc/release/check/adler32/adler32.mi:adler32 -pkg-sources bobzhang/zipc/deflate_blackbox_test:/Users/hongbozhang/git/moonbit-community/zipc/deflate -target wasm-gc -blackbox-test
-failed: moonc check -error-format json /Users/hongbozhang/git/moonbit-community/zipc/extra_fields.mbt /Users/hongbozhang/git/moonbit-community/zipc/zip.mbt /Users/hongbozhang/git/moonbit-community/zipc/dos_time.mbt /Users/hongbozhang/git/moonbit-community/zipc/bytes_utils.mbt /Users/hongbozhang/git/moonbit-community/zipc/working_demo.mbt -alert +test_import_all -o /Users/hongbozhang/git/moonbit-community/zipc/target/wasm-gc/release/check/zipc.mi -pkg bobzhang/zipc -std-path /Users/hongbozhang/.moon/lib/core/target/wasm-gc/release/bundle -i /Users/hongbozhang/git/moonbit-community/zipc/target/wasm-gc/release/check/deflate/deflate.mi:deflate -i /Users/hongbozhang/git/moonbit-community/zipc/target/wasm-gc/release/check/crc32/crc32.mi:crc32 -pkg-sources bobzhang/zipc:/Users/hongbozhang/git/moonbit-community/zipc -target wasm-gc
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/zipc/deflate"
+
+import(
+  "bobzhang/zipc/adler32"
+  "bobzhang/zipc/crc32"
+)
+
+// Values
+fn deflate_compress(Bytes, Level) -> Result[DeflateData, String]
+
+fn deflate_decompress(DeflateData) -> Result[Bytes, String]
+
+fn deflate_decompress_bytes(Bytes, Int) -> Result[Bytes, String]
+
+fn deflate_decompress_raw_bytes(Bytes, Int) -> Result[Bytes, String]
+
+fn deflate_of_bytes(Bytes, Level) -> Result[Bytes, String]
+
+fn[T, E] err(E) -> Result[T, E]
+
+fn gzip_compress_bytes(Bytes, Level, String?, String?, Int) -> Result[GzipData, String]
+
+fn gzip_decompress_bytes(GzipData) -> Result[Bytes, String]
+
+fn gzip_extract_metadata_bytes(Bytes) -> Result[GzipData, String]
+
+fn gzip_of_bytes(Bytes, Level, String?, String?) -> Result[Bytes, String]
+
+fn gzip_to_bytes(Bytes) -> Result[Bytes, String]
+
+fn level_best() -> Level
+
+fn level_default() -> Level
+
+fn level_fast() -> Level
+
+fn level_none() -> Level
+
+fn[T, E] ok(T) -> Result[T, E]
+
+fn[T, E] unwrap(Result[T, E]) -> T
+
+fn[T, E] unwrap_or(Result[T, E], T) -> T
+
+fn zlib_compress_bytes(Bytes, Level) -> Result[ZlibData, String]
+
+fn zlib_decompress_bytes(ZlibData) -> Result[Bytes, String]
+
+fn zlib_of_bytes(Bytes, Level) -> Result[Bytes, String]
+
+fn zlib_to_bytes(Bytes, Int) -> Result[Bytes, String]
+
+// Errors
+
+// Types and methods
+pub struct DeflateData {
+  compressed_bytes : Bytes
+  original_size : Int
+  adler32_checksum : @adler32.Adler32
+}
+
+pub struct GzipData {
+  compressed_bytes : Bytes
+  original_size : Int
+  crc32_checksum : @crc32.Crc32
+  filename : String?
+  comment : String?
+  modification_time : Int
+}
+
+pub enum HuffmanNode {
+  Leaf(Int)
+  Branch(HuffmanNode, HuffmanNode)
+}
+
+pub enum Level {
+  None
+  Fast
+  Default
+  Best
+}
+impl Show for Level
+
+pub enum Result[T, E] {
+  Ok(T)
+  Err(E)
+}
+
+pub struct ZlibData {
+  compressed_bytes : Bytes
+  original_size : Int
+  adler32_checksum : @adler32.Adler32
+}
+
+// Type aliases
+pub typealias Int as UInt16
+
+pub typealias Int64 as UInt32
+
+// Traits
+

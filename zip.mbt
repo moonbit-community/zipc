@@ -182,15 +182,15 @@ pub fn deflate_of_binary_string(
   }
 
   // Compress using deflate
-  match @deflate.deflate_of_binary_string(s, level) {
+  match @deflate.deflate_of_bytes(s.to_bytes(), level) {
     @deflate.Ok(compressed_data) => {
       // Calculate CRC-32 of original data
       let crc = @crc32.bytes(s.to_bytes())
       @deflate.ok({
         compression: Compression::Deflate,
         start: 0,
-        compressed_size: compressed_data.length(),
-        compressed_bytes: compressed_data,
+        compressed_size: compressed_data.to_string().length(),
+        compressed_bytes: compressed_data.to_string(),
         decompressed_size: len,
         decompressed_crc32: crc.0,
         version_made_by: 0x314, // UNIX, ZIP 2.0
