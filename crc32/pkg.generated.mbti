@@ -6,8 +6,6 @@ fn crc32_bytes(Bytes) -> Int64
 
 fn crc32_equal(Int64, Int64) -> Bool
 
-fn crc32_string(String) -> Int64
-
 fn crc32_to_hex(Int64) -> String
 
 // Errors

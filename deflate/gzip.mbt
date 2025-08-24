@@ -29,7 +29,7 @@ pub fn gzip_compress(
   modification_time : Int
 ) -> Result[GzipData, String] {
   // Calculate CRC-32 of original data
-  let crc = @crc32.crc32_string(data)
+  let crc = @crc32.crc32_bytes(data.to_bytes())
   
   // Compress using deflate
   match deflate_compress(data.to_bytes(), level) {
@@ -207,7 +207,7 @@ pub fn gzip_decompress(gzip_data : GzipData) -> Result[String, String] {
       }
       
       // Verify CRC-32 checksum
-      let computed_crc = @crc32.crc32_string(decompressed)
+      let computed_crc = @crc32.crc32_bytes(decompressed.to_bytes())
       if not(@crc32.crc32_equal(computed_crc, expected_crc)) {
         return Err("Gzip CRC-32 checksum mismatch")
       }

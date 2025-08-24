@@ -91,7 +91,7 @@ test {
 test {
   // CRC-32 checksums
   let data = "Hello, World!"
-  let crc = @crc32.crc32_string(data)
+  let crc = @crc32.crc32_bytes(data.to_bytes())
   inspect(@crc32.crc32_to_hex(crc).length() > 0, content="true")
   
   // Adler-32 checksums  

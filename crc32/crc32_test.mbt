@@ -1,40 +1,39 @@
 // Tests for CRC-32 implementation
 
 ///|
-test "crc32_empty_string" {
-  let crc = crc32_string("")
-  // Empty string should have CRC-32 of 0
+test "crc32_empty_bytes" {
+  let crc = crc32_bytes(Bytes::from_array([]))
+  // Empty bytes should have CRC-32 of 0
   assert_eq(crc, 0L)
 }
 
 ///|
 test "crc32_hello_world" {
-  let crc = crc32_string("Hello, World!")
+  let crc = crc32_bytes("Hello, World!".to_bytes())
   // Test that we get some CRC value (exact value may vary)
   assert_true(crc != 0L)
 }
 
 ///|
 test "crc32_equality" {
-  let crc1 = crc32_string("test")
-  let crc2 = crc32_string("test")
-  let crc3 = crc32_string("different")
+  let crc1 = crc32_bytes("test".to_bytes())
+  let crc2 = crc32_bytes("test".to_bytes())
+  let crc3 = crc32_bytes("different".to_bytes())
   assert_eq(crc32_equal(crc1, crc2), true)
   assert_eq(crc32_equal(crc1, crc3), false)
 }
 
 ///|
-test "crc32_bytes_vs_string" {
+test "crc32_bytes_consistency" {
   let test_string = "Hello, Bytes!"
   let test_bytes = test_string.to_bytes()
   
-  let crc_string = crc32_string(test_string)
-  let crc_bytes = crc32_bytes(test_bytes)
+  let crc1 = crc32_bytes(test_bytes)
+  let crc2 = crc32_bytes(test_string.to_bytes())
   
-  // Note: These may not be equal due to String vs Bytes encoding differences
-  // This test documents the behavior rather than asserting equality
-  assert_true(crc_string != 0L)
-  assert_true(crc_bytes != 0L)
+  // Both should produce the same result
+  assert_eq(crc32_equal(crc1, crc2), true)
+  assert_true(crc1 != 0L)
 }
 
 test "crc32_bytes" {

@@ -118,7 +118,7 @@ pub fn stored_of_binary_string(s : String) -> @deflate.Result[File, String] {
   }
 
   // Calculate actual CRC-32 checksum
-  let crc = @crc32.crc32_string(s)
+  let crc = @crc32.crc32_bytes(s.to_bytes())
   @deflate.ok({
     compression: Compression::Stored,
     start: 0,
@@ -149,7 +149,7 @@ pub fn stored_of_bytes(data : Bytes) -> @deflate.Result[File, String] {
   
   // Calculate CRC-32 checksum on the string that will actually be stored
   // This ensures consistency between storage and extraction
-  let crc = @crc32.crc32_string(data_as_string)
+  let crc = @crc32.crc32_bytes(data_as_string.to_bytes())
   
   @deflate.ok({
     compression: Compression::Stored,
@@ -184,7 +184,7 @@ pub fn deflate_of_binary_string(
   match @deflate.deflate_of_binary_string(s, level) {
     @deflate.Ok(compressed_data) => {
       // Calculate CRC-32 of original data
-      let crc = @crc32.crc32_string(s)
+      let crc = @crc32.crc32_bytes(s.to_bytes())
       @deflate.ok({
         compression: Compression::Deflate,
         start: 0,
@@ -225,7 +225,7 @@ pub fn deflate_of_bytes(
       
       // Calculate CRC-32 on the string representation that will be stored/extracted
       // This ensures consistency between storage and extraction
-      let crc = @crc32.crc32_string(data_as_string)
+      let crc = @crc32.crc32_bytes(data_as_string.to_bytes())
       
       @deflate.ok({
         compression: Compression::Deflate,

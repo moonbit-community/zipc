@@ -62,17 +62,6 @@ fn crc32_update_byte(crc : Crc32, byte : Int) -> Crc32 {
   (crc >> 8) ^ crc32_table[index]
 }
 
-// Update CRC-32 with a string
-
-///|
-fn crc32_update_string(crc : Crc32, s : String) -> Crc32 {
-  let mut result = crc
-  for i = 0; i < s.length(); i = i + 1 {
-    result = crc32_update_byte(result, s[i])
-  }
-  result
-}
-
 // Update CRC-32 with bytes (more efficient for binary data)
 
 ///|
@@ -89,15 +78,6 @@ fn crc32_update_bytes(crc : Crc32, data : Bytes) -> Crc32 {
 ///|
 fn finalize(crc : Crc32) -> Crc32 {
   crc ^ 0xffffffffL
-}
-
-// Compute CRC-32 of a string
-
-///|
-pub fn crc32_string(s : String) -> Crc32 {
-  let crc = new_crc32()
-  let updated = crc32_update_string(crc, s)
-  finalize(updated)
 }
 
 // Compute CRC-32 of bytes (more efficient for binary data)
