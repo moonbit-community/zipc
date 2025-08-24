@@ -34,21 +34,21 @@ test "empty archive encoding" {
 ///|
 test "stored file basic properties" {
   let test_content = "Hello, ZIP world!"
-  match @zipc.stored_of_binary_string(test_content) {
-    @deflate.Ok(file_data) => {
-      // Snapshot: File properties
-      inspect(@zipc.file_compression(file_data), content="Stored")
-      inspect(@zipc.file_compressed_size(file_data), content="17")
-      inspect(@zipc.file_decompressed_size(file_data), content="17")
-      inspect(@zipc.file_can_extract(file_data), content="true")
+  try {
+    let file_data = @zipc.stored_of_binary_string(test_content)
+    // Snapshot: File properties
+    inspect(@zipc.file_compression(file_data), content="Stored")
+    inspect(@zipc.file_compressed_size(file_data), content="17")
+    inspect(@zipc.file_decompressed_size(file_data), content="17")
+    inspect(@zipc.file_can_extract(file_data), content="true")
 
-      // Test extraction
-      match @zipc.file_to_binary_string(file_data) {
-        @deflate.Ok(extracted) => inspect(extracted, content=test_content)
-        @deflate.Err(error) => fail("File extraction failed: " + error)
-      }
+    // Test extraction
+    match @zipc.file_to_binary_string(file_data) {
+      @deflate.Ok(extracted) => inspect(extracted, content=test_content)
+      @deflate.Err(error) => fail("File extraction failed: " + error)
     }
-    @deflate.Err(error) => fail("Stored file creation failed: " + error)
+  } catch {
+    error => fail("Stored file creation failed: " + error.to_string())
   }
 }
 

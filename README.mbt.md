@@ -106,17 +106,13 @@ test {
 test {
   // Compress data with Gzip
   let data = "MoonBit zipc library example"
-  match @deflate.gzip_of_bytes(data.to_bytes(), @deflate.level_default(), None, None) {
-    @deflate.Ok(compressed) => {
-      // Decompress back
-      match @deflate.gzip_to_bytes(compressed) {
-        @deflate.Ok(decompressed) => {
-          inspect(decompressed.to_string(), content=data)
-        }
-        @deflate.Err(error) => fail("Gzip decompression failed: " + error)
-      }
-    }
-    @deflate.Err(error) => fail("Gzip compression failed: " + error)
+  try {
+    let compressed = @deflate.gzip_of_bytes(data.to_bytes(), @deflate.level_default(), None, None)
+    // Decompress back
+    let decompressed = @deflate.gzip_to_bytes(compressed)
+    inspect(decompressed.to_string(), content=data)
+  } catch {
+    error => fail("Gzip operation failed: " + error.to_string())
   }
 }
 ```

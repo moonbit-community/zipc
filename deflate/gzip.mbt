@@ -39,13 +39,13 @@ pub fn gzip_compress_bytes(
   filename : String?,
   comment : String?,
   modification_time : Int,
-) -> Result[GzipData, String] {
+) -> GzipData  {
   // Calculate CRC-32 of original data
   let crc = @crc32.bytes(data)
 
   // Compress using deflate
   match deflate_compress(data, level) {
-    Ok(deflate_data) => {
+    (deflate_data) => {
       // Build gzip header
       let mut header = Bytes::from_array([])
 
@@ -98,7 +98,7 @@ pub fn gzip_compress_bytes(
 
       // Combine header + deflate data + trailer
       let gzip_bytes = header + deflate_data.compressed_bytes + trailer
-      Ok({
+      ({
         compressed_bytes: gzip_bytes,
         original_size: data.length(),
         crc32_checksum: crc,
@@ -107,17 +107,17 @@ pub fn gzip_compress_bytes(
         modification_time,
       })
     }
-    Err(error) => Err("Gzip compression failed: " + error)
+   
   }
 }
 
 // Decompress gzip data
 
 ///|
-pub fn gzip_decompress_bytes(gzip_data : GzipData) -> Result[Bytes, String] {
+pub fn gzip_decompress_bytes(gzip_data : GzipData) -> Bytes raise {
   let data = gzip_data.compressed_bytes
   if data.length() < 18 { // Minimum: 10-byte header + 8-byte trailer
-    return Err("Gzip data too short (minimum 18 bytes)")
+    fail("Gzip data too short (minimum 18 bytes)")
   }
 
   // Parse gzip header
@@ -125,13 +125,13 @@ pub fn gzip_decompress_bytes(gzip_data : GzipData) -> Result[Bytes, String] {
 
   // Check magic number
   if data[offset].to_int() != 0x1f || data[offset + 1].to_int() != 0x8b {
-    return Err("Invalid gzip magic number")
+    fail("Invalid gzip magic number")
   }
   offset = offset + 2
 
   // Check compression method
   if data[offset].to_int() != 8 {
-    return Err("Unsupported compression method: " + data[offset].to_int().to_string())
+    fail("Unsupported compression method: " + data[offset].to_int().to_string())
   }
   offset = offset + 1
 
@@ -151,12 +151,12 @@ pub fn gzip_decompress_bytes(gzip_data : GzipData) -> Result[Bytes, String] {
   // Skip extra fields if present
   if (flags & fextra_flag) != 0 {
     if offset + 2 > data.length() {
-      return Err("Truncated gzip extra fields")
+      fail("Truncated gzip extra fields")
     }
     let extra_len = gzip_read_u16_le_bytes(data, offset)
     offset = offset + 2 + extra_len
     if offset > data.length() {
-      return Err("Truncated gzip extra fields data")
+      fail("Truncated gzip extra fields data")
     }
   }
 
@@ -166,7 +166,7 @@ pub fn gzip_decompress_bytes(gzip_data : GzipData) -> Result[Bytes, String] {
       offset = offset + 1
     }
     if offset >= data.length() {
-      return Err("Truncated gzip filename")
+      fail("Truncated gzip filename")
     }
     offset = offset + 1 // Skip null terminator
   }
@@ -177,7 +177,7 @@ pub fn gzip_decompress_bytes(gzip_data : GzipData) -> Result[Bytes, String] {
       offset = offset + 1
     }
     if offset >= data.length() {
-      return Err("Truncated gzip comment")
+      fail("Truncated gzip comment")
     }
     offset = offset + 1 // Skip null terminator
   }
@@ -186,13 +186,13 @@ pub fn gzip_decompress_bytes(gzip_data : GzipData) -> Result[Bytes, String] {
   if (flags & fhcrc_flag) != 0 {
     offset = offset + 2
     if offset > data.length() {
-      return Err("Truncated gzip header CRC")
+      fail("Truncated gzip header CRC")
     }
   }
 
   // Extract deflate data (everything except trailer)
   if offset + 8 > data.length() {
-    return Err("Truncated gzip trailer")
+    fail("Truncated gzip trailer")
   }
   let deflate_end = data.length() - 8
   let deflate_bytes = data[offset:deflate_end].to_bytes()
@@ -209,42 +209,26 @@ pub fn gzip_decompress_bytes(gzip_data : GzipData) -> Result[Bytes, String] {
   }
 
   // Use bytes-based deflate decompression to avoid String conversion corruption
-  match decompress_deflate_blocks_bytes(deflate_bytes) {
-    Ok(decompressed_bytes) => {
-      // Verify size
-      if decompressed_bytes.length() != expected_size {
-        return Err(
-          "Gzip size mismatch: expected " +
-          expected_size.to_string() +
-          ", got " +
-          decompressed_bytes.length().to_string(),
-        )
-      }
-
-      // Verify CRC-32 checksum
-      let computed_crc = @crc32.bytes(decompressed_bytes)
-      if computed_crc != expected_crc {
-        return Err("Gzip CRC-32 checksum mismatch")
-      }
-      Ok(decompressed_bytes)
-    }
-    Err(error) => Err("Deflate decompression failed: " + error)
+  let decompressed_bytes = decompress_deflate_blocks_bytes(deflate_bytes)
+  // Verify size
+  if decompressed_bytes.length() != expected_size {
+    fail(
+      "Gzip size mismatch: expected " +
+      expected_size.to_string() +
+      ", got " +
+      decompressed_bytes.length().to_string(),
+    )
   }
+
+  // Verify CRC-32 checksum
+  let computed_crc = @crc32.bytes(decompressed_bytes)
+  if computed_crc != expected_crc {
+    fail("Gzip CRC-32 checksum mismatch")
+  }
+  decompressed_bytes
 }
 
-// Helper function to write 32-bit little-endian integer
 
-///|
-fn write_u32_le(value : Int) -> String {
-  let b0 = value & 0xff
-  let b1 = (value >> 8) & 0xff
-  let b2 = (value >> 16) & 0xff
-  let b3 = (value >> 24) & 0xff
-  b0.unsafe_to_char().to_string() +
-  b1.unsafe_to_char().to_string() +
-  b2.unsafe_to_char().to_string() +
-  b3.unsafe_to_char().to_string()
-}
 
 // Helper function to write 32-bit little-endian integer as bytes
 
@@ -257,17 +241,7 @@ fn write_u32_le_bytes(value : Int) -> Bytes {
   Bytes::from_array([b0.to_byte(), b1.to_byte(), b2.to_byte(), b3.to_byte()])
 }
 
-// Helper function to read 16-bit little-endian integer (gzip version)
 
-///|
-fn gzip_read_u16_le(data : String, offset : Int) -> Int {
-  if offset + 1 >= data.length() {
-    return 0
-  }
-  let b0 = data[offset]
-  let b1 = data[offset + 1]
-  b0 + (b1 << 8)
-}
 
 // Helper function to read 16-bit little-endian integer from bytes
 
@@ -281,19 +255,7 @@ fn gzip_read_u16_le_bytes(data : Bytes, offset : Int) -> Int {
   b0 + (b1 << 8)
 }
 
-// Helper function to read 32-bit little-endian integer
 
-///|
-fn read_u32_le(data : String, offset : Int) -> Int {
-  if offset + 3 >= data.length() {
-    return 0
-  }
-  let b0 = data[offset]
-  let b1 = data[offset + 1]
-  let b2 = data[offset + 2]
-  let b3 = data[offset + 3]
-  b0 + (b1 << 8) + (b2 << 16) + (b3 << 24)
-}
 
 // Helper function to read 32-bit little-endian integer from bytes
 
@@ -309,40 +271,9 @@ fn read_u32_le_bytes(data : Bytes, offset : Int) -> Int {
   b0 + (b1 << 8) + (b2 << 16) + (b3 << 24)
 }
 
-// Create gzip-compressed file data (DEPRECATED - use gzip_of_bytes)
 
-///|
-fn gzip_of_binary_string(
-  s : String,
-  level : Level,
-  filename : String?,
-  comment : String?,
-) -> Result[String, String] {
-  match gzip_compress_bytes(s.to_bytes(), level, filename, comment, 0) {
-    Ok(gzip_data) => Ok(gzip_data.compressed_bytes.to_string())
-    Err(error) => Err("Gzip compression failed: " + error)
-  }
-}
 
-// Extract gzip-compressed data (DEPRECATED - use gzip_to_bytes)
 
-///|
-fn gzip_to_binary_string(
-  compressed_data : String,
-) -> Result[String, String] {
-  let gzip_data : GzipData = {
-    compressed_bytes: compressed_data.to_bytes(),
-    original_size: 0, // Will be read from trailer
-    crc32_checksum: @crc32.Crc32(0L), // Will be read from trailer
-    filename: None,
-    comment: None,
-    modification_time: 0,
-  }
-  match gzip_decompress_bytes(gzip_data) {
-    Ok(bytes) => Ok(bytes.to_string())
-    Err(error) => Err(error)
-  }
-}
 
 // Bytes-based gzip functions (more efficient for binary data)
 
@@ -352,16 +283,16 @@ pub fn gzip_of_bytes(
   level : Level,
   filename : String?,
   comment : String?,
-) -> Result[Bytes, String] {
+) -> Bytes {
   // Use the modern bytes-based implementation directly
   match gzip_compress_bytes(data, level, filename, comment, 0) {
-    Ok(gzip_data) => Ok(gzip_data.compressed_bytes)
-    Err(error) => Err(error)
+      (gzip_data) => (gzip_data.compressed_bytes)
+    
   }
 }
 
 ///|
-pub fn gzip_to_bytes(compressed_data : Bytes) -> Result[Bytes, String] {
+pub fn gzip_to_bytes(compressed_data : Bytes) -> Bytes raise {
   // Use the modern bytes-based implementation directly
   let gzip_data : GzipData = {
     compressed_bytes: compressed_data,

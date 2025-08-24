@@ -108,10 +108,10 @@ pub fn remove(path : Fpath, archive : Archive) -> Archive {
 // File operations
 
 ///|
-pub fn stored_of_binary_string(s : String) -> @deflate.Result[File, String] {
+pub fn stored_of_binary_string(s : String) -> File raise {
   let len = s.length()
   if len > max_file_size {
-    return @deflate.err(
+    fail(
       "File size exceeds maximum allowed (" +
       max_file_size.to_string() +
       " bytes)",
@@ -120,7 +120,7 @@ pub fn stored_of_binary_string(s : String) -> @deflate.Result[File, String] {
 
   // Calculate actual CRC-32 checksum
   let crc = @crc32.bytes(s.to_bytes())
-  @deflate.ok({
+  {
     compression: Compression::Stored,
     start: 0,
     compressed_size: len,
@@ -130,16 +130,16 @@ pub fn stored_of_binary_string(s : String) -> @deflate.Result[File, String] {
     version_made_by: 0x314, // UNIX, PKZIP 2.0
     version_needed_to_extract: 20, // PKZIP 2.0
     gp_flags: 0x800, // UTF-8 filename
-  })
+  }
 }
 
 // Create stored file from bytes (more efficient for binary data)
 
 ///|
-pub fn stored_of_bytes(data : Bytes) -> @deflate.Result[File, String] {
+pub fn stored_of_bytes(data : Bytes) -> File raise {
   let len = data.length()
   if len > max_file_size {
-    return @deflate.err(
+    fail(
       "File size exceeds maximum allowed (" +
       max_file_size.to_string() +
       " bytes)",
@@ -152,7 +152,7 @@ pub fn stored_of_bytes(data : Bytes) -> @deflate.Result[File, String] {
   // Calculate CRC-32 checksum on the string that will actually be stored
   // This ensures consistency between storage and extraction
   let crc = @crc32.bytes(data_as_string.to_bytes())
-  @deflate.ok({
+  {
     compression: Compression::Stored,
     start: 0,
     compressed_size: len,
@@ -162,7 +162,7 @@ pub fn stored_of_bytes(data : Bytes) -> @deflate.Result[File, String] {
     version_made_by: 0x314, // UNIX, PKZIP 2.0
     version_needed_to_extract: 20, // PKZIP 2.0
     gp_flags: 0x800, // UTF-8 filename
-  })
+  }
 }
 
 // Create deflate-compressed file
@@ -182,24 +182,20 @@ pub fn deflate_of_binary_string(
   }
 
   // Compress using deflate
-  match @deflate.deflate_of_bytes(s.to_bytes(), level) {
-    @deflate.Ok(compressed_data) => {
-      // Calculate CRC-32 of original data
-      let crc = @crc32.bytes(s.to_bytes())
-      @deflate.ok({
-        compression: Compression::Deflate,
-        start: 0,
-        compressed_size: compressed_data.to_string().length(),
-        compressed_bytes: compressed_data.to_string(),
-        decompressed_size: len,
-        decompressed_crc32: crc.0,
-        version_made_by: 0x314, // UNIX, ZIP 2.0
-        version_needed_to_extract: 20, // ZIP 2.0
-        gp_flags: 0x800, // UTF-8 filename
-      })
-    }
-    @deflate.Err(error) => @deflate.err("Deflate compression failed: " + error)
-  }
+  let compressed_data = @deflate.deflate_of_bytes(s.to_bytes(), level)
+  // Calculate CRC-32 of original data
+  let crc = @crc32.bytes(s.to_bytes())
+  @deflate.ok({
+    compression: Compression::Deflate,
+    start: 0,
+    compressed_size: compressed_data.to_string().length(),
+    compressed_bytes: compressed_data.to_string(),
+    decompressed_size: len,
+    decompressed_crc32: crc.0,
+    version_made_by: 0x314, // UNIX, ZIP 2.0
+    version_needed_to_extract: 20, // ZIP 2.0
+    gp_flags: 0x800, // UTF-8 filename
+  })
 }
 
 // Create deflate-compressed file from bytes (more efficient for binary data)
@@ -219,14 +215,13 @@ pub fn deflate_of_bytes(
   }
 
   // Compress using deflate directly on bytes (more efficient)
-  match @deflate.deflate_of_bytes(data, level) {
-    @deflate.Ok(compressed_data) => {
-      // Convert to string for storage (required by current File struct)
-      let compressed_as_string = compressed_data.to_string()
-      let data_as_string = data.to_string()
+  let compressed_data = @deflate.deflate_of_bytes(data, level)
+  // Convert to string for storage (required by current File struct)
+  let compressed_as_string = compressed_data.to_string()
+  let data_as_string = data.to_string()
 
-      // Calculate CRC-32 on the string representation that will be stored/extracted
-      // This ensures consistency between storage and extraction
+  // Calculate CRC-32 on the string representation that will be stored/extracted
+  // This ensures consistency between storage and extraction
       let crc = @crc32.bytes(data_as_string.to_bytes())
       @deflate.ok({
         compression: Compression::Deflate,
@@ -239,9 +234,6 @@ pub fn deflate_of_bytes(
         version_needed_to_extract: 20, // ZIP 2.0
         gp_flags: 0x800, // UTF-8 filename
       })
-    }
-    @deflate.Err(error) => @deflate.err("Deflate compression failed: " + error)
-  }
 }
 
 ///|
@@ -299,9 +291,9 @@ pub fn file_to_binary_string(file : File) -> @deflate.Result[String, String] {
 // Extract file content as bytes (more efficient for binary data)
 
 ///|
-pub fn file_to_bytes(file : File) -> @deflate.Result[Bytes, String] {
+pub fn file_to_bytes(file : File) -> Bytes raise {
   if not(file_can_extract(file)) {
-    return @deflate.err("Unsupported compression format")
+    fail("Unsupported compression format")
   }
   match file.compression {
     Compression::Stored => {
@@ -310,7 +302,7 @@ pub fn file_to_bytes(file : File) -> @deflate.Result[Bytes, String] {
       let data_view = compressed_bytes[file.start:file.start +
         file.compressed_size]
       // Convert view back to bytes
-      @deflate.ok(data_view.to_bytes())
+      data_view.to_bytes()
     }
     Compression::Deflate => {
       // Use bytes-based decompression for better performance
@@ -320,7 +312,7 @@ pub fn file_to_bytes(file : File) -> @deflate.Result[Bytes, String] {
         file.decompressed_size,
       )
     }
-    _ => @deflate.err("Unsupported compression format")
+    _ => fail("Unsupported compression format")
   }
 }
 

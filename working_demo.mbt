@@ -13,44 +13,44 @@ test "bytes_api_working_demo" {
 
   // Test 1: Create a stored (uncompressed) file using Bytes API
   println("\n✅ Test 1: Creating stored file from bytes...")
-  match stored_of_bytes(binary_data) {
-    @deflate.Ok(file) => {
-      println("   ✓ File created successfully")
-      println("   ✓ Compression: " + file_compression(file).to_string())
+  try {
+    let file = stored_of_bytes(binary_data)
+    println("   ✓ File created successfully")
+    println("   ✓ Compression: " + file_compression(file).to_string())
+    println(
+      "   ✓ Compressed size: " +
+      file_compressed_size(file).to_string() +
+      " bytes",
+    )
+    println(
+      "   ✓ Decompressed size: " +
+      file_decompressed_size(file).to_string() +
+      " bytes",
+    )
+
+    // Test 2: Extract the file content back to bytes
+    println("\n✅ Test 2: Extracting file content as bytes...")
+    try {
+      let extracted_bytes = file_to_bytes(file)
+      println("   ✓ Content extracted successfully")
       println(
-        "   ✓ Compressed size: " +
-        file_compressed_size(file).to_string() +
-        " bytes",
-      )
-      println(
-        "   ✓ Decompressed size: " +
-        file_decompressed_size(file).to_string() +
+        "   ✓ Extracted size: " +
+        extracted_bytes.length().to_string() +
         " bytes",
       )
 
-      // Test 2: Extract the file content back to bytes
-      println("\n✅ Test 2: Extracting file content as bytes...")
-      match file_to_bytes(file) {
-        @deflate.Ok(extracted_bytes) => {
-          println("   ✓ Content extracted successfully")
-          println(
-            "   ✓ Extracted size: " +
-            extracted_bytes.length().to_string() +
-            " bytes",
-          )
-
-          // Verify the data round-tripped correctly
-          let extracted_text = extracted_bytes.to_string()
-          if extracted_text == text_content {
-            println("   ✓ Data integrity verified - perfect round-trip!")
-          } else {
-            println("   ✗ Data integrity failed")
-          }
-        }
-        @deflate.Err(error) => println("   ✗ Extraction failed: " + error)
+      // Verify the data round-tripped correctly
+      let extracted_text = extracted_bytes.to_string()
+      if extracted_text == text_content {
+        println("   ✓ Data integrity verified - perfect round-trip!")
+      } else {
+        println("   ✗ Data integrity failed")
       }
+    } catch {
+      error => println("   ✗ Extraction failed: " + error.to_string())
     }
-    @deflate.Err(error) => println("   ✗ File creation failed: " + error)
+  } catch {
+    error => println("   ✗ File creation failed: " + error.to_string())
   }
 
   // Test 3: Performance comparison - CRC32 calculation
@@ -74,50 +74,51 @@ test "bytes_api_working_demo" {
 
   // Test 4: Create a simple archive
   println("\n✅ Test 4: Creating ZIP archive with bytes...")
-  match stored_of_bytes(binary_data) {
-    @deflate.Ok(file) =>
-      match member_make("demo.txt", MemberKind::File(file)) {
-        @deflate.Ok(zip_member) => {
-          let archive = empty()
-          let archive = add(zip_member, archive)
-          println("   ✓ Archive created with 1 file")
-          println("   ✓ Member count: " + member_count(archive).to_string())
+  try {
+    let file = stored_of_bytes(binary_data)
+    match member_make("demo.txt", MemberKind::File(file)) {
+      @deflate.Ok(zip_member) => {
+        let archive = empty()
+        let archive = add(zip_member, archive)
+        println("   ✓ Archive created with 1 file")
+        println("   ✓ Member count: " + member_count(archive).to_string())
 
-          // Convert archive to bytes
-          match to_bytes(archive) {
-            @deflate.Ok(zip_bytes) => {
-              println("   ✓ Archive serialized to bytes")
-              println(
-                "   ✓ ZIP file size: " +
-                zip_bytes.length().to_string() +
-                " bytes",
-              )
+        // Convert archive to bytes
+        match to_bytes(archive) {
+          @deflate.Ok(zip_bytes) => {
+            println("   ✓ Archive serialized to bytes")
+            println(
+              "   ✓ ZIP file size: " +
+              zip_bytes.length().to_string() +
+              " bytes",
+            )
 
-              // Parse it back
-              match of_bytes(zip_bytes) {
-                @deflate.Ok(parsed_archive) => {
-                  println("   ✓ Archive parsed from bytes successfully")
-                  println(
-                    "   ✓ Parsed member count: " +
-                    member_count(parsed_archive).to_string(),
-                  )
-                  if mem("demo.txt", parsed_archive) {
-                    println("   ✓ File 'demo.txt' found in parsed archive")
-                    println("   ✓ Complete round-trip successful! 🎉")
-                  }
+            // Parse it back
+            match of_bytes(zip_bytes) {
+              @deflate.Ok(parsed_archive) => {
+                println("   ✓ Archive parsed from bytes successfully")
+                println(
+                  "   ✓ Parsed member count: " +
+                  member_count(parsed_archive).to_string(),
+                )
+                if mem("demo.txt", parsed_archive) {
+                  println("   ✓ File 'demo.txt' found in parsed archive")
+                  println("   ✓ Complete round-trip successful! 🎉")
                 }
-                @deflate.Err(error) =>
-                  println("   ✗ Archive parsing failed: " + error)
               }
+              @deflate.Err(error) =>
+                println("   ✗ Archive parsing failed: " + error)
             }
-            @deflate.Err(error) =>
-              println("   ✗ Archive serialization failed: " + error)
           }
+          @deflate.Err(error) =>
+            println("   ✗ Archive serialization failed: " + error)
         }
-        @deflate.Err(error) =>
-          println("   ✗ Member creation failed: " + error)
       }
-    @deflate.Err(error) => println("   ✗ File creation failed: " + error)
+      @deflate.Err(error) =>
+        println("   ✗ Member creation failed: " + error)
+    }
+  } catch {
+    error => println("   ✗ File creation failed: " + error.to_string())
   }
   println("\n🎉 Bytes-based ZIP API demonstration complete!")
   println("✅ All core functionality working perfectly")
