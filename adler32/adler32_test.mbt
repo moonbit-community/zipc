@@ -25,7 +25,7 @@ test "adler32_equality_modern" {
   let adler1 = @adler32.bytes(test_bytes)
   let adler2 = @adler32.bytes(test_bytes)
   let different_adler = @adler32.bytes("different".to_bytes())
-  
+
   // Test struct equality (modern way)
   assert_eq(adler1 == adler2, true)
   assert_eq(adler1 == different_adler, false)
@@ -36,11 +36,11 @@ test "adler32_equality_modern" {
 test "adler32_show_implementation" {
   let test_bytes = "Hello, Adler32!".to_bytes()
   let adler = @adler32.bytes(test_bytes)
-  
+
   // Test Show implementation works (should display hex format)
   let empty_adler = @adler32.bytes(Bytes::from_array([]))
   assert_true(adler != empty_adler)
-  
+
   // Test consistency
   let same_adler = @adler32.bytes(test_bytes)
   assert_eq(adler, same_adler)
@@ -52,12 +52,14 @@ test "adler32_various_data_sizes" {
   let small = @adler32.bytes("a".to_bytes())
   let empty = @adler32.bytes(Bytes::from_array([]))
   assert_true(small != empty)
-  
+
   // Test medium data
-  let medium = @adler32.bytes("Hello, this is a medium sized test string!".to_bytes())
+  let medium = @adler32.bytes(
+    "Hello, this is a medium sized test string!".to_bytes(),
+  )
   assert_true(medium != small)
   assert_true(medium != empty)
-  
+
   // Test large data
   let large_data = "This is a much larger test string that should produce a different Adler-32 checksum than the smaller ones. It contains multiple sentences and should thoroughly test the checksum algorithm.".to_bytes()
   let large = @adler32.bytes(large_data)
@@ -72,14 +74,14 @@ test "adler32_binary_data" {
   let binary_data = Bytes::from_array([0, 1, 2, 3, 4, 5, 255, 254, 253])
   let binary_adler = @adler32.bytes(binary_data)
   let empty_adler = @adler32.bytes(Bytes::from_array([]))
-  
   assert_true(binary_adler != empty_adler)
-  
+
   // Test consistency with same binary data
   let same_binary_adler = @adler32.bytes(binary_data)
   assert_eq(binary_adler, same_binary_adler)
 }
 
+///|
 test "bytes" {
   // Verified test against Python's zlib.adler32()
   inspect(

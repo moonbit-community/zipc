@@ -39,13 +39,13 @@ pub fn gzip_compress_bytes(
   filename : String?,
   comment : String?,
   modification_time : Int,
-) -> GzipData  {
+) -> GzipData {
   // Calculate CRC-32 of original data
   let crc = @crc32.bytes(data)
 
   // Compress using deflate
   match deflate_compress(data, level) {
-    (deflate_data) => {
+    deflate_data => {
       // Build gzip header
       let mut header = Bytes::from_array([])
 
@@ -83,31 +83,33 @@ pub fn gzip_compress_bytes(
 
       // Optional filename (null-terminated)
       match filename {
-        Some(name) => header = header + name.to_bytes() + Bytes::from_array([0x00])
+        Some(name) =>
+          header = header + name.to_bytes() + Bytes::from_array([0x00])
         None => ()
       }
 
       // Optional comment (null-terminated)
       match comment {
-        Some(comm) => header = header + comm.to_bytes() + Bytes::from_array([0x00])
+        Some(comm) =>
+          header = header + comm.to_bytes() + Bytes::from_array([0x00])
         None => ()
       }
 
       // Build trailer: CRC-32 (4 bytes) + original size (4 bytes), both little-endian
-      let trailer = write_u32_le_bytes(crc.0.to_int()) + write_u32_le_bytes(data.length())
+      let trailer = write_u32_le_bytes(crc.0.to_int()) +
+        write_u32_le_bytes(data.length())
 
       // Combine header + deflate data + trailer
       let gzip_bytes = header + deflate_data.compressed_bytes + trailer
-      ({
+      {
         compressed_bytes: gzip_bytes,
         original_size: data.length(),
         crc32_checksum: crc,
         filename,
         comment,
         modification_time,
-      })
+      }
     }
-   
   }
 }
 
@@ -228,8 +230,6 @@ pub fn gzip_decompress_bytes(gzip_data : GzipData) -> Bytes raise {
   decompressed_bytes
 }
 
-
-
 // Helper function to write 32-bit little-endian integer as bytes
 
 ///|
@@ -240,8 +240,6 @@ fn write_u32_le_bytes(value : Int) -> Bytes {
   let b3 = (value >> 24) & 0xff
   Bytes::from_array([b0.to_byte(), b1.to_byte(), b2.to_byte(), b3.to_byte()])
 }
-
-
 
 // Helper function to read 16-bit little-endian integer from bytes
 
@@ -254,8 +252,6 @@ fn gzip_read_u16_le_bytes(data : Bytes, offset : Int) -> Int {
   let b1 = data[offset + 1].to_int()
   b0 + (b1 << 8)
 }
-
-
 
 // Helper function to read 32-bit little-endian integer from bytes
 
@@ -271,10 +267,6 @@ fn read_u32_le_bytes(data : Bytes, offset : Int) -> Int {
   b0 + (b1 << 8) + (b2 << 16) + (b3 << 24)
 }
 
-
-
-
-
 // Bytes-based gzip functions (more efficient for binary data)
 
 ///|
@@ -286,8 +278,7 @@ pub fn gzip_of_bytes(
 ) -> Bytes {
   // Use the modern bytes-based implementation directly
   match gzip_compress_bytes(data, level, filename, comment, 0) {
-      (gzip_data) => (gzip_data.compressed_bytes)
-    
+    gzip_data => gzip_data.compressed_bytes
   }
 }
 
@@ -317,7 +308,8 @@ pub fn gzip_extract_metadata_bytes(
   let mut offset = 0
 
   // Check magic number
-  if compressed_data[offset].to_int() != 0x1f || compressed_data[offset + 1].to_int() != 0x8b {
+  if compressed_data[offset].to_int() != 0x1f ||
+    compressed_data[offset + 1].to_int() != 0x8b {
     return Err("Invalid gzip magic number")
   }
   offset = offset + 2
@@ -346,7 +338,8 @@ pub fn gzip_extract_metadata_bytes(
   let mut filename : String? = None
   if (flags & fname_flag) != 0 {
     let start = offset
-    while offset < compressed_data.length() && compressed_data[offset].to_int() != 0 {
+    while offset < compressed_data.length() &&
+          compressed_data[offset].to_int() != 0 {
       offset = offset + 1
     }
     if offset < compressed_data.length() {
@@ -359,7 +352,8 @@ pub fn gzip_extract_metadata_bytes(
   let mut comment : String? = None
   if (flags & fcomment_flag) != 0 {
     let start = offset
-    while offset < compressed_data.length() && compressed_data[offset].to_int() != 0 {
+    while offset < compressed_data.length() &&
+          compressed_data[offset].to_int() != 0 {
       offset = offset + 1
     }
     if offset < compressed_data.length() {

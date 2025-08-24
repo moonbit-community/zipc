@@ -4,8 +4,6 @@
 ///|
 pub(all) struct Adler32(Int64) derive(Eq)
 
-
-
 ///|
 let adler32_base : Int64 = 65521L // Largest prime smaller than 65536
 
@@ -27,8 +25,6 @@ fn adler32_update_byte(adler : Adler32, byte : Byte) -> Adler32 {
   Adler32((new_b << 16) | new_a)
 }
 
-
-
 // Update Adler-32 with bytes (more efficient for binary data)
 
 ///|
@@ -40,7 +36,6 @@ fn adler32_update_bytes(adler : Adler32, data : Bytes) -> Adler32 {
   result
 }
 
-
 // Compute Adler-32 of bytes (private - legacy support)
 
 ///|
@@ -49,10 +44,7 @@ pub fn bytes(data : Bytes) -> Adler32 {
   adler32_update_bytes(adler, data)
 }
 
-
 // Check if two Adler-32 values are equal (private - use == operator instead)
-
-
 
 ///|
 pub impl Show for Adler32 with output(adler, logger) {

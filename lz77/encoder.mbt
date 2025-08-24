@@ -18,6 +18,7 @@
 // - Space Complexity: O(window_size) for hash tables
 // - Compression Ratio: Depends on data redundancy, typically 30-70% for text
 
+///|
 /// Encode bytes using LZ77 compression algorithm
 ///
 /// This is the main encoding function that processes input data and produces
@@ -38,11 +39,11 @@
 ///    c. Update hash tables with new position
 /// 3. Return the complete token sequence
 ///
-  /// # Example
-  /// ```moonbit
-  /// let data = b"Hello World Hello World"
-  /// let config = @lz77.default_config()
-  /// let tokens = @lz77.encode(data, config)
+/// # Example
+/// ```
+/// let data = b"Hello World Hello World"
+/// let config = @lz77.default_config()
+/// let tokens = @lz77.encode(data, config)
 /// @json.inspect(tokens, content=[
 ///   ["Literal", 72],
 ///   ["Literal", 101],
@@ -56,17 +57,7 @@
 ///   ["Literal", 108],
 ///   ["Literal", 100],
 ///   ["Literal", 32],
-///   ["Literal", 72],
-///   ["Literal", 101],
-///   ["Literal", 108],
-///   ["Literal", 108],
-///   ["Literal", 111],
-///   ["Literal", 32],
-///   ["Literal", 87],
-///   ["Literal", 111],
-///   ["Literal", 114],
-///   ["Literal", 108],
-///   ["Literal", 100],
+///   ["Reference", 11, 12],
 /// ])
 /// ```
 pub fn encode(data : Bytes, config : LZ77Config) -> Array[LZ77Token] {
@@ -77,31 +68,38 @@ pub fn encode(data : Bytes, config : LZ77Config) -> Array[LZ77Token] {
 
   // Initialize encoder state with hash tables and sliding window
   let state = new_encoder_state(config)
-  let mut result = []
+  let result = []
 
   // Main encoding loop - process each position in the input
   while state.position < data.length() {
     // Find the best match (literal or reference) at current position
     let token = find_best_match(data, state, config)
-    result = result + [token]
+    result.push(token)
+
+    // Update hash tables with current position for future matches
+    // This makes the current position available for future lookups
+    update_hash_tables(data, state, config)
 
     // Advance position based on token type
     match token {
       LZ77Token::Literal(_) =>
         // Literal: advance by 1 byte
         state.position += 1
-      LZ77Token::Reference(length, _) =>
-        // Reference: advance by match length (skip matched bytes)
-        state.position += length
+      LZ77Token::Reference(length, _) => {
+        // Reference: advance by match length, but also update hash tables
+        // for all intermediate positions to maintain proper hash chains
+        for i = 1; i < length; i = i + 1 {
+          state.position += 1
+          update_hash_tables(data, state, config)
+        }
+        state.position += 1
+      }
     }
-
-    // Update hash tables with newly processed position(s)
-    // This maintains the sliding window and hash chains for future matches
-    update_hash_tables(data, state, config)
   }
   result
 }
 
+///|
 /// Find the best match for the current position
 ///
 /// This function implements the core string matching algorithm using hash chains.
@@ -130,65 +128,73 @@ pub fn encode(data : Bytes, config : LZ77Config) -> Array[LZ77Token] {
 /// - Hash lookup is O(1) average case
 /// - Chain traversal is limited to prevent O(n²) worst case
 /// - Early termination when maximum match length is found
-fn find_best_match(data : Bytes, state : EncoderState, config : LZ77Config) -> LZ77Token {
+fn find_best_match(
+  data : Bytes,
+  state : EncoderState,
+  config : LZ77Config,
+) -> LZ77Token {
   let pos = state.position
-  
+
   // Need at least min_match_length bytes for a valid match
   // If we're too close to end of data, output literal
   if pos + config.min_match_length - 1 >= data.length() {
     return LZ77Token::Literal(data[pos])
   }
-  
+
   // Calculate 3-byte rolling hash for current position
   // This hash is used to quickly find potential match candidates
   let hash = hash3(data[pos], data[pos + 1], data[pos + 2])
   let chain_head = state.hash_head[hash]
-  
+
   // If no previous occurrence of this hash exists, output literal
   if chain_head == -1 {
     return LZ77Token::Literal(data[pos])
   }
-  
+
   // Search for the longest match by following the hash chain
   let mut best_length = 0
   let mut best_distance = 0
   let mut current = chain_head
   let mut chain_count = 0
   let max_chain_length = 128 // Limit chain traversal to prevent O(n²) behavior
-  
+
   // Follow hash chain to examine all positions with matching hash
   while current != -1 && chain_count < max_chain_length {
     let distance = pos - current
-    
+
     // Validate distance constraints
     if distance > config.max_distance || distance <= 0 {
       break // Distance too large or invalid
     }
-    
+
     // Check if position is still within the sliding window
     if current < state.window_start {
       break // Position has fallen out of the sliding window
     }
-    
+
     // Calculate actual match length between current and candidate positions
-    let match_length = find_match_length(data, pos, current, config.max_match_length)
-    
+    let match_length = find_match_length(
+      data,
+      pos,
+      current,
+      config.max_match_length,
+    )
+
     // Update best match if this one is longer and meets minimum requirements
     if match_length >= config.min_match_length && match_length > best_length {
       best_length = match_length
       best_distance = distance
-      
+
       // Early termination: if we found the maximum possible match, stop searching
       if best_length == config.max_match_length {
         break
       }
     }
-    
+
     // Follow chain to next position with same hash
     current = state.hash_prev[current % config.window_size]
     chain_count += 1
   }
-  
   if best_length >= config.min_match_length {
     LZ77Token::Reference(best_length, best_distance)
   } else {
@@ -196,6 +202,7 @@ fn find_best_match(data : Bytes, state : EncoderState, config : LZ77Config) -> L
   }
 }
 
+///|
 /// Find the length of a match between two positions
 ///
 /// This function compares bytes at two positions to determine how many
@@ -220,21 +227,26 @@ fn find_best_match(data : Bytes, state : EncoderState, config : LZ77Config) -> L
 /// # Performance
 /// - Time complexity: O(match_length)
 /// - Typically terminates quickly for non-matches
-fn find_match_length(data : Bytes, pos1 : Int, pos2 : Int, max_length : Int) -> Int {
+fn find_match_length(
+  data : Bytes,
+  pos1 : Int,
+  pos2 : Int,
+  max_length : Int,
+) -> Int {
   let mut length = 0
   let data_length = data.length()
-  
+
   // Compare bytes sequentially until mismatch or limits reached
-  while length < max_length && 
-        pos1 + length < data_length && 
+  while length < max_length &&
+        pos1 + length < data_length &&
         pos2 + length < data_length &&
         data[pos1 + length] == data[pos2 + length] {
     length += 1
   }
-  
   length
 }
 
+///|
 /// Update hash tables with new position
 ///
 /// This function maintains the hash tables and sliding window as the encoder
@@ -260,21 +272,25 @@ fn find_match_length(data : Bytes, pos1 : Int, pos2 : Int, max_length : Int) -> 
 /// - Window slides forward as encoding progresses
 /// - Old positions outside window are effectively ignored
 /// - Window size determines maximum back-reference distance
-fn update_hash_tables(data : Bytes, state : EncoderState, config : LZ77Config) -> Unit {
+fn update_hash_tables(
+  data : Bytes,
+  state : EncoderState,
+  config : LZ77Config,
+) -> Unit {
   let pos = state.position
-  
+
   // Update sliding window boundaries
   // Window start moves forward once we exceed window size
   if pos >= config.window_size {
     state.window_start = pos - config.window_size + 1
   }
-  
+
   // Add current position to hash table if we have enough bytes for a hash
   // Need at least 3 bytes to calculate hash3
   if pos + 2 < data.length() {
     let hash = hash3(data[pos], data[pos + 1], data[pos + 2])
     let window_pos = pos % config.window_size // Circular buffer index
-    
+
     // Update hash chain: link current position to previous head
     // This maintains a linked list of positions with the same hash
     state.hash_prev[window_pos] = state.hash_head[hash]
@@ -282,6 +298,7 @@ fn update_hash_tables(data : Bytes, state : EncoderState, config : LZ77Config) -
   }
 }
 
+///|
 /// Encode with default DEFLATE-compatible configuration
 ///
 /// This is a convenience function that uses the default LZ77 configuration
@@ -301,7 +318,7 @@ fn update_hash_tables(data : Bytes, state : EncoderState, config : LZ77Config) -
 ///
 /// # Example
 /// ```
-/// let data = b"Hello World Hello World"
+/// let data = b"HelloxxHelloHelloello"
 /// let tokens = @lz77.encode_default(data)
 /// @json.inspect(tokens, content=[
 ///   ["Literal", 72],
@@ -309,30 +326,18 @@ fn update_hash_tables(data : Bytes, state : EncoderState, config : LZ77Config) -
 ///   ["Literal", 108],
 ///   ["Literal", 108],
 ///   ["Literal", 111],
-///   ["Literal", 32],
-///   ["Literal", 87],
-///   ["Literal", 111],
-///   ["Literal", 114],
-///   ["Literal", 108],
-///   ["Literal", 100],
-///   ["Literal", 32],
-///   ["Literal", 72],
-///   ["Literal", 101],
-///   ["Literal", 108],
-///   ["Literal", 108],
-///   ["Literal", 111],
-///   ["Literal", 32],
-///   ["Literal", 87],
-///   ["Literal", 111],
-///   ["Literal", 114],
-///   ["Literal", 108],
-///   ["Literal", 100],
+///   ["Literal", 120],
+///   ["Literal", 120],
+///   ["Reference", 5, 7],
+///   ["Reference", 5, 5],
+///   ["Reference", 4, 4],
 /// ])
 /// ```
 pub fn encode_default(data : Bytes) -> Array[LZ77Token] {
   encode(data, default_config())
 }
 
+///|
 /// Encode to byte format suitable for storage or transmission
 ///
 /// This function encodes the input data and serializes the resulting tokens
@@ -361,15 +366,12 @@ pub fn encode_default(data : Bytes) -> Array[LZ77Token] {
 /// let compressed = @lz77.encode_to_bytes(data, @lz77.default_config())
 /// @json.inspect(compressed.to_array(), content=[
 ///   0, 72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 32, 0, 87, 0, 111, 0, 114, 0, 108,
-///   0, 100, 0, 32, 0, 72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 32, 0, 87, 0, 111, 0,
-///   114, 0, 108, 0, 100,
+///   0, 100, 0, 32, 1, 11, 12
 /// ])
 /// ```
-pub fn encode_to_bytes(data : Bytes, config : LZ77Config) -> Bytes {
-  // First, encode to token format
+pub fn encode_to_bytes(data : Bytes, config : LZ77Config) -> Bytes { // First, encode to token format
   let tokens = encode(data, config)
   let output = @buffer.new()
-
   // Serialize each token to byte format
   for token in tokens {
     match token {
@@ -389,6 +391,7 @@ pub fn encode_to_bytes(data : Bytes, config : LZ77Config) -> Bytes {
   output.to_bytes()
 }
 
+///|
 /// Write variable-length integer using LEB128 encoding
 ///
 /// This function encodes integers using a variable-length format where
@@ -423,9 +426,11 @@ fn @buffer.T::write_leb128(buffer : Self, value : Int) -> Unit {
   } else {
     // Multiple bytes: set continuation bit (1xxxxxxx) and recurse
     buffer.write_byte((value % 128 + 128).to_byte())
-    buffer.write_leb128(value / 128) }
+    buffer.write_leb128(value / 128)
+  }
 }
 
+///|
 test "write_leb128" {
   let buffer = @buffer.new()
   buffer.write_leb128(0)

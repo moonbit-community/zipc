@@ -56,10 +56,6 @@ pub enum HuffmanNode {
 impl Eq for HuffmanNode
 impl Show for HuffmanNode
 
-type SymbolCode
-impl Eq for SymbolCode
-impl Show for SymbolCode
-
 // Type aliases
 
 // Traits

@@ -1,6 +1,5 @@
 // Core types for deflate module
 
-
 ///|
 pub typealias Int64 as UInt32
 

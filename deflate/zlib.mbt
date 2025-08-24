@@ -72,9 +72,7 @@ pub fn zlib_decompress_bytes(zlib_data : ZlibData) -> Bytes raise {
   let compression_method = cmf & 0x0f
   let compression_info = (cmf >> 4) & 0x0f
   if compression_method != 8 {
-    fail(
-      "Unsupported compression method: " + compression_method.to_string(),
-    )
+    fail("Unsupported compression method: " + compression_method.to_string())
   }
   if compression_info > 7 {
     fail("Invalid compression info: " + compression_info.to_string())
@@ -110,8 +108,6 @@ pub fn zlib_decompress_bytes(zlib_data : ZlibData) -> Bytes raise {
   }
 }
 
-
-
 // Helper function to write 16-bit big-endian integer as bytes
 
 ///|
@@ -120,8 +116,6 @@ fn write_u16_be_bytes(value : Int) -> Bytes {
   let b1 = value & 0xff
   Bytes::from_array([b0.to_byte(), b1.to_byte()])
 }
-
-
 
 // Helper function to write 32-bit big-endian integer as bytes
 
@@ -133,8 +127,6 @@ fn write_u32_be_bytes(value : Int) -> Bytes {
   let b3 = value & 0xff
   Bytes::from_array([b0.to_byte(), b1.to_byte(), b2.to_byte(), b3.to_byte()])
 }
-
-
 
 // Helper function to read 32-bit big-endian integer from bytes
 
@@ -149,10 +141,6 @@ fn read_u32_be_bytes(data : Bytes, offset : Int) -> Int {
   let b3 = data[offset + 3].to_int()
   (b0 << 24) + (b1 << 16) + (b2 << 8) + b3
 }
-
-
-
-
 
 // Bytes-based zlib functions (more efficient for binary data)
 

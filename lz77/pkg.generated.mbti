@@ -48,6 +48,7 @@ pub enum LZ77Token {
 }
 impl Eq for LZ77Token
 impl Show for LZ77Token
+impl ToJson for LZ77Token
 
 // Type aliases
 

@@ -222,18 +222,18 @@ pub fn deflate_of_bytes(
 
   // Calculate CRC-32 on the string representation that will be stored/extracted
   // This ensures consistency between storage and extraction
-      let crc = @crc32.bytes(data_as_string.to_bytes())
-      @deflate.ok({
-        compression: Compression::Deflate,
-        start: 0,
-        compressed_size: compressed_as_string.length(),
-        compressed_bytes: compressed_as_string,
-        decompressed_size: len,
-        decompressed_crc32: crc.0,
-        version_made_by: 0x314, // UNIX, ZIP 2.0
-        version_needed_to_extract: 20, // ZIP 2.0
-        gp_flags: 0x800, // UTF-8 filename
-      })
+  let crc = @crc32.bytes(data_as_string.to_bytes())
+  @deflate.ok({
+    compression: Compression::Deflate,
+    start: 0,
+    compressed_size: compressed_as_string.length(),
+    compressed_bytes: compressed_as_string,
+    decompressed_size: len,
+    decompressed_crc32: crc.0,
+    version_made_by: 0x314, // UNIX, ZIP 2.0
+    version_needed_to_extract: 20, // ZIP 2.0
+    gp_flags: 0x800, // UTF-8 filename
+  })
 }
 
 ///|

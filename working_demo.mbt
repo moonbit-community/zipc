@@ -114,30 +114,28 @@ test "bytes_api_working_demo" {
             println("   ✗ Archive serialization failed: " + error)
         }
       }
-      @deflate.Err(error) =>
-        println("   ✗ Member creation failed: " + error)
+      @deflate.Err(error) => println("   ✗ Member creation failed: " + error)
     }
   } catch {
     error => println("   ✗ File creation failed: " + error.to_string())
   }
-  
+
   // Test compression algorithms
   println("\n🔧 Testing compression algorithms...")
-  
+
   // Test LZ77 compression
   let lz77_tokens = @lz77.encode_default(binary_data)
   let lz77_decoded = @lz77.decode(lz77_tokens)
   if lz77_decoded == binary_data {
     println("   ✓ LZ77 compression/decompression working")
   }
-  
+
   // Test Huffman tree construction
   let huffman_tree = @huffman.build_fixed_literal_tree()
   match huffman_tree {
     Some(_) => println("   ✓ Huffman tree construction working")
     None => println("   ✗ Huffman tree construction failed")
   }
-  
   println("\n🎉 Bytes-based ZIP API demonstration complete!")
   println("✅ All core functionality working perfectly")
   println("✅ 2-4x performance improvements delivered")

@@ -1,7 +1,6 @@
 // Deflate compression/decompression implementation
 // This is a simplified implementation focusing on basic functionality
 
-
 // Deflate compressed data structure
 
 ///|
@@ -14,10 +13,7 @@ pub struct DeflateData {
 // Compress data using deflate algorithm
 
 ///|
-pub fn deflate_compress(
-  data : Bytes,
-  level : Level,
-) -> DeflateData {
+pub fn deflate_compress(data : Bytes, level : Level) -> DeflateData {
   // Work directly with bytes to avoid corruption
   match level {
     Level::None => compress_uncompressed(data)
@@ -27,14 +23,14 @@ pub fn deflate_compress(
   }
 }
 
-
-
 // Decompress deflate data
 
 ///|
 pub fn deflate_decompress(deflate_data : DeflateData) -> Bytes raise {
   // Decompress using bytes-based function to avoid String conversion corruption
-  let decompressed_bytes = decompress_deflate_blocks_bytes(deflate_data.compressed_bytes)
+  let decompressed_bytes = decompress_deflate_blocks_bytes(
+    deflate_data.compressed_bytes,
+  )
   // Verify Adler-32 checksum of the decompressed data
   let computed_adler = @adler32.bytes(decompressed_bytes)
   if computed_adler == deflate_data.adler32_checksum {
@@ -43,8 +39,6 @@ pub fn deflate_decompress(deflate_data : DeflateData) -> Bytes raise {
     fail("Adler-32 checksum mismatch")
   }
 }
-
-
 
 // Compress using uncompressed blocks (Level::None)
 
@@ -57,7 +51,7 @@ fn compress_uncompressed(data : Bytes) -> DeflateData {
       compressed_bytes: Bytes::from_array([]),
       original_size: 0,
       adler32_checksum: adler,
-      }
+    }
   }
 
   // For uncompressed blocks, we need to create deflate blocks
@@ -118,7 +112,7 @@ fn compress_uncompressed(data : Bytes) -> DeflateData {
 // Bytes-based basic deflate compression (no String conversion)
 
 ///|
-fn compress_basic_deflate_bytes(data : Bytes) -> DeflateData{
+fn compress_basic_deflate_bytes(data : Bytes) -> DeflateData {
   // Try Fixed Huffman compression for small data, otherwise use uncompressed
   if data.length() < 1000 {
     compress_fixed_huffman_bytes(data)
@@ -128,12 +122,10 @@ fn compress_basic_deflate_bytes(data : Bytes) -> DeflateData{
   }
 }
 
-
-
 // Bytes-based Fixed Huffman compression (no String conversion)
 
 ///|
-fn compress_fixed_huffman_bytes(data : Bytes) -> DeflateData  {
+fn compress_fixed_huffman_bytes(data : Bytes) -> DeflateData {
   if data.length() == 0 {
     // Empty data - just return empty compressed data
     let adler = @adler32.bytes(data)
@@ -176,8 +168,6 @@ fn compress_fixed_huffman_bytes(data : Bytes) -> DeflateData  {
   }
 }
 
-
-
 // Decompress deflate blocks from bytes (handles binary data correctly)
 
 ///|
@@ -197,15 +187,19 @@ fn decompress_deflate_blocks_bytes(compressed : Bytes) -> Bytes raise {
     let bfinal = header_byte & 1
     let btype_value = (header_byte >> 1) & 3
     match @huffman.btype_to_block_type(btype_value) {
-      Some(block_type) => {
+      Some(block_type) =>
         if block_type == @huffman.uncompressed_block_type() {
           // Uncompressed block
-          let (block_data, new_offset) = decompress_uncompressed_block_bytes(compressed, offset)
+          let (block_data, new_offset) = decompress_uncompressed_block_bytes(
+            compressed, offset,
+          )
           result = result + block_data
           offset = new_offset
         } else if block_type == @huffman.fixed_huffman_block_type() {
           // Fixed Huffman block - use bytes-based decompression
-          let (block_data, new_offset) = @huffman.decompress_fixed_huffman_block_bytes(compressed, offset)
+          let (block_data, new_offset) = @huffman.decompress_fixed_huffman_block_bytes(
+            compressed, offset,
+          )
           result = result + block_data
           offset = new_offset
         } else if block_type == @huffman.dynamic_huffman_block_type() {
@@ -214,7 +208,6 @@ fn decompress_deflate_blocks_bytes(compressed : Bytes) -> Bytes raise {
         } else {
           fail("Unknown block type")
         }
-      }
       None => fail("Invalid block type: " + btype_value.to_string())
     }
 
@@ -225,8 +218,6 @@ fn decompress_deflate_blocks_bytes(compressed : Bytes) -> Bytes raise {
   }
   result
 }
-
-
 
 // Decompress an uncompressed block from bytes (handles binary data correctly)
 
@@ -257,8 +248,6 @@ fn decompress_uncompressed_block_bytes(
   (block_data, data_offset + len)
 }
 
-
-
 // Helper functions for binary data (reused from zip module)
 
 ///|
@@ -267,8 +256,6 @@ fn write_u16_le_bytes(value : Int) -> Bytes {
   let b1 = (value >> 8) & 0xff
   Bytes::from_array([b0.to_byte(), b1.to_byte()])
 }
-
-
 
 ///|
 fn read_u16_le_bytes(data : Bytes, offset : Int) -> Int {
@@ -283,18 +270,11 @@ fn read_u16_le_bytes(data : Bytes, offset : Int) -> Int {
 // Create deflate-compressed file data for ZIP (DEPRECATED - use deflate_of_bytes)
 
 ///|
-pub fn deflate_of_bytes(
-  data : Bytes,
-  level : Level,
-) -> Bytes {
+pub fn deflate_of_bytes(data : Bytes, level : Level) -> Bytes {
   match deflate_compress(data, level) {
-    (deflate_data) => deflate_data.compressed_bytes
+    deflate_data => deflate_data.compressed_bytes
   }
 }
-
-
-
-
 
 // Bytes-based API functions (more efficient for binary data)
 
