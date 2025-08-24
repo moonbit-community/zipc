@@ -300,9 +300,34 @@ fn update_hash_tables(data : Bytes, state : EncoderState, config : LZ77Config) -
 /// - Maximum distance: 32768 bytes
 ///
 /// # Example
-/// ```moonbit
-/// let data = "Hello World Hello World".to_bytes()
-/// let _tokens = @lz77.encode_default(data)
+/// ```
+/// let data = b"Hello World Hello World"
+/// let tokens = @lz77.encode_default(data)
+/// @json.inspect(tokens, content=[
+///   ["Literal", 72],
+///   ["Literal", 101],
+///   ["Literal", 108],
+///   ["Literal", 108],
+///   ["Literal", 111],
+///   ["Literal", 32],
+///   ["Literal", 87],
+///   ["Literal", 111],
+///   ["Literal", 114],
+///   ["Literal", 108],
+///   ["Literal", 100],
+///   ["Literal", 32],
+///   ["Literal", 72],
+///   ["Literal", 101],
+///   ["Literal", 108],
+///   ["Literal", 108],
+///   ["Literal", 111],
+///   ["Literal", 32],
+///   ["Literal", 87],
+///   ["Literal", 111],
+///   ["Literal", 114],
+///   ["Literal", 108],
+///   ["Literal", 100],
+/// ])
 /// ```
 pub fn encode_default(data : Bytes) -> Array[LZ77Token] {
   encode(data, default_config())
@@ -331,15 +356,20 @@ pub fn encode_default(data : Bytes) -> Array[LZ77Token] {
 /// - LSB format with 7 data bits + 1 continuation bit per byte
 ///
 /// # Example
-/// ```moonbit
-/// let data = "Hello World".to_bytes()
-/// let _compressed = @lz77.encode_to_bytes(data, @lz77.default_config())
+/// ```
+/// let data = b"Hello World Hello World"
+/// let compressed = @lz77.encode_to_bytes(data, @lz77.default_config())
+/// @json.inspect(compressed.to_array(), content=[
+///   0, 72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 32, 0, 87, 0, 111, 0, 114, 0, 108,
+///   0, 100, 0, 32, 0, 72, 0, 101, 0, 108, 0, 108, 0, 111, 0, 32, 0, 87, 0, 111, 0,
+///   114, 0, 108, 0, 100,
+/// ])
 /// ```
 pub fn encode_to_bytes(data : Bytes, config : LZ77Config) -> Bytes {
   // First, encode to token format
   let tokens = encode(data, config)
   let output = @buffer.new()
-  
+
   // Serialize each token to byte format
   for token in tokens {
     match token {
@@ -351,12 +381,11 @@ pub fn encode_to_bytes(data : Bytes, config : LZ77Config) -> Bytes {
       LZ77Token::Reference(length, distance) => {
         // Reference format: marker (0x01) + varint(length) + varint(distance)
         output.write_byte(b'\x01')
-        write_varint(output, length)
-        write_varint(output, distance)
+        output.write_leb128(length)
+        output.write_leb128(distance)
       }
     }
   }
-  
   output.to_bytes()
 }
 
@@ -386,13 +415,37 @@ pub fn encode_to_bytes(data : Bytes, config : LZ77Config) -> Bytes {
 /// - 2 bytes for values 128-16383
 /// - 3 bytes for values 16384-2097151
 /// - etc.
-fn write_varint(buffer : @buffer.T, value : Int) -> Unit {
+fn @buffer.T::write_leb128(buffer : Self, value : Int) -> Unit {
+  //TODO(upstream): upstream and change T to Buffer  
   if value < 128 {
     // Single byte: no continuation bit (0xxxxxxx)
     buffer.write_byte(value.to_byte())
   } else {
     // Multiple bytes: set continuation bit (1xxxxxxx) and recurse
     buffer.write_byte((value % 128 + 128).to_byte())
-    write_varint(buffer, value / 128)
-  }
+    buffer.write_leb128(value / 128) }
+}
+
+test "write_leb128" {
+  let buffer = @buffer.new()
+  buffer.write_leb128(0)
+  assert_eq(buffer.to_bytes(), b"\x00")
+  buffer.reset()
+  buffer.write_leb128(127)
+  assert_eq(buffer.to_bytes(), b"\x7f")
+  buffer.reset()
+  buffer.write_leb128(128)
+  assert_eq(buffer.to_bytes(), b"\x80\x01")
+  buffer.reset()
+  buffer.write_leb128(129)
+  assert_eq(buffer.to_bytes(), b"\x81\x01")
+  buffer.reset()
+  buffer.write_leb128(16383)
+  assert_eq(buffer.to_bytes(), b"\xff\x7f")
+  buffer.reset()
+  buffer.write_leb128(16384)
+  assert_eq(buffer.to_bytes(), b"\x80\x80\x01")
+  buffer.reset()
+  buffer.write_leb128(2097151)
+  assert_eq(buffer.to_bytes(), b"\xff\xff\x7f")
 }
