@@ -126,8 +126,10 @@ test "deflate data structure integrity" {
       // Test decompression with the full structure
       match @deflate.deflate_decompress(deflate_data) {
         @deflate.Ok(decompressed) => {
-          inspect(decompressed.to_string(), content=test_data)
-          inspect(decompressed.to_string() == test_data, content="true")
+          // Compare bytes directly since String<->Bytes conversion is not lossless
+          let original_bytes = test_data.to_bytes()
+          inspect(decompressed.length(), content=original_bytes.length().to_string())
+          inspect(decompressed == original_bytes, content="true")
         }
         @deflate.Err(error) => fail("Full deflate decompression failed: " + error)
       }
