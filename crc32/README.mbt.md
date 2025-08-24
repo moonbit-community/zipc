@@ -26,11 +26,7 @@ test "quick_start_example" {
   // Verify data integrity
   let received_data = b"Hello, World!"
   let received_checksum = @crc32.bytes(received_data)
-  if checksum == received_checksum {
-    inspect("Data integrity verified!", content="Data integrity verified!")
-  } else {
-    inspect("Data corruption detected!", content="Data corruption detected!")
-  }
+  assert_eq(checksum, received_checksum)
 }
 ```
 
@@ -98,11 +94,7 @@ test "example_integrity" {
   let received_crc = @crc32.bytes(received_data)
   
   // Verify integrity
-  if expected_crc == received_crc {
-    inspect("✅ Data integrity verified", content="✅ Data integrity verified")
-  } else {
-    inspect("❌ Data corruption detected!", content="❌ Data corruption detected!")
-  }
+  assert_eq(expected_crc, received_crc)
 }
 ```
 
