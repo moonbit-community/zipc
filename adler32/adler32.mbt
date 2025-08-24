@@ -69,31 +69,3 @@ pub fn adler32_bytes(data : Bytes) -> Adler32 {
 pub fn adler32_equal(a1 : Adler32, a2 : Adler32) -> Bool {
   a1 == a2
 }
-
-// Check Adler-32 with error message
-
-///|
-pub fn adler32_check(expect : Adler32, found : Adler32) -> Result[Unit, String] {
-  if adler32_equal(expect, found) {
-    Ok(())
-  } else {
-    Err(
-      "Adler-32 mismatch: expected \{adler32_to_hex(expect)}, found \{adler32_to_hex(found)}",
-    )
-  }
-}
-
-// Format Adler-32 as hex string
-
-///|
-pub fn adler32_to_hex(adler : Adler32) -> String {
-  let hex_chars = "0123456789abcdef"
-  let mut result = ""
-  let mut value = adler
-  for i = 0; i < 8; i = i + 1 {
-    let digit = value.land(0xfL).to_int()
-    result = hex_chars[digit].to_string() + result
-    value = value >> 4
-  }
-  "0x" + result
-}
