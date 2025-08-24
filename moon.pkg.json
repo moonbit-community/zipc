@@ -1,5 +1,6 @@
 {
   "import": [
-    "bobzhang/zipc/deflate"
+    "bobzhang/zipc/deflate",
+    "bobzhang/zipc/crc32"
   ]
 }

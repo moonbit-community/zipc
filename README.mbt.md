@@ -91,8 +91,8 @@ test {
 test {
   // CRC-32 checksums
   let data = "Hello, World!"
-  let crc = @deflate.crc32_string(data)
-  inspect(@deflate.crc32_to_hex(crc).length() > 0, content="true")
+  let crc = @crc32.crc32_string(data)
+  inspect(@crc32.crc32_to_hex(crc).length() > 0, content="true")
   
   // Adler-32 checksums  
   inspect(@deflate.adler32_equal(@deflate.adler32_string(""), 1), content="true")

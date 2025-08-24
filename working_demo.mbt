@@ -46,15 +46,15 @@ test "bytes_api_working_demo" {
   println("\n✅ Test 3: Performance comparison (CRC32)...")
   
   // String-based CRC32 (old way)
-  let string_crc = @deflate.crc32_string(text_content)
+  let string_crc = @crc32.crc32_string(text_content)
   println("   ✓ String-based CRC32: " + string_crc.to_string())
   
   // Bytes-based CRC32 (new way - 2-4x faster)
-  let bytes_crc = @deflate.crc32_bytes(binary_data)
+  let bytes_crc = @crc32.crc32_bytes(binary_data)
   println("   ✓ Bytes-based CRC32: " + bytes_crc.to_string())
   
   // Both should produce the same result
-  if @deflate.crc32_equal(string_crc, bytes_crc) {
+  if @crc32.crc32_equal(string_crc, bytes_crc) {
     println("   ✓ Both methods produce identical results")
     println("   ✓ But bytes method is 2-4x faster! 🚀")
   } else {
@@ -121,22 +121,22 @@ test "bytes_vs_string_performance_demo" {
   println("📊 Testing CRC32 performance on different data sizes:")
   
   // Test small data
-  let small_string_crc = @deflate.crc32_string(small_data)
-  let small_bytes_crc = @deflate.crc32_bytes(small_data.to_bytes())
+  let small_string_crc = @crc32.crc32_string(small_data)
+  let small_bytes_crc = @crc32.crc32_bytes(small_data.to_bytes())
   println("   Small (" + small_data.length().to_string() + " bytes): ✓ Results match: " + 
-          @deflate.crc32_equal(small_string_crc, small_bytes_crc).to_string())
+          @crc32.crc32_equal(small_string_crc, small_bytes_crc).to_string())
   
   // Test medium data
-  let medium_string_crc = @deflate.crc32_string(medium_data)
-  let medium_bytes_crc = @deflate.crc32_bytes(medium_data.to_bytes())
+  let medium_string_crc = @crc32.crc32_string(medium_data)
+  let medium_bytes_crc = @crc32.crc32_bytes(medium_data.to_bytes())
   println("   Medium (" + medium_data.length().to_string() + " bytes): ✓ Results match: " + 
-          @deflate.crc32_equal(medium_string_crc, medium_bytes_crc).to_string())
+          @crc32.crc32_equal(medium_string_crc, medium_bytes_crc).to_string())
   
   // Test large data
-  let large_string_crc = @deflate.crc32_string(large_data)
-  let large_bytes_crc = @deflate.crc32_bytes(large_data.to_bytes())
+  let large_string_crc = @crc32.crc32_string(large_data)
+  let large_bytes_crc = @crc32.crc32_bytes(large_data.to_bytes())
   println("   Large (" + large_data.length().to_string() + " bytes): ✓ Results match: " + 
-          @deflate.crc32_equal(large_string_crc, large_bytes_crc).to_string())
+          @crc32.crc32_equal(large_string_crc, large_bytes_crc).to_string())
   
   println("\n🚀 Performance Benefits:")
   println("   ✓ Bytes-based CRC32 is 2-4x faster")

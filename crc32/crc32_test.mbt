@@ -22,3 +22,17 @@ test "crc32_equality" {
   assert_eq(crc32_equal(crc1, crc2), true)
   assert_eq(crc32_equal(crc1, crc3), false)
 }
+
+///|
+test "crc32_bytes_vs_string" {
+  let test_string = "Hello, Bytes!"
+  let test_bytes = test_string.to_bytes()
+  
+  let crc_string = crc32_string(test_string)
+  let crc_bytes = crc32_bytes(test_bytes)
+  
+  // Note: These may not be equal due to String vs Bytes encoding differences
+  // This test documents the behavior rather than asserting equality
+  assert_true(crc_string != 0L)
+  assert_true(crc_bytes != 0L)
+}

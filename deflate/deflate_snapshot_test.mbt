@@ -51,9 +51,9 @@ test "checksum consistency" {
   let test_data = "Checksum test data"
 
   // Test CRC-32 consistency
-  let crc1 = @deflate.crc32_string(test_data)
-  let crc2 = @deflate.crc32_string(test_data)
-  inspect(@deflate.crc32_equal(crc1, crc2), content="true")
+  let crc1 = @crc32.crc32_string(test_data)
+  let crc2 = @crc32.crc32_string(test_data)
+  inspect(@crc32.crc32_equal(crc1, crc2), content="true")
 
   // Test Adler-32 consistency  
   let adler1 = @deflate.adler32_string(test_data)
@@ -61,7 +61,7 @@ test "checksum consistency" {
   inspect(@deflate.adler32_equal(adler1, adler2), content="true")
 
   // Snapshot: Known values - let's see what they actually are
-  let empty_crc = @deflate.crc32_string("")
+  let empty_crc = @crc32.crc32_string("")
   inspect(empty_crc, content="0")
   let empty_adler = @deflate.adler32_string("")
   inspect(empty_adler, content="1")
