@@ -16,7 +16,7 @@ pub enum HuffmanNode {
 // Build fixed literal/length Huffman tree
 
 ///|
-pub fn build_fixed_literal_tree() -> HuffmanNode {
+fn build_fixed_literal_tree() -> HuffmanNode {
   // Fixed Huffman codes for literals/lengths:
   // 0-143: 8 bits, codes 00110000-10111111 (0x30-0xBF)
   // 144-255: 9 bits, codes 110010000-111111111 (0x190-0x1FF)  
@@ -35,7 +35,7 @@ pub fn build_fixed_literal_tree() -> HuffmanNode {
 // Build fixed distance Huffman tree
 
 ///|
-pub fn build_fixed_distance_tree() -> HuffmanNode {
+fn build_fixed_distance_tree() -> HuffmanNode {
   // Fixed distance codes: all 5 bits, codes 00000-11111 (0x00-0x1F)
   let leaf_1 = HuffmanNode::Leaf(1) // Distance 1
   let leaf_2 = HuffmanNode::Leaf(2) // Distance 2
@@ -45,7 +45,7 @@ pub fn build_fixed_distance_tree() -> HuffmanNode {
 // Decode a symbol from bit stream using Huffman tree
 
 ///|
-pub fn decode_huffman_symbol(
+fn decode_huffman_symbol(
   tree : HuffmanNode,
   _bits : String,
   bit_offset : Int,
@@ -92,7 +92,7 @@ let _distance_extra_bits : Array[Int] = [
 // Get length from length code
 
 ///|
-pub fn get_length_from_code(code : Int, extra_bits : Int) -> Int {
+fn get_length_from_code(code : Int, extra_bits : Int) -> Int {
   if code >= 257 && code <= 285 {
     let index = code - 257
     if index < length_base.length() {
@@ -108,7 +108,7 @@ pub fn get_length_from_code(code : Int, extra_bits : Int) -> Int {
 // Get distance from distance code
 
 ///|
-pub fn get_distance_from_code(code : Int, extra_bits : Int) -> Int {
+fn get_distance_from_code(code : Int, extra_bits : Int) -> Int {
   if code < distance_base.length() {
     distance_base[code] + extra_bits
   } else {
@@ -119,7 +119,7 @@ pub fn get_distance_from_code(code : Int, extra_bits : Int) -> Int {
 // Decompress Fixed Huffman block (simplified implementation)
 
 ///|
-pub fn decompress_fixed_huffman_block(
+fn decompress_fixed_huffman_block(
   compressed : String,
   offset : Int,
 ) -> Result[(String, Int), String] {
@@ -146,7 +146,7 @@ pub fn decompress_fixed_huffman_block(
 // Bit manipulation utilities for Huffman decoding
 
 ///|
-pub fn read_bits(data : String, bit_offset : Int, num_bits : Int) -> (Int, Int) {
+fn read_bits(data : String, bit_offset : Int, num_bits : Int) -> (Int, Int) {
   // Read num_bits starting from bit_offset
   // Returns (value, new_bit_offset)
 
@@ -171,7 +171,7 @@ pub fn read_bits(data : String, bit_offset : Int, num_bits : Int) -> (Int, Int) 
 // Reverse bits in a value (for Huffman code lookup)
 
 ///|
-pub fn reverse_bits(value : Int, num_bits : Int) -> Int {
+fn reverse_bits(value : Int, num_bits : Int) -> Int {
   let mut result = 0
   let mut val = value
   for i = 0; i < num_bits; i = i + 1 {
@@ -184,7 +184,7 @@ pub fn reverse_bits(value : Int, num_bits : Int) -> Int {
 // Build canonical Huffman tree from code lengths
 
 ///|
-pub fn build_huffman_tree_from_lengths(
+fn build_huffman_tree_from_lengths(
   _code_lengths : Array[Int],
 ) -> HuffmanNode {
   // This would implement the canonical Huffman tree construction
@@ -197,7 +197,7 @@ pub fn build_huffman_tree_from_lengths(
 // Validate Huffman code lengths
 
 ///|
-pub fn validate_huffman_lengths(lengths : Array[Int]) -> Bool {
+fn validate_huffman_lengths(lengths : Array[Int]) -> Bool {
   // Check that the code lengths form a valid Huffman tree
   // (sum of 2^(-length) should equal 1)
 
@@ -218,24 +218,24 @@ pub fn validate_huffman_lengths(lengths : Array[Int]) -> Bool {
 // Constants for Fixed Huffman implementation
 
 ///|
-pub let max_literal_length_codes : Int = 288
+let max_literal_length_codes : Int = 288
 
 ///|
-pub let max_distance_codes : Int = 32
+let max_distance_codes : Int = 32
 
 ///|
-pub let max_code_length : Int = 15
+let max_code_length : Int = 15
 
 // Error messages
 
 ///|
-pub let huffman_invalid_symbol : String = "Invalid Huffman symbol"
+let huffman_invalid_symbol : String = "Invalid Huffman symbol"
 
 ///|
-pub let huffman_invalid_length : String = "Invalid length code"
+let huffman_invalid_length : String = "Invalid length code"
 
 ///|
-pub let huffman_invalid_distance : String = "Invalid distance code"
+let huffman_invalid_distance : String = "Invalid distance code"
 
 ///|
-pub let huffman_premature_end : String = "Premature end of Huffman data"
+let huffman_premature_end : String = "Premature end of Huffman data"

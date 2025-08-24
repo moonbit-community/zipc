@@ -33,6 +33,7 @@ fn btype_to_block_type(btype : Int) -> BlockType? {
   }
 }
 
+
 // Deflate compressed data structure
 
 ///|
@@ -61,7 +62,7 @@ pub fn deflate_compress(
 // Legacy string-based API for backward compatibility
 
 ///|
-pub fn deflate_compress_string(
+fn deflate_compress_string(
   data : String,
   level : Level,
 ) -> Result[DeflateData, String] {
@@ -90,7 +91,7 @@ pub fn deflate_decompress(deflate_data : DeflateData) -> Result[Bytes, String] {
 // Legacy string-based API for backward compatibility
 
 ///|
-pub fn deflate_decompress_string(
+fn deflate_decompress_string(
   deflate_data : DeflateData,
 ) -> Result[String, String] {
   match deflate_decompress(deflate_data) {
