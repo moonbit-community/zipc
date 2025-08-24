@@ -36,3 +36,30 @@ test "crc32_bytes_vs_string" {
   assert_true(crc_string != 0L)
   assert_true(crc_bytes != 0L)
 }
+
+test "crc32_bytes" {
+  // Below tests are verified, it should not be changed.
+  inspect(crc32_bytes("hello"), content="907060870")
+  inspect(crc32_bytes("hello world hgoho"), content="1710446219")
+  inspect(crc32_bytes("hello world hgoho xx"), content="1526806642")
+  inspect(crc32_bytes("hello world hgoho xx yy"), content="667264221")
+  inspect(crc32_bytes("hello world hgoho xx yy zz"), content="104365882")
+  inspect(crc32_bytes("hello world hgoho xx yy zz aa"), content="671492413")
+  inspect(crc32_bytes("hello world hgoho xx yy zz aa bb"), content="3001932438")
+  inspect(
+    crc32_bytes("hello world hgoho xx yy zz aa bb cc"),
+    content="26599636",
+  )
+  inspect(
+    crc32_bytes("hello world hgoho xx yy zz aa bb cc dd"),
+    content="3638140378",
+  )
+  inspect(
+    crc32_bytes("hello world hgoho xx yy zz aa bb cc dd ee"),
+    content="1503706078",
+  )
+  inspect(
+    crc32_bytes("hello world hgoho xx yy zz aa bb cc dd ee ff"),
+    content="109730630",
+  )
+}
