@@ -12,22 +12,22 @@ This package provides Huffman coding functionality for DEFLATE compression as sp
 ## Usage
 
 ```moonbit
-// Create fixed Huffman trees
-let literal_tree = @huffman.build_fixed_literal_tree()
-let distance_tree = @huffman.build_fixed_distance_tree()
+test "huffman_usage_example" {
+  // Create fixed Huffman trees
+  let literal_tree = @huffman.build_fixed_literal_tree()
+  let distance_tree = @huffman.build_fixed_distance_tree()
 
-// Decode symbols from bit stream
-match @huffman.decode_huffman_symbol(literal_tree, bit_data, offset) {
-  Some((symbol, new_offset)) => {
-    // Process decoded symbol
-    println("Decoded symbol: " + symbol.to_string())
-  }
-  None => println("Decoding failed")
+  // Test block type conversion
+  let uncompressed = @huffman.uncompressed_block_type()
+  let btype = @huffman.block_type_to_btype(uncompressed)
+  inspect(btype, content="0")
+
+  // Test length/distance code utilities
+  let length = @huffman.get_length_from_code(257, 0)
+  let distance = @huffman.get_distance_from_code(0, 0)
+  inspect(length, content="3")
+  inspect(distance, content="1")
 }
-
-// Get length/distance values from codes
-let length = @huffman.get_length_from_code(code, extra_bits)
-let distance = @huffman.get_distance_from_code(code, extra_bits)
 ```
 
 ## Block Types
