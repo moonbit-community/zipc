@@ -290,9 +290,14 @@ test "rfc1951_compliance_fixed_huffman" {
 
 test "rfc1951_length_distance_tables" {
   // Test that length and distance tables match RFC 1951
-  let reader = @huffman.new_bit_reader("test".to_bytes())
+  // Use a BitReader with all zero bits for predictable extra bit reading
+  let zero_data = @buffer.new()
+  for i = 0; i < 10; i = i + 1 {
+    zero_data.write_byte(b'\x00')
+  }
+  let reader = @huffman.new_bit_reader(zero_data.to_bytes())
   
-  // Test some key length codes
+  // Test some key length codes (with 0 extra bits, should return base values)
   let length_codes = [257, 258, 259, 265, 269, 273, 277, 281, 285]
   let expected_lengths = [3, 4, 5, 11, 19, 35, 67, 131, 258]
   
@@ -312,7 +317,7 @@ test "rfc1951_length_distance_tables" {
     }
   }
   
-  // Test some key distance codes
+  // Test some key distance codes (with 0 extra bits, should return base values)
   let distance_codes = [0, 1, 2, 4, 6, 8, 10, 12, 14]
   let expected_distances = [1, 2, 3, 5, 9, 17, 33, 65, 129]
   
