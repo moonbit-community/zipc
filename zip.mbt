@@ -125,7 +125,7 @@ pub fn stored_of_binary_string(s : String) -> @deflate.Result[File, String] {
     compressed_size: len,
     compressed_bytes: s,
     decompressed_size: len,
-    decompressed_crc32: @crc32.crc32_to_int64(crc),
+    decompressed_crc32: crc.0,
     version_made_by: 0x314, // UNIX, PKZIP 2.0
     version_needed_to_extract: 20, // PKZIP 2.0
     gp_flags: 0x800, // UTF-8 filename
@@ -157,7 +157,7 @@ pub fn stored_of_bytes(data : Bytes) -> @deflate.Result[File, String] {
     compressed_size: len,
     compressed_bytes: data_as_string,
     decompressed_size: len,
-    decompressed_crc32: @crc32.crc32_to_int64(crc),
+    decompressed_crc32: crc.0,
     version_made_by: 0x314, // UNIX, PKZIP 2.0
     version_needed_to_extract: 20, // PKZIP 2.0
     gp_flags: 0x800, // UTF-8 filename
@@ -191,7 +191,7 @@ pub fn deflate_of_binary_string(
         compressed_size: compressed_data.length(),
         compressed_bytes: compressed_data,
         decompressed_size: len,
-        decompressed_crc32: @crc32.crc32_to_int64(crc),
+        decompressed_crc32: crc.0,
         version_made_by: 0x314, // UNIX, ZIP 2.0
         version_needed_to_extract: 20, // ZIP 2.0
         gp_flags: 0x800, // UTF-8 filename
@@ -233,7 +233,7 @@ pub fn deflate_of_bytes(
         compressed_size: compressed_as_string.length(),
         compressed_bytes: compressed_as_string,
         decompressed_size: len,
-        decompressed_crc32: @crc32.crc32_to_int64(crc),
+        decompressed_crc32: crc.0,
         version_made_by: 0x314, // UNIX, ZIP 2.0
         version_needed_to_extract: 20, // ZIP 2.0
         gp_flags: 0x800, // UTF-8 filename

@@ -109,7 +109,7 @@ pub fn compare_string_vs_bytes_write_u32() -> String {
   let test_value = 0x12345678
   
   // String-based approach (current, inefficient)
-  let string_start = 0 // Placeholder for timing
+  let _string_start = 0 // Placeholder for timing
   let string_result = {
     let b0 = test_value & 0xff
     let b1 = (test_value >> 8) & 0xff
@@ -120,12 +120,12 @@ pub fn compare_string_vs_bytes_write_u32() -> String {
     b2.unsafe_to_char().to_string() +
     b3.unsafe_to_char().to_string()
   }
-  let string_end = 0 // Placeholder for timing
+  let _string_end = 0 // Placeholder for timing
   
   // Bytes-based approach (proposed, efficient)
-  let bytes_start = 0 // Placeholder for timing
+  let _bytes_start = 0 // Placeholder for timing
   let bytes_result = write_u32_le_bytes(test_value)
-  let bytes_end = 0 // Placeholder for timing
+  let _bytes_end = 0 // Placeholder for timing
   
   "String approach: " + string_result.length().to_string() + " chars, " +
   "Bytes approach: " + bytes_result.length().to_string() + " bytes\n" +

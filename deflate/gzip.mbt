@@ -13,7 +13,7 @@ pub struct GzipData {
 }
 
 // Gzip header flags
-let ftext_flag : Int = 0x01 // File is probably ASCII text
+let _ftext_flag : Int = 0x01 // File is probably ASCII text
 let fhcrc_flag : Int = 0x02 // Header CRC present
 let fextra_flag : Int = 0x04 // Extra fields present
 let fname_flag : Int = 0x08 // Original filename present
@@ -82,7 +82,7 @@ pub fn gzip_compress(
       }
       
       // Build trailer: CRC-32 (4 bytes) + original size (4 bytes), both little-endian
-      let trailer = write_u32_le(@crc32.crc32_to_int64(crc).to_int()) + write_u32_le(data.length())
+      let trailer = write_u32_le(crc.0.to_int()) + write_u32_le(data.length())
       
       // Combine header + deflate data + trailer
       let gzip_bytes = header + deflate_data.compressed_bytes.to_string() + trailer
@@ -190,7 +190,7 @@ pub fn gzip_decompress(gzip_data : GzipData) -> Result[String, String] {
   let expected_size = read_u32_le(data, deflate_end + 4)
   
   // Decompress deflate data
-  let deflate_data : DeflateData = {
+  let _deflate_data : DeflateData = {
     compressed_bytes: deflate_bytes.to_bytes(),
     original_size: expected_size,
     adler32_checksum: 0L, // Gzip uses CRC-32, not Adler-32
@@ -275,7 +275,7 @@ pub fn gzip_to_binary_string(compressed_data : String) -> Result[String, String]
   let gzip_data : GzipData = {
     compressed_bytes: compressed_data,
     original_size: 0, // Will be read from trailer
-    crc32_checksum: @crc32.crc32_from_int64(0L), // Will be read from trailer
+    crc32_checksum: @crc32.Crc32(0L), // Will be read from trailer
     filename: None,
     comment: None,
     modification_time: 0,

@@ -158,18 +158,7 @@ fn compress_uncompressed(data : Bytes) -> Result[DeflateData, String] {
   })
 }
 
-// Basic deflate compression (simplified)
 
-///|
-fn compress_basic_deflate(data : String) -> Result[DeflateData, String] {
-  // Try Fixed Huffman compression for small data, otherwise use uncompressed
-  if data.length() < 1000 {
-    compress_fixed_huffman(data)
-  } else {
-    // For larger data, fall back to uncompressed blocks for now
-    compress_uncompressed(data.to_bytes())
-  }
-}
 
 // Bytes-based basic deflate compression (no String conversion)
 ///|
@@ -510,7 +499,7 @@ pub fn deflate_of_bytes(
 ///|
 pub fn deflate_decompress_bytes(
   compressed_data : Bytes,
-  original_size : Int,
+  _original_size : Int,
 ) -> Result[Bytes, String] {
   // Use bytes-based decompression to avoid String conversion corruption
   match decompress_deflate_blocks_bytes(compressed_data) {

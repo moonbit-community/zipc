@@ -66,9 +66,9 @@ test "bytes_api_working_demo" {
   match stored_of_bytes(binary_data) {
     @deflate.Ok(file) => {
       match member_make("demo.txt", MemberKind::File(file)) {
-        @deflate.Ok(member) => {
+        @deflate.Ok(zip_member) => {
           let archive = empty()
-          let archive = add(member, archive)
+          let archive = add(zip_member, archive)
           
           println("   ✓ Archive created with 1 file")
           println("   ✓ Member count: " + member_count(archive).to_string())

@@ -43,7 +43,7 @@ pub fn build_fixed_distance_tree() -> HuffmanNode {
 ///|
 pub fn decode_huffman_symbol(
   tree : HuffmanNode,
-  bits : String,
+  _bits : String,
   bit_offset : Int
 ) -> (Int, Int)? {
   // This is a simplified implementation
@@ -51,7 +51,7 @@ pub fn decode_huffman_symbol(
   
   match tree {
     HuffmanNode::Leaf(symbol) => Some((symbol, bit_offset))
-    HuffmanNode::Branch(left, right) => {
+    HuffmanNode::Branch(_left, _right) => {
       // For now, just return a placeholder
       Some((65, bit_offset + 1)) // Return 'A' and advance 1 bit
     }
@@ -64,7 +64,7 @@ let length_base : Array[Int] = [
   35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258
 ]
 
-let length_extra_bits : Array[Int] = [
+let _length_extra_bits : Array[Int] = [
   0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
   3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0
 ]
@@ -75,7 +75,7 @@ let distance_base : Array[Int] = [
   257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577
 ]
 
-let distance_extra_bits : Array[Int] = [
+let _distance_extra_bits : Array[Int] = [
   0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6,
   7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13
 ]
@@ -173,7 +173,7 @@ pub fn reverse_bits(value : Int, num_bits : Int) -> Int {
 
 // Build canonical Huffman tree from code lengths
 ///|
-pub fn build_huffman_tree_from_lengths(code_lengths : Array[Int]) -> HuffmanNode {
+pub fn build_huffman_tree_from_lengths(_code_lengths : Array[Int]) -> HuffmanNode {
   // This would implement the canonical Huffman tree construction
   // algorithm from RFC 1951 Section 3.2.2
   
