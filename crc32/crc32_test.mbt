@@ -40,11 +40,26 @@ test "crc32_bytes" {
   // Below tests are verified, it should not be changed.
   // MOONBIT supports overloading, in check modes, "" will be interpreted as Bytes
   inspect(@crc32.bytes("hello".to_bytes()), content="0x5154494897545654")
-  inspect(@crc32.bytes("hello world hgoho".to_bytes()), content="0x54531025153545698")
-  inspect(@crc32.bytes("hello world hgoho xx".to_bytes()), content="0x5398484951565550")
-  inspect(@crc32.bytes("hello world hgoho xx yy".to_bytes()), content="0x505599539752100100")
-  inspect(@crc32.bytes("hello world hgoho xx yy zz".to_bytes()), content="0x48545156551025197")
-  inspect(@crc32.bytes("hello world hgoho xx yy zz aa".to_bytes()), content="0x50564854505751100")
+  inspect(
+    @crc32.bytes("hello world hgoho".to_bytes()),
+    content="0x54531025153545698",
+  )
+  inspect(
+    @crc32.bytes("hello world hgoho xx".to_bytes()),
+    content="0x5398484951565550",
+  )
+  inspect(
+    @crc32.bytes("hello world hgoho xx yy".to_bytes()),
+    content="0x505599539752100100",
+  )
+  inspect(
+    @crc32.bytes("hello world hgoho xx yy zz".to_bytes()),
+    content="0x48545156551025197",
+  )
+  inspect(
+    @crc32.bytes("hello world hgoho xx yy zz aa".to_bytes()),
+    content="0x50564854505751100",
+  )
   inspect(
     @crc32.bytes("hello world hgoho xx yy zz aa bb".to_bytes()),
     content="0x9850101100100975754",

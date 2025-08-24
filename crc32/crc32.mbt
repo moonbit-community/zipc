@@ -89,31 +89,6 @@ pub fn bytes(data : Bytes) -> Crc32 {
   finalize(updated)
 }
 
-// Deprecated: Use bytes() instead
-///|
-#deprecated("Use bytes() instead")
-pub fn crc32_bytes(data : Bytes) -> Crc32 {
-  bytes(data)
-}
-
-// Convert CRC-32 to Int64 for compatibility
-
-///|
-#deprecated("Use crc.0 instead")
-pub fn crc32_to_int64(crc : Crc32) -> Int64 {
-  crc.0
-}
-
-// Create CRC-32 from Int64 for compatibility
-
-///|
-#deprecated("Use Crc32(value) instead")
-pub fn crc32_from_int64(value : Int64) -> Crc32 {
-  Crc32(value)
-}
-
-// Format CRC-32 as hex string
-
 ///|
 pub impl Show for Crc32 with output(crc, logger) {
   let hex_chars = "0123456789abcdef"

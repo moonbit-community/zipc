@@ -2,14 +2,7 @@
 package "bobzhang/zipc/crc32"
 
 // Values
-#alias(crc32_bytes, deprecated)
 fn bytes(Bytes) -> Crc32
-
-#deprecated
-fn crc32_from_int64(Int64) -> Crc32
-
-#deprecated
-fn crc32_to_int64(Crc32) -> Int64
 
 // Errors
 

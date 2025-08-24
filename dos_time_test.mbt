@@ -40,7 +40,9 @@ test "dos time component extraction" {
 ///|
 test "dos time edge cases" {
   // Test DOS epoch (1980-01-01 00:00:00)
-  let (dos_time_epoch, dos_date_epoch) = @zipc.unix_to_dos_datetime(@zipc.dos_epoch)
+  let (dos_time_epoch, dos_date_epoch) = @zipc.unix_to_dos_datetime(
+    @zipc.dos_epoch,
+  )
   let (year, month, day, hour, minute, second) = @zipc.dos_datetime_components(
     dos_time_epoch, dos_date_epoch,
   )
@@ -53,7 +55,9 @@ test "dos time edge cases" {
 
   // Test before DOS epoch
   let before_epoch = @zipc.dos_epoch - 86400 // One day before
-  let (dos_time_before, dos_date_before) = @zipc.unix_to_dos_datetime(before_epoch)
+  let (dos_time_before, dos_date_before) = @zipc.unix_to_dos_datetime(
+    before_epoch,
+  )
 
   // Should clamp to minimum DOS date/time
   inspect(dos_time_before, content="0")
@@ -63,7 +67,9 @@ test "dos time edge cases" {
 ///|
 test "dos time boundary values" {
   // Test maximum DOS date (2107-12-31)
-  let (dos_time_max, dos_date_max) = @zipc.make_dos_datetime(2107, 12, 31, 23, 59, 58)
+  let (dos_time_max, dos_date_max) = @zipc.make_dos_datetime(
+    2107, 12, 31, 23, 59, 58,
+  )
   let (year, month, day, hour, minute, second) = @zipc.dos_datetime_components(
     dos_time_max, dos_date_max,
   )
@@ -106,7 +112,9 @@ test "dos time formatting" {
 test "dos time leap year handling" {
   // Test leap year (2020)
   let leap_year_time = @zipc.dos_datetime_to_unix(0, (40 << 9) | (2 << 5) | 29) // 2020-02-29 00:00:00
-  let (dos_time_leap, dos_date_leap) = @zipc.unix_to_dos_datetime(leap_year_time)
+  let (dos_time_leap, dos_date_leap) = @zipc.unix_to_dos_datetime(
+    leap_year_time,
+  )
   let (year, month, day, _, _, _) = @zipc.dos_datetime_components(
     dos_time_leap, dos_date_leap,
   )
@@ -117,7 +125,10 @@ test "dos time leap year handling" {
   inspect(day, content="29")
 
   // Test non-leap year (2021)
-  let non_leap_year_time = @zipc.dos_datetime_to_unix(0, (41 << 9) | (2 << 5) | 28) // 2021-02-28 00:00:00
+  let non_leap_year_time = @zipc.dos_datetime_to_unix(
+    0,
+    (41 << 9) | (2 << 5) | 28,
+  ) // 2021-02-28 00:00:00
   let (dos_time_non_leap, dos_date_non_leap) = @zipc.unix_to_dos_datetime(
     non_leap_year_time,
   )
@@ -134,8 +145,12 @@ test "dos time precision" {
   // Test 2-second precision of DOS time
   let (dos_time_odd, _) = @zipc.make_dos_datetime(2022, 1, 1, 12, 0, 31) // Odd second
   let (dos_time_even, _) = @zipc.make_dos_datetime(2022, 1, 1, 12, 0, 32) // Even second
-  let (_, _, _, _, _, second_odd) = @zipc.dos_datetime_components(dos_time_odd, 0)
-  let (_, _, _, _, _, second_even) = @zipc.dos_datetime_components(dos_time_even, 0)
+  let (_, _, _, _, _, second_odd) = @zipc.dos_datetime_components(
+    dos_time_odd, 0,
+  )
+  let (_, _, _, _, _, second_even) = @zipc.dos_datetime_components(
+    dos_time_even, 0,
+  )
 
   // Odd seconds should be rounded down
   inspect(second_odd, content="30")
@@ -188,7 +203,9 @@ test "dos time month calculations" {
   ]
   for i = 0; i < months.length(); i = i + 1 {
     let (month_num, _) = months[i]
-    let (dos_time, dos_date) = @zipc.make_dos_datetime(2022, month_num, 15, 12, 0, 0)
+    let (dos_time, dos_date) = @zipc.make_dos_datetime(
+      2022, month_num, 15, 12, 0, 0,
+    )
     let (year, month, day, _, _, _) = @zipc.dos_datetime_components(
       dos_time, dos_date,
     )

@@ -74,7 +74,7 @@ test "error handling basic" {
 ///|
 test "compression levels api" {
   let test_data = "Test data for levels"
-  
+
   // Verify test data is not empty
   inspect(test_data.length() > 0, content="true")
 

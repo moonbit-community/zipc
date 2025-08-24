@@ -32,7 +32,8 @@ test "gzip with filename and comment" {
   let filename = "test.txt"
   let comment = "This is a test file"
   let level = @deflate.level_fast()
-  match @deflate.gzip_compress(test_data, level, Some(filename), Some(comment), 0) {
+  match
+    @deflate.gzip_compress(test_data, level, Some(filename), Some(comment), 0) {
     @deflate.Ok(gzip_data) => {
       // Verify metadata
       inspect(gzip_data.filename, content="Some(\"test.txt\")")
@@ -69,7 +70,8 @@ test "gzip convenience functions" {
   let level = @deflate.level_best()
 
   // Test @deflate.gzip_of_binary_string
-  match @deflate.gzip_of_binary_string(test_data, level, Some("test.bin"), None) {
+  match
+    @deflate.gzip_of_binary_string(test_data, level, Some("test.bin"), None) {
     @deflate.Ok(compressed_bytes) => {
       // Should have gzip magic bytes
       inspect(compressed_bytes.length() > 18, content="true") // Minimum gzip size
