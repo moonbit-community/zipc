@@ -2,31 +2,11 @@
 package "bobzhang/zipc/deflate"
 
 // Values
-fn adler32_bytes(Bytes) -> Int64
-
-fn adler32_check(Int64, Int64) -> Result[Unit, String]
-
-fn adler32_equal(Int64, Int64) -> Bool
-
-fn adler32_string(String) -> Int64
-
-fn adler32_to_hex(Int64) -> String
-
 fn build_fixed_distance_tree() -> HuffmanNode
 
 fn build_fixed_literal_tree() -> HuffmanNode
 
 fn build_huffman_tree_from_lengths(Array[Int]) -> HuffmanNode
-
-fn crc32_bytes(Bytes) -> Int64
-
-fn crc32_check(Int64, Int64) -> Result[Unit, String]
-
-fn crc32_equal(Int64, Int64) -> Bool
-
-fn crc32_string(String) -> Int64
-
-fn crc32_to_hex(Int64) -> String
 
 fn decode_huffman_symbol(HuffmanNode, String, Int) -> (Int, Int)?
 
@@ -89,10 +69,6 @@ let max_code_length : Int
 let max_distance_codes : Int
 
 let max_literal_length_codes : Int
-
-fn new_adler32() -> Int64
-
-fn new_crc32() -> Int64
 
 fn[T, E] ok(T) -> Result[T, E]
 
@@ -161,10 +137,6 @@ pub struct ZlibData {
 }
 
 // Type aliases
-pub typealias Int64 as Adler32
-
-pub typealias Int64 as Crc32
-
 pub typealias Int as UInt16
 
 pub typealias Int64 as UInt32

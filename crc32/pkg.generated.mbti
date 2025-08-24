@@ -1,0 +1,25 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/zipc/crc32"
+
+// Values
+fn crc32_bytes(Bytes) -> Int64
+
+fn crc32_check(Int64, Int64) -> Result[Unit, String]
+
+fn crc32_equal(Int64, Int64) -> Bool
+
+fn crc32_string(String) -> Int64
+
+fn crc32_to_hex(Int64) -> String
+
+fn new_crc32() -> Int64
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub typealias Int64 as Crc32
+
+// Traits
+
