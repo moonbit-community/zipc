@@ -119,7 +119,8 @@ test "deflate data structure integrity" {
   match @deflate.deflate_compress(test_data.to_bytes(), level) {
     @deflate.Ok(deflate_data) => {
       // Verify the structure has the expected fields
-      inspect(deflate_data.original_size, content=test_data.length().to_string())
+      // Note: original_size should be the byte length, not string length
+      inspect(deflate_data.original_size, content=test_data.to_bytes().length().to_string())
       inspect(deflate_data.compressed_bytes.length() >= 0, content="true")
       
       // Test decompression with the full structure
