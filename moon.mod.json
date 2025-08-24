@@ -2,7 +2,7 @@
   "name": "bobzhang/zipc",
   "version": "0.1.0",
   "readme": "README.md",
-  "repository": "https://github.com/dbuenzli/zipc",
+  "repository": "https://github.com/moonbit-community/zipc",
   "license": "ISC",
   "keywords": ["zip", "compression", "deflate", "archive"],
   "alert-list": "+test_import_all",
