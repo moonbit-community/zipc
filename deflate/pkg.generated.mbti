@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/zipc/deflate"
 
+import(
+  "bobzhang/zipc/crc32"
+)
+
 // Values
 fn build_fixed_distance_tree() -> HuffmanNode
 
@@ -106,7 +110,7 @@ pub struct DeflateData {
 pub struct GzipData {
   compressed_bytes : String
   original_size : Int
-  crc32_checksum : Int64
+  crc32_checksum : @crc32.Crc32
   filename : String?
   comment : String?
   modification_time : Int

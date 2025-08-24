@@ -82,7 +82,7 @@ pub fn gzip_compress(
       }
       
       // Build trailer: CRC-32 (4 bytes) + original size (4 bytes), both little-endian
-      let trailer = write_u32_le(crc.to_int()) + write_u32_le(data.length())
+      let trailer = write_u32_le(@crc32.crc32_to_int64(crc).to_int()) + write_u32_le(data.length())
       
       // Combine header + deflate data + trailer
       let gzip_bytes = header + deflate_data.compressed_bytes.to_string() + trailer
@@ -208,7 +208,7 @@ pub fn gzip_decompress(gzip_data : GzipData) -> Result[String, String] {
       
       // Verify CRC-32 checksum
       let computed_crc = @crc32.crc32_bytes(decompressed.to_bytes())
-      if not(@crc32.crc32_equal(computed_crc, expected_crc)) {
+      if not(@crc32.crc32_equal(computed_crc, @crc32.crc32_from_int64(expected_crc))) {
         return Err("Gzip CRC-32 checksum mismatch")
       }
       
@@ -275,7 +275,7 @@ pub fn gzip_to_binary_string(compressed_data : String) -> Result[String, String]
   let gzip_data : GzipData = {
     compressed_bytes: compressed_data,
     original_size: 0, // Will be read from trailer
-    crc32_checksum: 0L, // Will be read from trailer
+    crc32_checksum: @crc32.crc32_from_int64(0L), // Will be read from trailer
     filename: None,
     comment: None,
     modification_time: 0,
