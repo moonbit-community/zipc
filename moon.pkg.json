@@ -2,6 +2,7 @@
   "import": [
     "bobzhang/zipc/deflate",
     "bobzhang/zipc/crc32",
-    "bobzhang/zipc/huffman"
+    "bobzhang/zipc/huffman",
+    "bobzhang/zipc/lz77"
   ]
 }
