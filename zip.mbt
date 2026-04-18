@@ -585,8 +585,8 @@ fn read_u16_le(data : String, offset : Int) -> Int {
   if offset + 1 >= data.length() {
     return 0
   }
-  let b0 = data[offset]
-  let b1 = data[offset + 1]
+  let b0 = data[offset].to_int()
+  let b1 = data[offset + 1].to_int()
   b0 + (b1 << 8)
 }
 
@@ -595,10 +595,10 @@ fn read_u32_le(data : String, offset : Int) -> Int {
   if offset + 3 >= data.length() {
     return 0
   }
-  let b0 = data[offset]
-  let b1 = data[offset + 1]
-  let b2 = data[offset + 2]
-  let b3 = data[offset + 3]
+  let b0 = data[offset].to_int()
+  let b1 = data[offset + 1].to_int()
+  let b2 = data[offset + 2].to_int()
+  let b3 = data[offset + 3].to_int()
   b0 + (b1 << 8) + (b2 << 16) + (b3 << 24)
 }
 

@@ -2,16 +2,17 @@
 // Implements the LZ77 sliding window compression scheme
 
 // LZ77 token representing either a literal byte or a length-distance pair
+
 ///|
 pub enum LZ77Token {
   Literal(Byte) // Single literal byte
   Reference(Int, Int) // (length, distance) back-reference
-} derive(Show, Eq, ToJson(style="flat"))
+} derive(Show, Eq, ToJson)
 
 // LZ77 compression parameters
 
 ///|
-pub struct LZ77Config {
+pub(all) struct LZ77Config {
   window_size : Int // Size of the sliding window (typically 32KB for DEFLATE)
   max_match_length : Int // Maximum match length (typically 258 for DEFLATE)
   min_match_length : Int // Minimum match length (typically 3 for DEFLATE)
