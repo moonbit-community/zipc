@@ -2,6 +2,7 @@
 // Tests cover basic functionality, edge cases, and performance
 
 // Test basic literal encoding/decoding
+
 ///|
 test "lz77_basic_literals" {
   let data = @buffer.new()
@@ -12,7 +13,8 @@ test "lz77_basic_literals" {
   inspect(
     decoded,
     content=(
-      #|b"\x48\x65\x6c\x6c\x6f"
+      #|b"Hello"
+
     ),
   )
   assert_eq(decoded, input)
