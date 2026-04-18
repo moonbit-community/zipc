@@ -1,0 +1,9 @@
+import {
+  "bobzhang/zipc/crc32",
+  "bobzhang/zipc/adler32",
+  "bobzhang/zipc/huffman",
+}
+
+options(
+  "is-main": false,
+)
