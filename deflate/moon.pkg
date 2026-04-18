@@ -2,6 +2,8 @@ import {
   "bobzhang/zipc/crc32",
   "bobzhang/zipc/adler32",
   "bobzhang/zipc/huffman",
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/encoding/utf8",
 }
 
 options(

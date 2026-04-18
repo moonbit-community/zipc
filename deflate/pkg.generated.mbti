@@ -1,55 +1,56 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/zipc/deflate"
 
-import(
-  "bobzhang/zipc/adler32"
-  "bobzhang/zipc/crc32"
-)
+import {
+  "bobzhang/zipc/adler32",
+  "bobzhang/zipc/crc32",
+  "moonbitlang/core/debug",
+}
 
 // Values
-fn deflate_compress(Bytes, Level) -> DeflateData
+pub fn deflate_compress(Bytes, Level) -> DeflateData
 
-fn deflate_decompress(DeflateData) -> Bytes raise
+pub fn deflate_decompress(DeflateData) -> Bytes raise
 
-fn deflate_decompress_bytes(Bytes, Int) -> Bytes raise
+pub fn deflate_decompress_bytes(Bytes, Int) -> Bytes raise
 
-fn deflate_decompress_raw_bytes(Bytes, Int) -> Bytes raise
+pub fn deflate_decompress_raw_bytes(Bytes, Int) -> Bytes raise
 
-fn deflate_of_bytes(Bytes, Level) -> Bytes
+pub fn deflate_of_bytes(Bytes, Level) -> Bytes
 
-fn[T, E] err(E) -> Result[T, E]
+pub fn[T, E] err(E) -> Result[T, E]
 
-fn gzip_compress_bytes(Bytes, Level, String?, String?, Int) -> GzipData
+pub fn gzip_compress_bytes(Bytes, Level, String?, String?, Int) -> GzipData
 
-fn gzip_decompress_bytes(GzipData) -> Bytes raise
+pub fn gzip_decompress_bytes(GzipData) -> Bytes raise
 
-fn gzip_extract_metadata_bytes(Bytes) -> Result[GzipData, String]
+pub fn gzip_extract_metadata_bytes(Bytes) -> Result[GzipData, String]
 
-fn gzip_of_bytes(Bytes, Level, String?, String?) -> Bytes
+pub fn gzip_of_bytes(Bytes, Level, String?, String?) -> Bytes
 
-fn gzip_to_bytes(Bytes) -> Bytes raise
+pub fn gzip_to_bytes(Bytes) -> Bytes raise
 
-fn level_best() -> Level
+pub fn level_best() -> Level
 
-fn level_default() -> Level
+pub fn level_default() -> Level
 
-fn level_fast() -> Level
+pub fn level_fast() -> Level
 
-fn level_none() -> Level
+pub fn level_none() -> Level
 
-fn[T, E] ok(T) -> Result[T, E]
+pub fn[T, E] ok(T) -> Result[T, E]
 
-fn[T, E] unwrap(Result[T, E]) -> T
+pub fn[T, E] unwrap(Result[T, E]) -> T
 
-fn[T, E] unwrap_or(Result[T, E], T) -> T
+pub fn[T, E] unwrap_or(Result[T, E], T) -> T
 
-fn zlib_compress_bytes(Bytes, Level) -> ZlibData
+pub fn zlib_compress_bytes(Bytes, Level) -> ZlibData
 
-fn zlib_decompress_bytes(ZlibData) -> Bytes raise
+pub fn zlib_decompress_bytes(ZlibData) -> Bytes raise
 
-fn zlib_of_bytes(Bytes, Level) -> Bytes
+pub fn zlib_of_bytes(Bytes, Level) -> Bytes
 
-fn zlib_to_bytes(Bytes, Int) -> Bytes raise
+pub fn zlib_to_bytes(Bytes, Int) -> Bytes raise
 
 // Errors
 
@@ -74,8 +75,7 @@ pub enum Level {
   Fast
   Default
   Best
-}
-impl Show for Level
+} derive(@debug.Debug)
 
 pub enum Result[T, E] {
   Ok(T)
@@ -89,7 +89,7 @@ pub struct ZlibData {
 }
 
 // Type aliases
-pub typealias Int64 as UInt32
+pub type UInt32 = Int64
 
 // Traits
 

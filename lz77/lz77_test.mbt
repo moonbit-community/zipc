@@ -14,7 +14,6 @@ test "lz77_basic_literals" {
     decoded,
     content=(
       #|b"Hello"
-
     ),
   )
   assert_eq(decoded, input)
@@ -31,7 +30,7 @@ test "lz77_simple_repetition" {
   let tokens = @lz77.encode_default(input)
   let decoded = @lz77.decode(tokens)
   assert_eq(decoded, input)
-  @json.inspect(tokens, content=[["Literal", 65], ["Reference", 3, 1]])
+  json_inspect(tokens, content=[["Literal", 65], ["Reference", 3, 1]])
 }
 
 // Test longer pattern matching
@@ -46,7 +45,7 @@ test "lz77_pattern_matching" {
   let tokens = @lz77.encode_default(input)
   let decoded = @lz77.decode(tokens)
   assert_eq(decoded, input)
-  @json.inspect(tokens, content=[
+  json_inspect(tokens, content=[
     ["Literal", 97],
     ["Literal", 98],
     ["Literal", 99],

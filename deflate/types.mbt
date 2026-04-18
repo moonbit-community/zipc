@@ -1,7 +1,7 @@
 // Core types for deflate module
 
 ///|
-pub typealias Int64 as UInt32
+pub type UInt32 = Int64
 
 // Compression levels
 
@@ -11,7 +11,7 @@ pub enum Level {
   Fast
   Default
   Best
-} derive(Show)
+} derive(Debug)
 
 // Helper functions to create Level values
 

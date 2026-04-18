@@ -1,6 +1,8 @@
 import {
+  "moonbitlang/core/buffer",
 }
 
 options(
   "is-main": false,
+  test_import: [ "moonbitlang/core/encoding/utf8" ],
 )

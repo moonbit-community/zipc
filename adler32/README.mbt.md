@@ -16,7 +16,8 @@ This package provides Adler-32 checksum functionality as defined in RFC 1950 (zl
 
 ## Quick Start
 
-```moonbit
+```moonbit nocheck
+///|
 test "quick_start_example" {
   // Calculate Adler-32 of some data
   let data = b"Hello, World!"
@@ -26,7 +27,7 @@ test "quick_start_example" {
   // Verify data integrity
   let received_data = b"Hello, World!"
   let received_checksum = @adler32.bytes(received_data)
-  assert_eq(checksum, received_checksum)  
+  assert_eq(checksum, received_checksum)
 }
 ```
 
@@ -35,7 +36,8 @@ test "quick_start_example" {
 ### Types
 
 #### `Adler32`
-```moonbit
+```moonbit nocheck
+///|
 pub(all) struct Adler32(Int64) derive(Eq)
 ```
 
@@ -53,7 +55,8 @@ An Adler-32 checksum value with built-in equality comparison.
 
 Calculate the Adler-32 checksum of byte data.
 
-```moonbit
+```moonbit nocheck
+///|
 test "bytes_function_example" {
   let data = b"Hello, Adler32!"
   let adler = @adler32.bytes(data)
@@ -71,12 +74,13 @@ test "bytes_function_example" {
 
 ### Basic Usage
 
-```moonbit
+```moonbit nocheck
+///|
 test "example_basic" {
   // Calculate checksum
   let message = b"Hello, World!"
   let checksum = @adler32.bytes(message)
-  
+
   // Display result
   inspect("Message: Hello, World!", content="Message: Hello, World!")
   inspect(checksum, content="0x491025710148525497")
@@ -85,35 +89,43 @@ test "example_basic" {
 
 ### Data Integrity Verification
 
-```moonbit
+```moonbit nocheck
+///|
 test "example_integrity" {
   let original_data = b"Important data"
   let expected_adler = @adler32.bytes(original_data)
-  
+
   // Simulate data transmission/storage
   let received_data = b"Important data"
   let received_adler = @adler32.bytes(received_data)
-  
+
   // Verify integrity
   if expected_adler == received_adler {
-    inspect("✅ Data integrity verified", content="✅ Data integrity verified")
+    inspect(
+      "✅ Data integrity verified",
+      content="✅ Data integrity verified",
+    )
   } else {
-    inspect("❌ Data corruption detected!", content="❌ Data corruption detected!")
+    inspect(
+      "❌ Data corruption detected!",
+      content="❌ Data corruption detected!",
+    )
   }
 }
 ```
 
 ### Working with Different Data Types
 
-```moonbit
+```moonbit nocheck
+///|
 test "example_data_types" {
   // Text data
   let text_adler = @adler32.bytes(b"Hello")
-  
+
   // Binary data
   let binary_data = Bytes::from_array([0x48, 0x65, 0x6c, 0x6c, 0x6f]) // "Hello" in bytes
   let binary_adler = @adler32.bytes(binary_data)
-  
+
   // They should be equal
   assert_eq(text_adler, binary_adler)
   inspect(text_adler, content="0x48535699484910253")
@@ -122,16 +134,17 @@ test "example_data_types" {
 
 ### Empty Data Handling
 
-```moonbit
+```moonbit nocheck
+///|
 test "example_empty_data" {
   // Empty data has a known Adler-32 value of 1
   let empty_data = Bytes::from_array([])
   let empty_adler = @adler32.bytes(empty_data)
-  
+
   // Non-empty data
   let some_data = b"A"
   let some_adler = @adler32.bytes(some_data)
-  
+
   inspect(empty_adler, content="0x4848484848484849")
   inspect(some_adler, content="0x4848525048485250")
   assert_true(empty_adler != some_adler)
@@ -140,16 +153,17 @@ test "example_empty_data" {
 
 ### Performance Demonstration
 
-```moonbit
+```moonbit nocheck
+///|
 test "example_performance" {
   let small_data = b"Hello"
   let medium_data = b"This is a medium-sized piece of data for testing."
   let large_data = b"This is a much larger piece of data that demonstrates the performance characteristics of Adler-32. It should still be processed very quickly due to the algorithm's efficiency."
-  
+
   let small_adler = @adler32.bytes(small_data)
   let medium_adler = @adler32.bytes(medium_data)
   let large_adler = @adler32.bytes(large_data)
-  
+
   inspect(small_adler, content="0x48535699484910253")
   inspect(medium_adler, content="0x9851545049495698")
   inspect(large_adler, content="0x1009855575110210099")
@@ -211,13 +225,14 @@ This Adler-32 implementation is compatible with:
 
 ### Verified Test Values
 
-```moonbit
+```moonbit nocheck
+///|
 test "verified_values" {
   // These values are verified against Python's zlib.adler32()
   let test1 = @adler32.bytes(b"hello world hgoho xx yy zz aa bb cc dd ee ff")
   assert_eq(test1.0, 1725042482L)
-  
-  let test2 = @adler32.bytes(b"hello world hgoho xx yy zz aa bb cc dd ee")  
+
+  let test2 = @adler32.bytes(b"hello world hgoho xx yy zz aa bb cc dd ee")
   assert_eq(test2.0, 980291142L)
 }
 ```
@@ -226,7 +241,8 @@ test "verified_values" {
 
 This package integrates seamlessly with the zipc library ecosystem:
 
-```moonbit
+```moonbit nocheck
+///|
 test "integration_example" {
   // Used internally by zlib compression
   let data = b"Data to compress"

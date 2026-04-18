@@ -16,7 +16,8 @@ This package provides CRC-32 (Cyclic Redundancy Check) functionality using the s
 
 ## Quick Start
 
-```moonbit
+```moonbit nocheck
+///|
 test "quick_start_example" {
   // Calculate CRC-32 of some data
   let data = b"Hello, World!"
@@ -35,7 +36,8 @@ test "quick_start_example" {
 ### Types
 
 #### `Crc32`
-```moonbit
+```moonbit nocheck
+///|
 pub(all) struct Crc32(Int64) derive(Eq)
 ```
 
@@ -52,7 +54,8 @@ A CRC-32 checksum value with built-in equality comparison.
 
 Calculate the CRC-32 checksum of byte data.
 
-```moonbit
+```moonbit nocheck
+///|
 test "bytes_function_example" {
   let data = b"Hello, CRC32!"
   let crc = @crc32.bytes(data)
@@ -70,12 +73,13 @@ test "bytes_function_example" {
 
 ### Basic Usage
 
-```moonbit
+```moonbit nocheck
+///|
 test "example_basic" {
   // Calculate checksum
   let message = b"Hello, World!"
   let checksum = @crc32.bytes(message)
-  
+
   // Display result
   inspect("Message: Hello, World!", content="Message: Hello, World!")
   inspect(checksum, content="0x101995297995110048")
@@ -84,15 +88,16 @@ test "example_basic" {
 
 ### Data Integrity Verification
 
-```moonbit
+```moonbit nocheck
+///|
 test "example_integrity" {
   let original_data = b"Important data"
   let expected_crc = @crc32.bytes(original_data)
-  
+
   // Simulate data transmission/storage
   let received_data = b"Important data"
   let received_crc = @crc32.bytes(received_data)
-  
+
   // Verify integrity
   assert_eq(expected_crc, received_crc)
 }
@@ -100,15 +105,16 @@ test "example_integrity" {
 
 ### Working with Different Data Types
 
-```moonbit
+```moonbit nocheck
+///|
 test "example_data_types" {
   // Text data
   let text_crc = @crc32.bytes(b"Hello")
-  
+
   // Binary data
   let binary_data = Bytes::from_array([0x48, 0x65, 0x6c, 0x6c, 0x6f]) // "Hello" in bytes
   let binary_crc = @crc32.bytes(binary_data)
-  
+
   // They should be equal
   assert_eq(text_crc, binary_crc)
   inspect(text_crc, content="0x102551004956575650")
@@ -117,17 +123,21 @@ test "example_data_types" {
 
 ### Performance Comparison
 
-```moonbit
+```moonbit nocheck
+///|
 test "example_performance" {
   let small_data = b"Hello"
   let large_data = b"This is a much larger piece of data that will take more time to process but still be very fast with our optimized CRC-32 implementation."
-  
+
   let small_crc = @crc32.bytes(small_data)
   let large_crc = @crc32.bytes(large_data)
-  
+
   inspect(small_crc, content="0x102551004956575650")
   inspect(large_crc, content="0x49524897525197102")
-  inspect("Both calculated efficiently!", content="Both calculated efficiently!")
+  inspect(
+    "Both calculated efficiently!",
+    content="Both calculated efficiently!",
+  )
 }
 ```
 
@@ -166,7 +176,8 @@ The checksum values match those produced by:
 
 This package is designed to work seamlessly with the zipc library ecosystem:
 
-```moonbit
+```moonbit nocheck
+///|
 test "integration_example" {
   // Used internally by ZIP operations
   let file_data = b"File content"

@@ -7,7 +7,7 @@
 pub enum LZ77Token {
   Literal(Byte) // Single literal byte
   Reference(Int, Int) // (length, distance) back-reference
-} derive(Show, Eq, ToJson)
+} derive(Debug, Eq, ToJson)
 
 // LZ77 compression parameters
 
@@ -17,7 +17,7 @@ pub(all) struct LZ77Config {
   max_match_length : Int // Maximum match length (typically 258 for DEFLATE)
   min_match_length : Int // Minimum match length (typically 3 for DEFLATE)
   max_distance : Int // Maximum back-reference distance
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 // Default LZ77 configuration compatible with DEFLATE
 
@@ -40,15 +40,15 @@ struct EncoderState {
   hash_table : Array[Int] // Hash table for fast string matching
   hash_head : Array[Int] // Hash chain heads
   hash_prev : Array[Int] // Hash chain previous pointers
-} derive(Show)
+} derive(Debug)
 
 // LZ77 decoder state
 
 ///|
 struct DecoderState {
   mut position : Int // Current position in output
-  output_buffer : @buffer.T // Output buffer for decoded data
-} derive(Show)
+  output_buffer : @buffer.Buffer // Output buffer for decoded data
+} derive(Debug)
 
 // Hash table size (power of 2 for efficient modulo)
 
