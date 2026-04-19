@@ -7,16 +7,16 @@ pub enum Compression {
   Stored
   Deflate
   Other(Int)
-} derive(Show)
+} derive(Debug)
 
 ///|
-pub typealias String as Fpath
+pub type Fpath = String
 
 ///|
-pub typealias Int as Mode
+pub type Mode = Int
 
 ///|
-pub typealias Int as Ptime
+pub type Ptime = Int
 
 ///|
 pub struct File {
@@ -73,12 +73,12 @@ pub fn empty() -> Archive {
 
 ///|
 pub fn is_empty(archive : Archive) -> Bool {
-  archive.members.size() == 0
+  archive.members.length() == 0
 }
 
 ///|
 pub fn member_count(archive : Archive) -> Int {
-  archive.members.size()
+  archive.members.length()
 }
 
 ///|
@@ -105,6 +105,22 @@ pub fn remove(path : Fpath, archive : Archive) -> Archive {
   { members: new_members }
 }
 
+
+///|
+/// Convert a "binary string" (a MoonBit string where each char's low 8 bits
+/// represent one raw byte, as produced by `unsafe_to_char()` in this file)
+/// into Bytes. **This is NOT UTF-8 encoding** — using `@utf8.encode` would
+/// expand chars with code point >= 0x80 to two-byte UTF-8 sequences,
+/// corrupting the byte stream (flagged by Devin Review on zipc#6).
+fn binary_string_to_bytes(value : String) -> Bytes {
+  let len = value.length()
+  let arr : Array[Byte] = Array::make(len, (0).to_byte())
+  for i = 0; i < len; i = i + 1 {
+    arr[i] = (value.code_unit_at(i).to_int() & 0xff).to_byte()
+  }
+  Bytes::from_array(arr)
+}
+
 // File operations
 
 ///|
@@ -119,7 +135,7 @@ pub fn stored_of_binary_string(s : String) -> File raise {
   }
 
   // Calculate actual CRC-32 checksum
-  let crc = @crc32.bytes(s.to_bytes())
+  let crc = @crc32.bytes(binary_string_to_bytes(s))
   {
     compression: Compression::Stored,
     start: 0,
@@ -151,7 +167,7 @@ pub fn stored_of_bytes(data : Bytes) -> File raise {
 
   // Calculate CRC-32 checksum on the string that will actually be stored
   // This ensures consistency between storage and extraction
-  let crc = @crc32.bytes(data_as_string.to_bytes())
+  let crc = @crc32.bytes(binary_string_to_bytes(data_as_string))
   {
     compression: Compression::Stored,
     start: 0,
@@ -182,9 +198,9 @@ pub fn deflate_of_binary_string(
   }
 
   // Compress using deflate
-  let compressed_data = @deflate.deflate_of_bytes(s.to_bytes(), level)
+  let compressed_data = @deflate.deflate_of_bytes(binary_string_to_bytes(s), level)
   // Calculate CRC-32 of original data
-  let crc = @crc32.bytes(s.to_bytes())
+  let crc = @crc32.bytes(binary_string_to_bytes(s))
   @deflate.ok({
     compression: Compression::Deflate,
     start: 0,
@@ -222,7 +238,7 @@ pub fn deflate_of_bytes(
 
   // Calculate CRC-32 on the string representation that will be stored/extracted
   // This ensures consistency between storage and extraction
-  let crc = @crc32.bytes(data_as_string.to_bytes())
+  let crc = @crc32.bytes(binary_string_to_bytes(data_as_string))
   @deflate.ok({
     compression: Compression::Deflate,
     start: 0,
@@ -267,15 +283,12 @@ pub fn file_can_extract(file : File) -> Bool {
 
 ///|
 pub fn file_to_binary_string(file : File) -> @deflate.Result[String, String] {
-  if not(file_can_extract(file)) {
+  if !(file_can_extract(file)) {
     return @deflate.err("Unsupported compression format")
   }
   match file.compression {
     Compression::Stored => {
-      let data = file.compressed_bytes.substring(
-        start=file.start,
-        end=file.start + file.compressed_size,
-      )
+      let data = file.compressed_bytes[file.start:file.start + file.compressed_size].to_string()
       @deflate.ok(data)
     }
     Compression::Deflate =>
@@ -292,13 +305,13 @@ pub fn file_to_binary_string(file : File) -> @deflate.Result[String, String] {
 
 ///|
 pub fn file_to_bytes(file : File) -> Bytes raise {
-  if not(file_can_extract(file)) {
+  if !(file_can_extract(file)) {
     fail("Unsupported compression format")
   }
   match file.compression {
     Compression::Stored => {
       // Convert string to bytes first, then slice
-      let compressed_bytes = file.compressed_bytes.to_bytes()
+      let compressed_bytes = binary_string_to_bytes(file.compressed_bytes)
       let data_view = compressed_bytes[file.start:file.start +
         file.compressed_size]
       // Convert view back to bytes
@@ -306,7 +319,7 @@ pub fn file_to_bytes(file : File) -> Bytes raise {
     }
     Compression::Deflate => {
       // Use bytes-based decompression for better performance
-      let compressed_bytes = file.compressed_bytes.to_bytes()
+      let compressed_bytes = binary_string_to_bytes(file.compressed_bytes)
       @deflate.deflate_decompress_bytes(
         compressed_bytes,
         file.decompressed_size,
@@ -403,7 +416,7 @@ pub fn to_bytes(archive : Archive) -> @deflate.Result[Bytes, String] {
   // Use the existing string-based implementation and convert to bytes
   // In a full implementation, this would work directly with bytes throughout
   match to_binary_string(archive) {
-    @deflate.Ok(zip_string) => @deflate.ok(zip_string.to_bytes())
+    @deflate.Ok(zip_string) => @deflate.ok(binary_string_to_bytes(zip_string))
     @deflate.Err(error) => @deflate.err(error)
   }
 }
@@ -682,7 +695,7 @@ pub fn of_binary_string(data : String) -> @deflate.Result[Archive, String] {
   }
 
   // Check for ZIP magic bytes
-  if not(string_has_magic(data)) {
+  if !(string_has_magic(data)) {
     return @deflate.err("Not a valid ZIP archive - missing magic bytes")
   }
 
@@ -777,10 +790,7 @@ fn parse_central_directory_entry(
   if filename_start + filename_length > data.length() {
     return @deflate.err("Filename extends beyond file")
   }
-  let filename = data.substring(
-    start=filename_start,
-    end=filename_start + filename_length,
-  )
+  let filename = data[filename_start:filename_start + filename_length].to_string()
 
   // Determine compression type
   let compression = match compression_method {
@@ -860,9 +870,11 @@ fn read_file_data(
   if file_data_offset + compressed_size > data.length() {
     return @deflate.err("File data extends beyond archive")
   }
-  let file_data = data.substring(
-    start=file_data_offset,
-    end=file_data_offset + compressed_size,
-  )
+  let file_data = data[file_data_offset:file_data_offset + compressed_size].to_string()
   @deflate.ok(file_data)
+}
+
+///|
+pub impl Show for Compression with output(self, logger) {
+  logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
 }

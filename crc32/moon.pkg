@@ -1,0 +1,3 @@
+options(
+  test_import: [ "moonbitlang/core/encoding/utf8" ],
+)

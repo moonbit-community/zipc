@@ -11,7 +11,7 @@ test "adler32_empty_bytes" {
 
 ///|
 test "adler32_hello_world_bytes" {
-  let test_bytes = "Hello, World!".to_bytes()
+  let test_bytes = b"Hello, World!"
   let adler = @adler32.bytes(test_bytes)
   let empty_adler = @adler32.bytes(Bytes::from_array([]))
   // Test that we get some Adler value different from empty
@@ -21,10 +21,10 @@ test "adler32_hello_world_bytes" {
 ///|
 test "adler32_equality_modern" {
   let test_data = "test data"
-  let test_bytes = test_data.to_bytes()
+  let test_bytes = @utf8.encode(test_data)
   let adler1 = @adler32.bytes(test_bytes)
   let adler2 = @adler32.bytes(test_bytes)
-  let different_adler = @adler32.bytes("different".to_bytes())
+  let different_adler = @adler32.bytes(b"different")
 
   // Test struct equality (modern way)
   assert_eq(adler1 == adler2, true)
@@ -34,7 +34,7 @@ test "adler32_equality_modern" {
 
 ///|
 test "adler32_show_implementation" {
-  let test_bytes = "Hello, Adler32!".to_bytes()
+  let test_bytes = b"Hello, Adler32!"
   let adler = @adler32.bytes(test_bytes)
 
   // Test Show implementation works (should display hex format)
@@ -49,19 +49,19 @@ test "adler32_show_implementation" {
 ///|
 test "adler32_various_data_sizes" {
   // Test small data
-  let small = @adler32.bytes("a".to_bytes())
+  let small = @adler32.bytes(b"a")
   let empty = @adler32.bytes(Bytes::from_array([]))
   assert_true(small != empty)
 
   // Test medium data
   let medium = @adler32.bytes(
-    "Hello, this is a medium sized test string!".to_bytes(),
+    b"Hello, this is a medium sized test string!",
   )
   assert_true(medium != small)
   assert_true(medium != empty)
 
   // Test large data
-  let large_data = "This is a much larger test string that should produce a different Adler-32 checksum than the smaller ones. It contains multiple sentences and should thoroughly test the checksum algorithm.".to_bytes()
+  let large_data = b"This is a much larger test string that should produce a different Adler-32 checksum than the smaller ones. It contains multiple sentences and should thoroughly test the checksum algorithm."
   let large = @adler32.bytes(large_data)
   assert_true(large != medium)
   assert_true(large != small)
@@ -85,15 +85,15 @@ test "adler32_binary_data" {
 test "bytes" {
   // Verified test against Python's zlib.adler32()
   inspect(
-    @adler32.bytes("hello world hgoho xx yy zz aa bb cc dd ee ff"),
+    @adler32.bytes(b"hello world hgoho xx yy zz aa bb cc dd ee ff"),
     content="0x545410050481025150",
   )
   inspect(
-    @adler32.bytes("hello world hgoho xx yy zz aa bb cc dd ee ff").0,
+    @adler32.bytes(b"hello world hgoho xx yy zz aa bb cc dd ee ff").0,
     content="1725042482",
   )
   inspect(
-    @adler32.bytes("hello world hgoho xx yy zz aa bb cc dd ee").0,
+    @adler32.bytes(b"hello world hgoho xx yy zz aa bb cc dd ee").0,
     content="980291142",
   )
 }

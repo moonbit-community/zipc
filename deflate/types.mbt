@@ -1,7 +1,7 @@
 // Core types for deflate module
 
 ///|
-pub typealias Int64 as UInt32
+pub type UInt32 = Int64
 
 // Compression levels
 
@@ -11,7 +11,7 @@ pub enum Level {
   Fast
   Default
   Best
-} derive(Show)
+} derive(Debug)
 
 // Helper functions to create Level values
 
@@ -75,4 +75,9 @@ pub fn[T, E] unwrap_or(result : Result[T, E], default : T) -> T {
     Ok(value) => value
     Err(_) => default
   }
+}
+
+///|
+pub impl Show for Level with output(self, logger) {
+  logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
 }

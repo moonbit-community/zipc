@@ -6,7 +6,7 @@
 pub enum HuffmanNode {
   Leaf(Int) // Symbol value (0-285 for literals/lengths, 0-29 for distances)
   Branch(HuffmanNode, HuffmanNode) // Left and right children
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 // Symbol with code information for tree building
 
@@ -24,7 +24,7 @@ pub enum BlockType {
   Uncompressed // No compression (BTYPE = 00)
   FixedHuffman // Compressed with fixed Huffman codes (BTYPE = 01)  
   DynamicHuffman // Compressed with dynamic Huffman codes (BTYPE = 10)
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 // Convert block type to BTYPE value
 
@@ -106,3 +106,13 @@ let distance_extra_bits : Array[Int] = [
 // let code_length_order : Array[Int] = [
 //   16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
 // ]
+
+///|
+pub impl Show for HuffmanNode with output(self, logger) {
+  logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
+}
+
+///|
+pub impl Show for BlockType with output(self, logger) {
+  logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
+}

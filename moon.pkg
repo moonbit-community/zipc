@@ -3,4 +3,7 @@ import {
   "bobzhang/zipc/crc32",
   "bobzhang/zipc/huffman",
   "bobzhang/zipc/lz77",
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/encoding/utf8",
 }
