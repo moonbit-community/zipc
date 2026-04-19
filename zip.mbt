@@ -105,6 +105,22 @@ pub fn remove(path : Fpath, archive : Archive) -> Archive {
   { members: new_members }
 }
 
+
+///|
+/// Convert a "binary string" (a MoonBit string where each char's low 8 bits
+/// represent one raw byte, as produced by `unsafe_to_char()` in this file)
+/// into Bytes. **This is NOT UTF-8 encoding** — using `@utf8.encode` would
+/// expand chars with code point >= 0x80 to two-byte UTF-8 sequences,
+/// corrupting the byte stream (flagged by Devin Review on zipc#6).
+fn binary_string_to_bytes(value : String) -> Bytes {
+  let len = value.length()
+  let arr : Array[Byte] = Array::make(len, (0).to_byte())
+  for i = 0; i < len; i = i + 1 {
+    arr[i] = (value.code_unit_at(i).to_int() & 0xff).to_byte()
+  }
+  Bytes::from_array(arr)
+}
+
 // File operations
 
 ///|
@@ -119,7 +135,7 @@ pub fn stored_of_binary_string(s : String) -> File raise {
   }
 
   // Calculate actual CRC-32 checksum
-  let crc = @crc32.bytes(@utf8.encode(s))
+  let crc = @crc32.bytes(binary_string_to_bytes(s))
   {
     compression: Compression::Stored,
     start: 0,
@@ -151,7 +167,7 @@ pub fn stored_of_bytes(data : Bytes) -> File raise {
 
   // Calculate CRC-32 checksum on the string that will actually be stored
   // This ensures consistency between storage and extraction
-  let crc = @crc32.bytes(@utf8.encode(data_as_string))
+  let crc = @crc32.bytes(binary_string_to_bytes(data_as_string))
   {
     compression: Compression::Stored,
     start: 0,
@@ -182,9 +198,9 @@ pub fn deflate_of_binary_string(
   }
 
   // Compress using deflate
-  let compressed_data = @deflate.deflate_of_bytes(@utf8.encode(s), level)
+  let compressed_data = @deflate.deflate_of_bytes(binary_string_to_bytes(s), level)
   // Calculate CRC-32 of original data
-  let crc = @crc32.bytes(@utf8.encode(s))
+  let crc = @crc32.bytes(binary_string_to_bytes(s))
   @deflate.ok({
     compression: Compression::Deflate,
     start: 0,
@@ -222,7 +238,7 @@ pub fn deflate_of_bytes(
 
   // Calculate CRC-32 on the string representation that will be stored/extracted
   // This ensures consistency between storage and extraction
-  let crc = @crc32.bytes(@utf8.encode(data_as_string))
+  let crc = @crc32.bytes(binary_string_to_bytes(data_as_string))
   @deflate.ok({
     compression: Compression::Deflate,
     start: 0,
@@ -295,7 +311,7 @@ pub fn file_to_bytes(file : File) -> Bytes raise {
   match file.compression {
     Compression::Stored => {
       // Convert string to bytes first, then slice
-      let compressed_bytes = @utf8.encode(file.compressed_bytes)
+      let compressed_bytes = binary_string_to_bytes(file.compressed_bytes)
       let data_view = compressed_bytes[file.start:file.start +
         file.compressed_size]
       // Convert view back to bytes
@@ -303,7 +319,7 @@ pub fn file_to_bytes(file : File) -> Bytes raise {
     }
     Compression::Deflate => {
       // Use bytes-based decompression for better performance
-      let compressed_bytes = @utf8.encode(file.compressed_bytes)
+      let compressed_bytes = binary_string_to_bytes(file.compressed_bytes)
       @deflate.deflate_decompress_bytes(
         compressed_bytes,
         file.decompressed_size,
@@ -400,7 +416,7 @@ pub fn to_bytes(archive : Archive) -> @deflate.Result[Bytes, String] {
   // Use the existing string-based implementation and convert to bytes
   // In a full implementation, this would work directly with bytes throughout
   match to_binary_string(archive) {
-    @deflate.Ok(zip_string) => @deflate.ok(@utf8.encode(zip_string))
+    @deflate.Ok(zip_string) => @deflate.ok(binary_string_to_bytes(zip_string))
     @deflate.Err(error) => @deflate.err(error)
   }
 }
