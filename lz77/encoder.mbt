@@ -383,8 +383,8 @@ pub fn encode_to_bytes(data : Bytes, config : LZ77Config) -> Bytes { // First, e
       LZ77Token::Reference(length, distance) => {
         // Reference format: marker (0x01) + varint(length) + varint(distance)
         output.write_byte(b'\x01')
-        output.write_leb128(length)
-        output.write_leb128(distance)
+        output.write_uleb128(length)
+        output.write_uleb128(distance)
       }
     }
   }
@@ -418,7 +418,7 @@ pub fn encode_to_bytes(data : Bytes, config : LZ77Config) -> Bytes { // First, e
 /// - 2 bytes for values 128-16383
 /// - 3 bytes for values 16384-2097151
 /// - etc.
-fn @buffer.T::write_leb128(buffer : Self, value : Int) -> Unit {
+fn @buffer.Buffer::write_uleb128(buffer : Self, value : Int) -> Unit {
   //TODO(upstream): upstream and change T to Buffer  
   if value < 128 {
     // Single byte: no continuation bit (0xxxxxxx)
@@ -426,31 +426,31 @@ fn @buffer.T::write_leb128(buffer : Self, value : Int) -> Unit {
   } else {
     // Multiple bytes: set continuation bit (1xxxxxxx) and recurse
     buffer.write_byte((value % 128 + 128).to_byte())
-    buffer.write_leb128(value / 128)
+    buffer.write_uleb128(value / 128)
   }
 }
 
 ///|
-test "write_leb128" {
+test "write_uleb128" {
   let buffer = @buffer.new()
-  buffer.write_leb128(0)
+  buffer.write_uleb128(0)
   assert_eq(buffer.to_bytes(), b"\x00")
   buffer.reset()
-  buffer.write_leb128(127)
+  buffer.write_uleb128(127)
   assert_eq(buffer.to_bytes(), b"\x7f")
   buffer.reset()
-  buffer.write_leb128(128)
+  buffer.write_uleb128(128)
   assert_eq(buffer.to_bytes(), b"\x80\x01")
   buffer.reset()
-  buffer.write_leb128(129)
+  buffer.write_uleb128(129)
   assert_eq(buffer.to_bytes(), b"\x81\x01")
   buffer.reset()
-  buffer.write_leb128(16383)
+  buffer.write_uleb128(16383)
   assert_eq(buffer.to_bytes(), b"\xff\x7f")
   buffer.reset()
-  buffer.write_leb128(16384)
+  buffer.write_uleb128(16384)
   assert_eq(buffer.to_bytes(), b"\x80\x80\x01")
   buffer.reset()
-  buffer.write_leb128(2097151)
+  buffer.write_uleb128(2097151)
   assert_eq(buffer.to_bytes(), b"\xff\xff\x7f")
 }

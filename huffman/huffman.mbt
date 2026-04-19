@@ -6,7 +6,7 @@
 pub struct BitReader {
   data : Bytes
   mut bit_offset : Int // Current bit position
-} derive(Show)
+} derive(Debug)
 
 // Create a new bit reader
 
@@ -18,7 +18,7 @@ pub fn new_bit_reader(data : Bytes) -> BitReader {
 // Read bits from the stream (LSB first, as per RFC 1951)
 
 ///|
-pub fn read_bits(self : BitReader, num_bits : Int) -> Int {
+pub fn BitReader::read_bits(self : BitReader, num_bits : Int) -> Int {
   if num_bits <= 0 || num_bits > 32 {
     return 0
   }
@@ -44,7 +44,7 @@ pub fn read_bits(self : BitReader, num_bits : Int) -> Int {
 // Check if we're at the end of data
 
 ///|
-pub fn is_at_end(self : BitReader) -> Bool {
+pub fn BitReader::is_at_end(self : BitReader) -> Bool {
   self.bit_offset >= self.data.length() * 8
 }
 
@@ -360,7 +360,7 @@ pub fn decompress_fixed_huffman_block_bytes(
   let output = @buffer.new()
   let mut symbols_decoded = 0
   let max_symbols = 1000 // Prevent infinite loops
-  while not(reader.is_at_end()) && symbols_decoded < max_symbols {
+  while !reader.is_at_end() && symbols_decoded < max_symbols {
     // Decode literal/length symbol
     let symbol = match decode_symbol(reader, literal_tree) {
       Some(s) => s
@@ -436,4 +436,9 @@ pub fn decompress_fixed_huffman_block_bytes(
   let bits_consumed = reader.bit_offset
   let bytes_consumed = (bits_consumed + 7) / 8 // Round up to next byte
   (output.to_bytes(), offset + bytes_consumed)
+}
+
+///|
+pub impl Show for BitReader with output(self, logger) {
+  logger.write_string(@debug.render(self.to_repr(), max_depth=2147483647))
 }
