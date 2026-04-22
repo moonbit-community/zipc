@@ -1,152 +1,153 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/zipc"
 
-import(
-  "bobzhang/zipc/deflate"
-)
+import {
+  "bobzhang/zipc/deflate",
+  "moonbitlang/core/debug",
+}
 
 // Values
-fn add(Member, Archive) -> Archive
+pub fn add(Member, Archive) -> Archive
 
-fn bytes_from_ints(Array[Int]) -> Bytes
+pub fn bytes_from_ints(Array[Int]) -> Bytes
 
-fn compare_string_vs_bytes_write_u32() -> String
+pub fn compare_string_vs_bytes_write_u32() -> String
 
-fn concat_bytes(Array[Bytes]) -> Bytes
+pub fn concat_bytes(Array[Bytes]) -> Bytes
 
-fn create_unicode_path_field(String, Int) -> ExtraField
+pub fn create_unicode_path_field(String, Int) -> ExtraField
 
-fn create_unix_timestamp_field(Int, Int?, Int?) -> ExtraField
+pub fn create_unix_timestamp_field(Int, Int?, Int?) -> ExtraField
 
-fn current_unix_timestamp() -> Int
+pub fn current_unix_timestamp() -> Int
 
-fn deflate_of_binary_string(String, @deflate.Level) -> @deflate.Result[File, String]
+pub fn deflate_of_binary_string(String, @deflate.Level) -> @deflate.Result[File, String]
 
-fn deflate_of_bytes(Bytes, @deflate.Level) -> @deflate.Result[File, String]
+pub fn deflate_of_bytes(Bytes, @deflate.Level) -> @deflate.Result[File, String]
 
-fn demonstrate_migration_success() -> String
+pub fn demonstrate_migration_success() -> String
 
-fn dos_datetime_components(Int, Int) -> (Int, Int, Int, Int, Int, Int)
+pub fn dos_datetime_components(Int, Int) -> (Int, Int, Int, Int, Int, Int)
 
-fn dos_datetime_to_unix(Int, Int) -> Int
+pub fn dos_datetime_to_unix(Int, Int) -> Int
 
-let dos_epoch : Int
+pub let dos_epoch : Int
 
-fn empty() -> Archive
+pub fn empty() -> Archive
 
-fn extra_fields_size(Array[ExtraField]) -> Int
+pub fn extra_fields_size(Array[ExtraField]) -> Int
 
-fn file_can_extract(File) -> Bool
+pub fn file_can_extract(File) -> Bool
 
-fn file_compressed_bytes(File) -> String
+pub fn file_compressed_bytes(File) -> String
 
-fn file_compressed_size(File) -> Int
+pub fn file_compressed_size(File) -> Int
 
-fn file_compression(File) -> Compression
+pub fn file_compression(File) -> Compression
 
-fn file_decompressed_size(File) -> Int
+pub fn file_decompressed_size(File) -> Int
 
-fn file_to_binary_string(File) -> @deflate.Result[String, String]
+pub fn file_to_binary_string(File) -> @deflate.Result[String, String]
 
-fn file_to_bytes(File) -> Bytes raise
+pub fn file_to_bytes(File) -> Bytes raise
 
-fn find(String, Archive) -> Member?
+pub fn find(String, Archive) -> Member?
 
-fn find_extra_field(Array[ExtraField], Int) -> ExtraField?
+pub fn find_extra_field(Array[ExtraField], Int) -> ExtraField?
 
-fn format_dos_datetime(Int, Int) -> String
+pub fn format_dos_datetime(Int, Int) -> String
 
-let info_zip_unix_id : Int
+pub let info_zip_unix_id : Int
 
-fn is_empty(Archive) -> Bool
+pub fn is_empty(Archive) -> Bool
 
-fn make_dos_datetime(Int, Int, Int, Int, Int, Int) -> (Int, Int)
+pub fn make_dos_datetime(Int, Int, Int, Int, Int, Int) -> (Int, Int)
 
-let max_file_size : Int
+pub let max_file_size : Int
 
-let max_members : Int
+pub let max_members : Int
 
-let max_path_length : Int
+pub let max_path_length : Int
 
-fn mem(String, Archive) -> Bool
+pub fn mem(String, Archive) -> Bool
 
-fn member_count(Archive) -> Int
+pub fn member_count(Archive) -> Int
 
-fn member_kind(Member) -> MemberKind
+pub fn member_kind(Member) -> MemberKind
 
-fn member_make(String, MemberKind) -> @deflate.Result[Member, String]
+pub fn member_make(String, MemberKind) -> @deflate.Result[Member, String]
 
-fn member_mode(Member) -> Int
+pub fn member_mode(Member) -> Int
 
-fn member_mtime(Member) -> Int
+pub fn member_mtime(Member) -> Int
 
-fn member_path(Member) -> String
+pub fn member_path(Member) -> String
 
-let ntfs_extra_field_id : Int
+pub let ntfs_extra_field_id : Int
 
-fn of_binary_string(String) -> @deflate.Result[Archive, String]
+pub fn of_binary_string(String) -> @deflate.Result[Archive, String]
 
-fn of_bytes(Bytes) -> @deflate.Result[Archive, String]
+pub fn of_bytes(Bytes) -> @deflate.Result[Archive, String]
 
-fn parse_extra_fields(String) -> Array[ExtraField]
+pub fn parse_extra_fields(String) -> Array[ExtraField]
 
-fn parse_unicode_path_field(ExtraField) -> (String, Int)?
+pub fn parse_unicode_path_field(ExtraField) -> (String, Int)?
 
-fn parse_unix_timestamp_field(ExtraField) -> (Int, Int?, Int?)?
+pub fn parse_unix_timestamp_field(ExtraField) -> (Int, Int?, Int?)?
 
-fn read_u16_be_bytes(Bytes, Int) -> Int
+pub fn read_u16_be_bytes(Bytes, Int) -> Int
 
-fn read_u16_le_bytes(Bytes, Int) -> Int
+pub fn read_u16_le_bytes(Bytes, Int) -> Int
 
-fn read_u16_le_extra(String, Int) -> Int
+pub fn read_u16_le_extra(String, Int) -> Int
 
-fn read_u32_be_bytes(Bytes, Int) -> Int
+pub fn read_u32_be_bytes(Bytes, Int) -> Int
 
-fn read_u32_le_bytes(Bytes, Int) -> Int
+pub fn read_u32_le_bytes(Bytes, Int) -> Int
 
-fn read_u32_le_extra(String, Int) -> Int
+pub fn read_u32_le_extra(String, Int) -> Int
 
-fn remove(String, Archive) -> Archive
+pub fn remove(String, Archive) -> Archive
 
-fn remove_extra_field(Array[ExtraField], Int) -> Array[ExtraField]
+pub fn remove_extra_field(Array[ExtraField], Int) -> Array[ExtraField]
 
-fn serialize_extra_fields(Array[ExtraField]) -> String
+pub fn serialize_extra_fields(Array[ExtraField]) -> String
 
-fn set_extra_field(Array[ExtraField], ExtraField) -> Array[ExtraField]
+pub fn set_extra_field(Array[ExtraField], ExtraField) -> Array[ExtraField]
 
-fn stored_of_binary_string(String) -> File raise
+pub fn stored_of_binary_string(String) -> File raise
 
-fn stored_of_bytes(Bytes) -> File raise
+pub fn stored_of_bytes(Bytes) -> File raise
 
-fn string_has_magic(String) -> Bool
+pub fn string_has_magic(String) -> Bool
 
-fn to_binary_string(Archive) -> @deflate.Result[String, String]
+pub fn to_binary_string(Archive) -> @deflate.Result[String, String]
 
-fn to_bytes(Archive) -> @deflate.Result[Bytes, String]
+pub fn to_bytes(Archive) -> @deflate.Result[Bytes, String]
 
-let unicode_comment_id : Int
+pub let unicode_comment_id : Int
 
-let unicode_path_id : Int
+pub let unicode_path_id : Int
 
-let unix_extra_field_id : Int
+pub let unix_extra_field_id : Int
 
-fn unix_to_dos_datetime(Int) -> (Int, Int)
+pub fn unix_to_dos_datetime(Int) -> (Int, Int)
 
-fn validate_extra_field(ExtraField) -> Bool
+pub fn validate_extra_field(ExtraField) -> Bool
 
-fn write_u16_be_bytes(Int) -> Bytes
+pub fn write_u16_be_bytes(Int) -> Bytes
 
-fn write_u16_le_bytes(Int) -> Bytes
+pub fn write_u16_le_bytes(Int) -> Bytes
 
-fn write_u16_le_extra(Int) -> String
+pub fn write_u16_le_extra(Int) -> String
 
-fn write_u32_be_bytes(Int) -> Bytes
+pub fn write_u32_be_bytes(Int) -> Bytes
 
-fn write_u32_le_bytes(Int) -> Bytes
+pub fn write_u32_le_bytes(Int) -> Bytes
 
-fn write_u32_le_extra(Int) -> String
+pub fn write_u32_le_extra(Int) -> String
 
-let zip64_extra_field_id : Int
+pub let zip64_extra_field_id : Int
 
 // Errors
 
@@ -159,8 +160,8 @@ pub enum Compression {
   Stored
   Deflate
   Other(Int)
-}
-impl Show for Compression
+} derive(@debug.Debug)
+pub impl Show for Compression
 
 pub struct ExtraField {
   header_id : Int
@@ -193,11 +194,11 @@ pub enum MemberKind {
 }
 
 // Type aliases
-pub typealias String as Fpath
+pub type Fpath = String
 
-pub typealias Int as Mode
+pub type Mode = Int
 
-pub typealias Int as Ptime
+pub type Ptime = Int
 
 // Traits
 

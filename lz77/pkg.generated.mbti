@@ -1,54 +1,53 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "bobzhang/zipc/lz77"
 
+import {
+  "moonbitlang/core/debug",
+}
+
 // Values
-fn decode(Array[LZ77Token]) -> Bytes raise
+pub fn decode(Array[LZ77Token]) -> Bytes raise
 
-fn decode_from_bytes(Bytes) -> Bytes raise
+pub fn decode_from_bytes(Bytes) -> Bytes raise
 
-fn default_config() -> LZ77Config
+pub fn default_config() -> LZ77Config
 
-fn encode(Bytes, LZ77Config) -> Array[LZ77Token]
+pub fn encode(Bytes, LZ77Config) -> Array[LZ77Token]
 
-fn encode_default(Bytes) -> Array[LZ77Token]
+pub fn encode_default(Bytes) -> Array[LZ77Token]
 
-fn encode_to_bytes(Bytes, LZ77Config) -> Bytes
+pub fn encode_to_bytes(Bytes, LZ77Config) -> Bytes
 
-fn get_compression_stats(Int, Array[LZ77Token]) -> (Int, Int, Double)
+pub fn get_compression_stats(Int, Array[LZ77Token]) -> (Int, Int, Double)
 
-fn hash3(Byte, Byte, Byte) -> Int
+pub fn hash3(Byte, Byte, Byte) -> Int
 
-fn new_decoder_state() -> DecoderState
+pub fn new_decoder_state() -> DecoderState
 
-fn new_encoder_state(LZ77Config) -> EncoderState
+pub fn new_encoder_state(LZ77Config) -> EncoderState
 
-fn validate_tokens(Array[LZ77Token]) -> Bool
+pub fn validate_tokens(Array[LZ77Token]) -> Bool
 
 // Errors
 
 // Types and methods
-type DecoderState
-impl Show for DecoderState
+type DecoderState derive(@debug.Debug)
 
-type EncoderState
-impl Show for EncoderState
+type EncoderState derive(@debug.Debug)
 
-pub struct LZ77Config {
+pub(all) struct LZ77Config {
   window_size : Int
   max_match_length : Int
   min_match_length : Int
   max_distance : Int
-}
-impl Eq for LZ77Config
-impl Show for LZ77Config
+} derive(Eq, @debug.Debug)
+pub impl Show for LZ77Config
 
 pub enum LZ77Token {
   Literal(Byte)
   Reference(Int, Int)
-}
-impl Eq for LZ77Token
-impl Show for LZ77Token
-impl ToJson for LZ77Token
+} derive(Eq, ToJson, @debug.Debug)
+pub impl Show for LZ77Token
 
 // Type aliases
 
