@@ -86,7 +86,11 @@ test "huffman_tree_construction" {
 
 ///|
 test "symbol_decoding_basic" {
-  let data = "Hello World!".to_bytes()
+  let data = @utf16.encode(
+    "Hello World!"[:],
+    bom=false,
+    endianness=@utf16.Endian::Little,
+  )
   let reader = @huffman.new_bit_reader(data)
   let tree = @huffman.create_fixed_huffman_tree()
 
@@ -102,7 +106,11 @@ test "symbol_decoding_basic" {
 
 ///|
 test "length_distance_decoding" {
-  let data = "test".to_bytes()
+  let data = @utf16.encode(
+    "test"[:],
+    bom=false,
+    endianness=@utf16.Endian::Little,
+  )
   let reader = @huffman.new_bit_reader(data)
 
   // Test length codes
@@ -310,7 +318,7 @@ test "huffman_performance_large_data" {
 
   // Test reading many bits efficiently
   let mut total_bits_read = 0
-  while not(reader.is_at_end()) && total_bits_read < 8000 {
+  while !reader.is_at_end() && total_bits_read < 8000 {
     let _bits = reader.read_bits(8) // Read byte by byte
     total_bits_read += 8
   }
@@ -328,7 +336,13 @@ test "huffman_stress_test_repeated_patterns" {
   // Test with repeated patterns
   let pattern_data = @buffer.new()
   for i = 0; i < 100; i = i + 1 {
-    pattern_data.write_bytes("ABCDEFGH".to_bytes())
+    pattern_data.write_bytes(
+      @utf16.encode(
+        "ABCDEFGH"[:],
+        bom=false,
+        endianness=@utf16.Endian::Little,
+      ),
+    )
   }
   let compressed = pattern_data.to_bytes()
   match
@@ -359,7 +373,11 @@ test "huffman_boundary_conditions" {
   match
     {
       let (_decompressed, bytes_consumed) = @huffman.decompress_fixed_huffman_block_bytes(
-        "A".to_bytes(),
+        @utf16.encode(
+          "A"[:],
+          bom=false,
+          endianness=@utf16.Endian::Little,
+        ),
         0,
       )
       inspect(bytes_consumed == 1, content="true")
@@ -373,7 +391,11 @@ test "huffman_boundary_conditions" {
   }
 
   // Test maximum valid offset
-  let data = "Hello World!".to_bytes()
+  let data = @utf16.encode(
+    "Hello World!"[:],
+    bom=false,
+    endianness=@utf16.Endian::Little,
+  )
   match
     {
       let (_, _) = @huffman.decompress_fixed_huffman_block_bytes(

@@ -360,7 +360,7 @@ pub fn decompress_fixed_huffman_block_bytes(
   let output = @buffer.new()
   let mut symbols_decoded = 0
   let max_symbols = 1000 // Prevent infinite loops
-  while not(reader.is_at_end()) && symbols_decoded < max_symbols {
+  while !reader.is_at_end() && symbols_decoded < max_symbols {
     // Decode literal/length symbol
     let symbol = match decode_symbol(reader, literal_tree) {
       Some(s) => s
