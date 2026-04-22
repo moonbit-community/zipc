@@ -7,16 +7,21 @@ pub enum Compression {
   Stored
   Deflate
   Other(Int)
-} derive(Show)
+} derive(Debug)
 
 ///|
-pub typealias String as Fpath
+pub impl Show for Compression with output(compression, logger) {
+  @debug.to_repr(compression).output(logger)
+}
 
 ///|
-pub typealias Int as Mode
+pub type Fpath = String
 
 ///|
-pub typealias Int as Ptime
+pub type Mode = Int
+
+///|
+pub type Ptime = Int
 
 ///|
 pub struct File {
