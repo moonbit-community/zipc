@@ -383,8 +383,8 @@ pub fn encode_to_bytes(data : Bytes, config : LZ77Config) -> Bytes { // First, e
       LZ77Token::Reference(length, distance) => {
         // Reference format: marker (0x01) + varint(length) + varint(distance)
         output.write_byte(b'\x01')
-        output.write_leb128(length)
-        output.write_leb128(distance)
+        write_unsigned_leb128(output, length)
+        write_unsigned_leb128(output, distance)
       }
     }
   }
@@ -392,26 +392,36 @@ pub fn encode_to_bytes(data : Bytes, config : LZ77Config) -> Bytes { // First, e
 }
 
 ///|
+fn write_unsigned_leb128(buffer : @buffer.Buffer, value : Int) -> Unit {
+  if value < 128 {
+    buffer.write_byte(value.to_byte())
+  } else {
+    buffer.write_byte((value % 128 + 128).to_byte())
+    write_unsigned_leb128(buffer, value / 128)
+  }
+}
+
+///|
 test "write_leb128" {
   let buffer = @buffer.new()
-  buffer.write_leb128(0)
+  write_unsigned_leb128(buffer, 0)
   assert_eq(buffer.to_bytes(), b"\x00")
   buffer.reset()
-  buffer.write_leb128(127)
+  write_unsigned_leb128(buffer, 127)
   assert_eq(buffer.to_bytes(), b"\x7f")
   buffer.reset()
-  buffer.write_leb128(128)
+  write_unsigned_leb128(buffer, 128)
   assert_eq(buffer.to_bytes(), b"\x80\x01")
   buffer.reset()
-  buffer.write_leb128(129)
+  write_unsigned_leb128(buffer, 129)
   assert_eq(buffer.to_bytes(), b"\x81\x01")
   buffer.reset()
-  buffer.write_leb128(16383)
+  write_unsigned_leb128(buffer, 16383)
   assert_eq(buffer.to_bytes(), b"\xff\x7f")
   buffer.reset()
-  buffer.write_leb128(16384)
+  write_unsigned_leb128(buffer, 16384)
   assert_eq(buffer.to_bytes(), b"\x80\x80\x01")
   buffer.reset()
-  buffer.write_leb128(2097151)
+  write_unsigned_leb128(buffer, 2097151)
   assert_eq(buffer.to_bytes(), b"\xff\xff\x7f")
 }
