@@ -7,7 +7,11 @@ test "bytes_api_working_demo" {
 
   // Create some binary test data
   let text_content = "Hello, Bytes-based ZIP API! This demonstrates the new architecture."
-  let binary_data = text_content.to_bytes()
+  let binary_data = @utf16.encode(
+    text_content[:],
+    bom=false,
+    endianness=@utf16.Endian::Little,
+  )
   println("📝 Original data: " + text_content)
   println("📊 Original size: " + binary_data.length().to_string() + " bytes")
 
@@ -57,7 +61,13 @@ test "bytes_api_working_demo" {
   println("\n✅ Test 3: Performance comparison (CRC32)...")
 
   // String-based CRC32 (old way)
-  let string_crc = @crc32.bytes(text_content.to_bytes())
+  let string_crc = @crc32.bytes(
+    @utf16.encode(
+      text_content[:],
+      bom=false,
+      endianness=@utf16.Endian::Little,
+    ),
+  )
   println("   ✓ String-based CRC32: " + string_crc.to_string())
 
   // Bytes-based CRC32 (new way - 2-4x faster)
@@ -155,8 +165,20 @@ test "bytes_vs_string_performance_demo" {
   println("📊 Testing CRC32 performance on different data sizes:")
 
   // Test small data
-  let small_string_crc = @crc32.bytes(small_data.to_bytes())
-  let small_bytes_crc = @crc32.bytes(small_data.to_bytes())
+  let small_string_crc = @crc32.bytes(
+    @utf16.encode(
+      small_data[:],
+      bom=false,
+      endianness=@utf16.Endian::Little,
+    ),
+  )
+  let small_bytes_crc = @crc32.bytes(
+    @utf16.encode(
+      small_data[:],
+      bom=false,
+      endianness=@utf16.Endian::Little,
+    ),
+  )
   println(
     "   Small (" +
     small_data.length().to_string() +
@@ -165,8 +187,20 @@ test "bytes_vs_string_performance_demo" {
   )
 
   // Test medium data
-  let medium_string_crc = @crc32.bytes(medium_data.to_bytes())
-  let medium_bytes_crc = @crc32.bytes(medium_data.to_bytes())
+  let medium_string_crc = @crc32.bytes(
+    @utf16.encode(
+      medium_data[:],
+      bom=false,
+      endianness=@utf16.Endian::Little,
+    ),
+  )
+  let medium_bytes_crc = @crc32.bytes(
+    @utf16.encode(
+      medium_data[:],
+      bom=false,
+      endianness=@utf16.Endian::Little,
+    ),
+  )
   println(
     "   Medium (" +
     medium_data.length().to_string() +
@@ -175,8 +209,20 @@ test "bytes_vs_string_performance_demo" {
   )
 
   // Test large data
-  let large_string_crc = @crc32.bytes(large_data.to_bytes())
-  let large_bytes_crc = @crc32.bytes(large_data.to_bytes())
+  let large_string_crc = @crc32.bytes(
+    @utf16.encode(
+      large_data[:],
+      bom=false,
+      endianness=@utf16.Endian::Little,
+    ),
+  )
+  let large_bytes_crc = @crc32.bytes(
+    @utf16.encode(
+      large_data[:],
+      bom=false,
+      endianness=@utf16.Endian::Little,
+    ),
+  )
   println(
     "   Large (" +
     large_data.length().to_string() +

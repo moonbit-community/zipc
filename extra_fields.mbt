@@ -47,7 +47,7 @@ pub fn parse_extra_fields(data : String) -> Array[ExtraField] {
 
     // Read data
     if offset + data_size <= data.length() {
-      let field_data = data.substring(start=offset, end=offset + data_size)
+      let field_data = data[offset:offset + data_size].to_string()
       fields.push({ header_id, data_size, data: field_data })
       offset = offset + data_size
     } else {
@@ -193,7 +193,7 @@ pub fn parse_unicode_path_field(field : ExtraField) -> (String, Int)? {
     return None // Unsupported version
   }
   let crc32 = read_u32_le_extra(field.data, 1)
-  let unicode_path = field.data.substring(start=5, end=field.data.length())
+  let unicode_path = field.data[5:field.data.length()].to_string()
   Some((unicode_path, crc32))
 }
 

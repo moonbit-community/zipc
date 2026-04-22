@@ -1,4 +1,5 @@
 import {
+  "moonbitlang/core/encoding/utf16",
   "bobzhang/zipc/deflate",
   "bobzhang/zipc/crc32",
   "bobzhang/zipc/huffman",
