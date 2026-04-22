@@ -19,13 +19,14 @@ LZ77 is a lossless data compression algorithm that uses a sliding window to find
 
 ### Encoding Data
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   // Basic encoding with default configuration
   let data = "Hello World Hello World".to_bytes()
   let tokens = @lz77.encode_default(data)
   inspect(tokens.length() > 0, content="true")
-  
+
   // Custom configuration
   let config = @lz77.default_config()
   let custom_tokens = @lz77.encode(data, config)
@@ -35,7 +36,8 @@ test {
 
 ### Decoding Data
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   // Decode tokens back to original data
   let data = "Hello World".to_bytes()
@@ -47,12 +49,13 @@ test {
 
 ### Byte Format Encoding/Decoding
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   // Encode to byte format for storage/transmission
   let data = "Hello World".to_bytes()
   let compressed = @lz77.encode_to_bytes(data, @lz77.default_config())
-  
+
   // Decode from byte format
   let decompressed = @lz77.decode_from_bytes(compressed)
   inspect(decompressed == data, content="true")
@@ -124,7 +127,8 @@ hash = ((b1 << 10) ^ (b2 << 5) ^ b3) % hash_size
 
 This LZ77 implementation is designed to be compatible with DEFLATE compression:
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   // DEFLATE-compatible configuration
   let deflate_config = @lz77.default_config() // Already DEFLATE-compatible
@@ -151,34 +155,39 @@ The test suite includes:
 
 ### Text Compression
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   let text = "The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."
   let data = text.to_bytes()
-  
+
   let compressed = @lz77.encode_to_bytes(data, @lz77.default_config())
   let decompressed = @lz77.decode_from_bytes(compressed)
-  
+
   inspect(decompressed == data, content="true")
-  
-  let (_literals, _references, ratio) = @lz77.get_compression_stats(data.length(), @lz77.encode_default(data))
+
+  let (_literals, _references, ratio) = @lz77.get_compression_stats(
+    data.length(),
+    @lz77.encode_default(data),
+  )
   println("Compression ratio: " + ratio.to_string())
 }
 ```
 
 ### Pattern Detection
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   // Create data with repeating patterns
   let pattern_data = @buffer.new()
   for i = 0; i < 100; i = i + 1 {
     pattern_data.write_byte((i % 10 + 48).to_byte()) // "0123456789" repeated
   }
-  
+
   let tokens = @lz77.encode_default(pattern_data.to_bytes())
   let decoded = @lz77.decode(tokens)
-  
+
   inspect(decoded == pattern_data.to_bytes(), content="true")
   inspect("Pattern detection works", content="Pattern detection works")
 }

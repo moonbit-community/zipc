@@ -62,11 +62,7 @@ test "bytes_api_working_demo" {
 
   // String-based CRC32 (old way)
   let string_crc = @crc32.bytes(
-    @utf16.encode(
-      text_content[:],
-      bom=false,
-      endianness=@utf16.Endian::Little,
-    ),
+    @utf16.encode(text_content[:], bom=false, endianness=@utf16.Endian::Little),
   )
   println("   ✓ String-based CRC32: " + string_crc.to_string())
 
@@ -166,18 +162,10 @@ test "bytes_vs_string_performance_demo" {
 
   // Test small data
   let small_string_crc = @crc32.bytes(
-    @utf16.encode(
-      small_data[:],
-      bom=false,
-      endianness=@utf16.Endian::Little,
-    ),
+    @utf16.encode(small_data[:], bom=false, endianness=@utf16.Endian::Little),
   )
   let small_bytes_crc = @crc32.bytes(
-    @utf16.encode(
-      small_data[:],
-      bom=false,
-      endianness=@utf16.Endian::Little,
-    ),
+    @utf16.encode(small_data[:], bom=false, endianness=@utf16.Endian::Little),
   )
   println(
     "   Small (" +
@@ -188,18 +176,10 @@ test "bytes_vs_string_performance_demo" {
 
   // Test medium data
   let medium_string_crc = @crc32.bytes(
-    @utf16.encode(
-      medium_data[:],
-      bom=false,
-      endianness=@utf16.Endian::Little,
-    ),
+    @utf16.encode(medium_data[:], bom=false, endianness=@utf16.Endian::Little),
   )
   let medium_bytes_crc = @crc32.bytes(
-    @utf16.encode(
-      medium_data[:],
-      bom=false,
-      endianness=@utf16.Endian::Little,
-    ),
+    @utf16.encode(medium_data[:], bom=false, endianness=@utf16.Endian::Little),
   )
   println(
     "   Medium (" +
@@ -210,18 +190,10 @@ test "bytes_vs_string_performance_demo" {
 
   // Test large data
   let large_string_crc = @crc32.bytes(
-    @utf16.encode(
-      large_data[:],
-      bom=false,
-      endianness=@utf16.Endian::Little,
-    ),
+    @utf16.encode(large_data[:], bom=false, endianness=@utf16.Endian::Little),
   )
   let large_bytes_crc = @crc32.bytes(
-    @utf16.encode(
-      large_data[:],
-      bom=false,
-      endianness=@utf16.Endian::Little,
-    ),
+    @utf16.encode(large_data[:], bom=false, endianness=@utf16.Endian::Little),
   )
   println(
     "   Large (" +

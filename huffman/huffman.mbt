@@ -2,6 +2,7 @@
 // RFC 1951: Fixed and Dynamic Huffman codes
 
 // Bit stream reader for efficient bit operations
+
 ///|
 pub struct BitReader {
   data : Bytes
@@ -214,7 +215,7 @@ pub fn create_fixed_distance_tree() -> HuffmanNode {
   build_fixed_distance_huffman_tree()
 }
 
-// Build the actual Fixed distance tree structure  
+// Build the actual Fixed distance tree structure
 
 ///|
 fn build_fixed_distance_huffman_tree() -> HuffmanNode {

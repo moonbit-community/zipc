@@ -29,11 +29,7 @@ test "crc32_equality" {
     @utf16.encode("test"[:], bom=false, endianness=@utf16.Endian::Little),
   )
   let crc3 = @crc32.bytes(
-    @utf16.encode(
-      "different"[:],
-      bom=false,
-      endianness=@utf16.Endian::Little,
-    ),
+    @utf16.encode("different"[:], bom=false, endianness=@utf16.Endian::Little),
   )
   assert_eq(crc1, crc2)
   assert_not_eq(crc1, crc3)
@@ -49,11 +45,7 @@ test "crc32_bytes_consistency" {
   )
   let crc1 = @crc32.bytes(test_bytes)
   let crc2 = @crc32.bytes(
-    @utf16.encode(
-      test_string[:],
-      bom=false,
-      endianness=@utf16.Endian::Little,
-    ),
+    @utf16.encode(test_string[:], bom=false, endianness=@utf16.Endian::Little),
   )
 
   // Both should produce the same result
@@ -67,11 +59,7 @@ test "crc32_bytes" {
   // MOONBIT supports overloading, in check modes, "" will be interpreted as Bytes
   inspect(
     @crc32.bytes(
-      @utf16.encode(
-        "hello"[:],
-        bom=false,
-        endianness=@utf16.Endian::Little,
-      ),
+      @utf16.encode("hello"[:], bom=false, endianness=@utf16.Endian::Little),
     ),
     content="0x535349505550100102",
   )

@@ -2,6 +2,7 @@
 // Tests cover RFC 1951 compliance, edge cases, and performance
 
 // Test BitReader functionality
+
 ///|
 test "bit_reader_basic_operations" {
   let buffer = @buffer.new()
@@ -212,7 +213,7 @@ test "fixed_huffman_decompression_basic" {
 
   // Test that the decompression function exists and handles errors gracefully
   match
-    {
+    ({
       let test_buffer = @buffer.new()
       test_buffer.write_byte(b'A')
       let (_, _) = @huffman.decompress_fixed_huffman_block_bytes(
@@ -223,7 +224,7 @@ test "fixed_huffman_decompression_basic" {
         "Decompression function accessible",
         content="Decompression function accessible",
       )
-    } {
+    }) {
     _ =>
       inspect(
         "Decompression function handles errors",
@@ -337,16 +338,12 @@ test "huffman_stress_test_repeated_patterns" {
   let pattern_data = @buffer.new()
   for i = 0; i < 100; i = i + 1 {
     pattern_data.write_bytes(
-      @utf16.encode(
-        "ABCDEFGH"[:],
-        bom=false,
-        endianness=@utf16.Endian::Little,
-      ),
+      @utf16.encode("ABCDEFGH"[:], bom=false, endianness=@utf16.Endian::Little),
     )
   }
   let compressed = pattern_data.to_bytes()
   match
-    {
+    ({
       let (decompressed, bytes_consumed) = @huffman.decompress_fixed_huffman_block_bytes(
         compressed, 0,
       )
@@ -356,7 +353,7 @@ test "huffman_stress_test_repeated_patterns" {
         "Repeated pattern processed",
         content="Repeated pattern processed",
       )
-    } {
+    }) {
     _ =>
       inspect(
         "Repeated pattern test attempted",
@@ -371,18 +368,14 @@ test "huffman_stress_test_repeated_patterns" {
 test "huffman_boundary_conditions" {
   // Test single byte
   match
-    {
+    ({
       let (_decompressed, bytes_consumed) = @huffman.decompress_fixed_huffman_block_bytes(
-        @utf16.encode(
-          "A"[:],
-          bom=false,
-          endianness=@utf16.Endian::Little,
-        ),
+        @utf16.encode("A"[:], bom=false, endianness=@utf16.Endian::Little),
         0,
       )
       inspect(bytes_consumed == 1, content="true")
       inspect("Single byte processed", content="Single byte processed")
-    } {
+    }) {
     _ =>
       inspect(
         "Single byte test attempted",
@@ -397,13 +390,13 @@ test "huffman_boundary_conditions" {
     endianness=@utf16.Endian::Little,
   )
   match
-    {
+    ({
       let (_, _) = @huffman.decompress_fixed_huffman_block_bytes(
         data,
         data.length() - 1,
       )
       inspect("Maximum offset processed", content="Maximum offset processed")
-    } {
+    }) {
     _ =>
       inspect(
         "Maximum offset test attempted",
@@ -540,13 +533,13 @@ test "huffman_error_handling" {
     malformed_data.write_byte(b'\xFF') // All 1s
   }
   match
-    {
+    ({
       let (_, _) = @huffman.decompress_fixed_huffman_block_bytes(
         malformed_data.to_bytes(),
         0,
       )
       inspect("Malformed data handled", content="Malformed data handled")
-    } {
+    }) {
     _ =>
       inspect(
         "Malformed data test attempted",

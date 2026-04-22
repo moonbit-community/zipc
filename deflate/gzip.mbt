@@ -84,13 +84,8 @@ pub fn gzip_compress_bytes(
       // Optional filename (null-terminated)
       match filename {
         Some(name) =>
-          header =
-            header +
-            @utf16.encode(
-              name[:],
-              bom=false,
-              endianness=@utf16.Endian::Little,
-            ) +
+          header = header +
+            @utf16.encode(name[:], bom=false, endianness=@utf16.Endian::Little) +
             Bytes::from_array([0x00])
         None => ()
       }
@@ -98,13 +93,8 @@ pub fn gzip_compress_bytes(
       // Optional comment (null-terminated)
       match comment {
         Some(comm) =>
-          header =
-            header +
-            @utf16.encode(
-              comm[:],
-              bom=false,
-              endianness=@utf16.Endian::Little,
-            ) +
+          header = header +
+            @utf16.encode(comm[:], bom=false, endianness=@utf16.Endian::Little) +
             Bytes::from_array([0x00])
         None => ()
       }

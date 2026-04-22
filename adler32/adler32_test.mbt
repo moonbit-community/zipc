@@ -33,11 +33,7 @@ test "adler32_equality_modern" {
   let adler1 = @adler32.bytes(test_bytes)
   let adler2 = @adler32.bytes(test_bytes)
   let different_adler = @adler32.bytes(
-    @utf16.encode(
-      "different"[:],
-      bom=false,
-      endianness=@utf16.Endian::Little,
-    ),
+    @utf16.encode("different"[:], bom=false, endianness=@utf16.Endian::Little),
   )
 
   // Test struct equality (modern way)

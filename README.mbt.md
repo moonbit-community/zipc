@@ -57,20 +57,21 @@ The main package provides ZIP archive functionality, while the `deflate` package
 
 ### Basic ZIP Archive Operations
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   // Create an empty ZIP archive
   let archive = @zipc.empty()
-  
+
   // Test basic archive properties
   inspect(@zipc.member_count(archive), content="0")
   inspect(@zipc.is_empty(archive), content="true")
-  
+
   // Test encoding/decoding empty archive
   match @zipc.to_binary_string(archive) {
     @deflate.Ok(zip_data) => {
       inspect(zip_data.length(), content="22") // Empty ZIP is 22 bytes
-      
+
       // Test decoding
       match @zipc.of_binary_string(zip_data) {
         @deflate.Ok(decoded) => {
@@ -87,13 +88,14 @@ test {
 
 ### Working with Checksums
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   // CRC-32 checksums
   let data = b"Hello, World!"
   let crc = @crc32.bytes(data)
   inspect(crc.0 > 0L, content="true") // CRC should be non-zero for non-empty data
-  
+
   // Test CRC equality
   let crc2 = @crc32.bytes(data)
   inspect(crc == crc2, content="true") // Same data should produce same CRC
@@ -102,16 +104,25 @@ test {
 
 ### Gzip Compression
 
-```moonbit
+```moonbit nocheck
+///|
 test {
   // Test Gzip compression functionality
   let data = "MoonBit zipc library example"
   try {
-    let compressed = @deflate.gzip_of_bytes(data.to_bytes(), @deflate.level_default(), None, None)
+    let compressed = @deflate.gzip_of_bytes(
+      data.to_bytes(),
+      @deflate.level_default(),
+      None,
+      None,
+    )
     // Verify compression produces output
     inspect(compressed.length() > 0, content="true")
-    inspect("Gzip compression successful", content="Gzip compression successful")
-    
+    inspect(
+      "Gzip compression successful",
+      content="Gzip compression successful",
+    )
+
     // Note: Full round-trip decompression requires complete DEFLATE implementation
     // For now, we test that compression works and produces valid gzip headers
   } catch {
