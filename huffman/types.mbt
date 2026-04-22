@@ -6,7 +6,12 @@
 pub enum HuffmanNode {
   Leaf(Int) // Symbol value (0-285 for literals/lengths, 0-29 for distances)
   Branch(HuffmanNode, HuffmanNode) // Left and right children
-} derive(Show, Eq)
+} derive(Debug, Eq)
+
+///|
+pub impl Show for HuffmanNode with output(node, logger) {
+  @debug.to_repr(node).output(logger)
+}
 
 // Symbol with code information for tree building
 
@@ -24,7 +29,12 @@ pub enum BlockType {
   Uncompressed // No compression (BTYPE = 00)
   FixedHuffman // Compressed with fixed Huffman codes (BTYPE = 01)  
   DynamicHuffman // Compressed with dynamic Huffman codes (BTYPE = 10)
-} derive(Show, Eq)
+} derive(Debug, Eq)
+
+///|
+pub impl Show for BlockType with output(block_type, logger) {
+  @debug.to_repr(block_type).output(logger)
+}
 
 // Convert block type to BTYPE value
 

@@ -392,45 +392,6 @@ pub fn encode_to_bytes(data : Bytes, config : LZ77Config) -> Bytes { // First, e
 }
 
 ///|
-/// Write variable-length integer using LEB128 encoding
-///
-/// This function encodes integers using a variable-length format where
-/// each byte contains 7 data bits and 1 continuation bit. This is more
-/// space-efficient than fixed-width integers for small values.
-///
-/// # Parameters
-/// - `buffer`: Output buffer to write to
-/// - `value`: Integer value to encode (must be non-negative)
-///
-/// # Encoding Format
-/// - Each byte: [continuation_bit][7_data_bits]
-/// - Continuation bit = 1: more bytes follow
-/// - Continuation bit = 0: last byte
-/// - Little-endian byte order (LSB first)
-///
-/// # Examples
-/// - 0-127: single byte (0xxxxxxx)
-/// - 128-16383: two bytes (1xxxxxxx 0xxxxxxx)
-/// - etc.
-///
-/// # Performance
-/// - 1 byte for values 0-127
-/// - 2 bytes for values 128-16383
-/// - 3 bytes for values 16384-2097151
-/// - etc.
-fn @buffer.T::write_leb128(buffer : Self, value : Int) -> Unit {
-  //TODO(upstream): upstream and change T to Buffer  
-  if value < 128 {
-    // Single byte: no continuation bit (0xxxxxxx)
-    buffer.write_byte(value.to_byte())
-  } else {
-    // Multiple bytes: set continuation bit (1xxxxxxx) and recurse
-    buffer.write_byte((value % 128 + 128).to_byte())
-    buffer.write_leb128(value / 128)
-  }
-}
-
-///|
 test "write_leb128" {
   let buffer = @buffer.new()
   buffer.write_leb128(0)

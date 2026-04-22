@@ -6,7 +6,12 @@
 pub struct BitReader {
   data : Bytes
   mut bit_offset : Int // Current bit position
-} derive(Show)
+} derive(Debug)
+
+///|
+pub impl Show for BitReader with output(reader, logger) {
+  @debug.to_repr(reader).output(logger)
+}
 
 // Create a new bit reader
 
@@ -18,7 +23,7 @@ pub fn new_bit_reader(data : Bytes) -> BitReader {
 // Read bits from the stream (LSB first, as per RFC 1951)
 
 ///|
-pub fn read_bits(self : BitReader, num_bits : Int) -> Int {
+pub fn BitReader::read_bits(self : Self, num_bits : Int) -> Int {
   if num_bits <= 0 || num_bits > 32 {
     return 0
   }
@@ -44,7 +49,7 @@ pub fn read_bits(self : BitReader, num_bits : Int) -> Int {
 // Check if we're at the end of data
 
 ///|
-pub fn is_at_end(self : BitReader) -> Bool {
+pub fn BitReader::is_at_end(self : Self) -> Bool {
   self.bit_offset >= self.data.length() * 8
 }
 
