@@ -10,29 +10,32 @@ This package provides essential Huffman coding functionality for DEFLATE compres
 
 ## Usage
 
-```moonbit
+```moonbit nocheck
+///|
 test "huffman_minimal_interface_example" {
   // Block type management - the core public API
   let uncompressed = @huffman.uncompressed_block_type()
   let fixed_huffman = @huffman.fixed_huffman_block_type()
   let dynamic_huffman = @huffman.dynamic_huffman_block_type()
-  
+
   // Convert block types to BTYPE values
   let btype0 = @huffman.block_type_to_btype(uncompressed)
   let btype1 = @huffman.block_type_to_btype(fixed_huffman)
   let btype2 = @huffman.block_type_to_btype(dynamic_huffman)
-  
+
   inspect(btype0, content="0")
-  inspect(btype1, content="1") 
+  inspect(btype1, content="1")
   inspect(btype2, content="2")
-  
+
   // Convert BTYPE values back to block types
   match @huffman.btype_to_block_type(1) {
-    Some(block_type) => {
+    Some(block_type) =>
       if block_type == @huffman.fixed_huffman_block_type() {
-        inspect("Fixed Huffman block type correctly identified", content="Fixed Huffman block type correctly identified")
+        inspect(
+          "Fixed Huffman block type correctly identified",
+          content="Fixed Huffman block type correctly identified",
+        )
       }
-    }
     None => fail("Should have found block type")
   }
 }

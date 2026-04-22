@@ -2,6 +2,7 @@
 // RFC 1951: Fixed and Dynamic Huffman codes
 
 // Huffman tree node for decoding
+
 ///|
 pub enum HuffmanNode {
   Leaf(Int) // Symbol value (0-285 for literals/lengths, 0-29 for distances)

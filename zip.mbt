@@ -297,7 +297,7 @@ pub fn file_to_binary_string(file : File) -> @deflate.Result[String, String] {
   match file.compression {
     Compression::Stored => {
       let data = file.compressed_bytes[file.start:file.start +
-        file.compressed_size].to_string()
+      file.compressed_size].to_string()
       @deflate.ok(data)
     }
     Compression::Deflate =>
@@ -814,8 +814,7 @@ fn parse_central_directory_entry(
   if filename_start + filename_length > data.length() {
     return @deflate.err("Filename extends beyond file")
   }
-  let filename = data[filename_start:filename_start +
-    filename_length].to_string()
+  let filename = data[filename_start:filename_start + filename_length].to_string()
 
   // Determine compression type
   let compression = match compression_method {
@@ -895,7 +894,6 @@ fn read_file_data(
   if file_data_offset + compressed_size > data.length() {
     return @deflate.err("File data extends beyond archive")
   }
-  let file_data = data[file_data_offset:file_data_offset +
-    compressed_size].to_string()
+  let file_data = data[file_data_offset:file_data_offset + compressed_size].to_string()
   @deflate.ok(file_data)
 }

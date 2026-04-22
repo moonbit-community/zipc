@@ -14,7 +14,6 @@ test "lz77_basic_literals" {
     decoded,
     content=(
       #|b"Hello"
-
     ),
   )
   assert_eq(decoded, input)

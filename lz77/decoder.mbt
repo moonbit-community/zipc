@@ -2,6 +2,7 @@
 // Decodes LZ77 compressed data back to original bytes
 
 // Decode LZ77 tokens back to original bytes
+
 ///|
 pub fn decode(tokens : Array[LZ77Token]) -> Bytes raise {
   let state = new_decoder_state()
