@@ -1,4 +1,5 @@
 import {
+  "moonbitlang/core/buffer",
   "bobzhang/zipc/crc32",
   "bobzhang/zipc/adler32",
   "bobzhang/zipc/huffman",
