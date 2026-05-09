@@ -201,7 +201,7 @@ pub fn gzip_decompress_bytes(gzip_data : GzipData) -> Bytes raise {
     fail("Truncated gzip trailer")
   }
   let deflate_end = data.length() - 8
-  let deflate_bytes = data[offset:deflate_end].to_bytes()
+  let deflate_bytes = data[offset:deflate_end].to_owned()
 
   // Extract trailer: CRC-32 and original size
   let expected_crc = read_u32_le_bytes(data, deflate_end).to_int64()
@@ -347,7 +347,7 @@ pub fn gzip_extract_metadata_bytes(
       offset = offset + 1
     }
     if offset < compressed_data.length() {
-      filename = Some(compressed_data[start:offset].to_bytes().to_string())
+      filename = Some(compressed_data[start:offset].to_owned().to_string())
       offset = offset + 1
     }
   }
@@ -361,7 +361,7 @@ pub fn gzip_extract_metadata_bytes(
       offset = offset + 1
     }
     if offset < compressed_data.length() {
-      comment = Some(compressed_data[start:offset].to_bytes().to_string())
+      comment = Some(compressed_data[start:offset].to_owned().to_string())
       offset = offset + 1
     }
   }
