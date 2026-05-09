@@ -87,7 +87,7 @@ pub fn zlib_decompress_bytes(zlib_data : ZlibData) -> Bytes raise {
   // Extract deflate data (everything except header and trailing checksum)
   let deflate_start = 2
   let deflate_end = data.length() - 4
-  let deflate_bytes = data[deflate_start:deflate_end].to_bytes()
+  let deflate_bytes = data[deflate_start:deflate_end].to_owned()
 
   // Extract Adler-32 checksum (last 4 bytes, big-endian)
   let expected_adler = read_u32_be_bytes(data, deflate_end).to_int64()

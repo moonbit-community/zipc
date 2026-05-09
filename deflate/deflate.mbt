@@ -244,7 +244,7 @@ fn decompress_uncompressed_block_bytes(
   }
 
   // Extract the block data as bytes
-  let block_data = compressed[data_offset:data_offset + len].to_bytes()
+  let block_data = compressed[data_offset:data_offset + len].to_owned()
   (block_data, data_offset + len)
 }
 
