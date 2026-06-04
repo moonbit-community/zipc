@@ -288,12 +288,20 @@ pub fn file_to_binary_string(file : File) -> @deflate.Result[String, String] {
       file.compressed_size].to_owned()
       @deflate.ok(data)
     }
-    Deflate =>
-      // TODO: Deflate decompression needs proper implementation
-      // For now, stored compression demonstrates all the architectural benefits
-      @deflate.err(
-        "Deflate decompression not yet implemented - use stored compression",
-      )
+    Deflate => {
+      // Decompress via the shared inflate core, then convert the resulting
+      // bytes into a binary string (one char per byte).
+      try {
+        let bytes = file_to_bytes(file)
+        let sb = StringBuilder::new()
+        for i = 0; i < bytes.length(); i = i + 1 {
+          sb.write_char(bytes[i].to_int().unsafe_to_char())
+        }
+        @deflate.ok(sb.to_string())
+      } catch {
+        _ => @deflate.err("Deflate decompression failed")
+      }
+    }
     _ => @deflate.err("Unsupported compression format")
   }
 }
@@ -319,16 +327,16 @@ pub fn file_to_bytes(file : File) -> Bytes raise {
       data_view.to_owned()
     }
     Deflate => {
-      // Use bytes-based decompression for better performance
-      let compressed_bytes = @utf16.encode(
-        file.compressed_bytes[:],
-        bom=false,
-        endianness=Little,
-      )
-      @deflate.deflate_decompress_bytes(
-        compressed_bytes,
-        file.decompressed_size,
-      )
+      // `compressed_bytes` is a binary string (one char per byte). Recover the
+      // raw deflate stream by taking each char code as a single byte over the
+      // [start, start + compressed_size) range, then inflate it.
+      let s = file.compressed_bytes
+      let arr : Array[Byte] = []
+      let stop = file.start + file.compressed_size
+      for i = file.start; i < stop && i < s.length(); i = i + 1 {
+        arr.push((s[i].to_int() & 0xff).to_byte())
+      }
+      @deflate.deflate_decompress_bytes(Bytes::from_array(arr), file.decompressed_size)
     }
     _ => fail("Unsupported compression format")
   }
