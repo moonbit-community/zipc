@@ -10,7 +10,7 @@ pub enum Compression {
 } derive(Debug)
 
 ///|
-pub impl Show for Compression with output(compression, logger) {
+pub impl Show for Compression with fn output(compression, logger) {
   @debug.to_repr(compression).output(logger)
 }
 
@@ -124,11 +124,9 @@ pub fn stored_of_binary_string(s : String) -> File raise {
   }
 
   // Calculate actual CRC-32 checksum
-  let crc = @crc32.bytes(
-    @utf16.encode(s[:], bom=false, endianness=@utf16.Endian::Little),
-  )
+  let crc = @crc32.bytes(@utf16.encode(s[:], bom=false, endianness=Little))
   {
-    compression: Compression::Stored,
+    compression: Stored,
     start: 0,
     compressed_size: len,
     compressed_bytes: s,
@@ -159,14 +157,10 @@ pub fn stored_of_bytes(data : Bytes) -> File raise {
   // Calculate CRC-32 checksum on the string that will actually be stored
   // This ensures consistency between storage and extraction
   let crc = @crc32.bytes(
-    @utf16.encode(
-      data_as_string[:],
-      bom=false,
-      endianness=@utf16.Endian::Little,
-    ),
+    @utf16.encode(data_as_string[:], bom=false, endianness=Little),
   )
   {
-    compression: Compression::Stored,
+    compression: Stored,
     start: 0,
     compressed_size: len,
     compressed_bytes: data_as_string,
@@ -196,15 +190,13 @@ pub fn deflate_of_binary_string(
 
   // Compress using deflate
   let compressed_data = @deflate.deflate_of_bytes(
-    @utf16.encode(s[:], bom=false, endianness=@utf16.Endian::Little),
+    @utf16.encode(s[:], bom=false, endianness=Little),
     level,
   )
   // Calculate CRC-32 of original data
-  let crc = @crc32.bytes(
-    @utf16.encode(s[:], bom=false, endianness=@utf16.Endian::Little),
-  )
+  let crc = @crc32.bytes(@utf16.encode(s[:], bom=false, endianness=Little))
   @deflate.ok({
-    compression: Compression::Deflate,
+    compression: Deflate,
     start: 0,
     compressed_size: compressed_data.to_string().length(),
     compressed_bytes: compressed_data.to_string(),
@@ -241,14 +233,10 @@ pub fn deflate_of_bytes(
   // Calculate CRC-32 on the string representation that will be stored/extracted
   // This ensures consistency between storage and extraction
   let crc = @crc32.bytes(
-    @utf16.encode(
-      data_as_string[:],
-      bom=false,
-      endianness=@utf16.Endian::Little,
-    ),
+    @utf16.encode(data_as_string[:], bom=false, endianness=Little),
   )
   @deflate.ok({
-    compression: Compression::Deflate,
+    compression: Deflate,
     start: 0,
     compressed_size: compressed_as_string.length(),
     compressed_bytes: compressed_as_string,
@@ -283,8 +271,8 @@ pub fn file_compressed_bytes(file : File) -> String {
 ///|
 pub fn file_can_extract(file : File) -> Bool {
   match file.compression {
-    Compression::Stored => true
-    Compression::Deflate => true // Would need actual deflate implementation
+    Stored => true
+    Deflate => true // Would need actual deflate implementation
     _ => false
   }
 }
@@ -295,12 +283,12 @@ pub fn file_to_binary_string(file : File) -> @deflate.Result[String, String] {
     return @deflate.err("Unsupported compression format")
   }
   match file.compression {
-    Compression::Stored => {
+    Stored => {
       let data = file.compressed_bytes[file.start:file.start +
       file.compressed_size].to_owned()
       @deflate.ok(data)
     }
-    Compression::Deflate =>
+    Deflate =>
       // TODO: Deflate decompression needs proper implementation
       // For now, stored compression demonstrates all the architectural benefits
       @deflate.err(
@@ -318,24 +306,24 @@ pub fn file_to_bytes(file : File) -> Bytes raise {
     fail("Unsupported compression format")
   }
   match file.compression {
-    Compression::Stored => {
+    Stored => {
       // Convert string to bytes first, then slice
       let compressed_bytes = @utf16.encode(
         file.compressed_bytes[:],
         bom=false,
-        endianness=@utf16.Endian::Little,
+        endianness=Little,
       )
       let data_view = compressed_bytes[file.start:file.start +
         file.compressed_size]
       // Convert view back to bytes
       data_view.to_owned()
     }
-    Compression::Deflate => {
+    Deflate => {
       // Use bytes-based decompression for better performance
       let compressed_bytes = @utf16.encode(
         file.compressed_bytes[:],
         bom=false,
-        endianness=@utf16.Endian::Little,
+        endianness=Little,
       )
       @deflate.deflate_decompress_bytes(
         compressed_bytes,
@@ -362,7 +350,7 @@ pub fn member_make(
   }
   let sanitized_path = path.replace(old="\\", new="/")
   let final_path = match kind {
-    MemberKind::Dir =>
+    Dir =>
       if sanitized_path.is_empty() {
         "./"
       } else if sanitized_path.strip_suffix("/") is Some(_) {
@@ -370,11 +358,11 @@ pub fn member_make(
       } else {
         sanitized_path + "/"
       }
-    MemberKind::File(_) => sanitized_path
+    File(_) => sanitized_path
   }
   let default_mode = match kind {
-    MemberKind::Dir => 0o755
-    MemberKind::File(_) => 0o644
+    Dir => 0o755
+    File(_) => 0o644
   }
   @deflate.ok({
     path: final_path,
@@ -433,15 +421,9 @@ pub fn to_bytes(archive : Archive) -> @deflate.Result[Bytes, String] {
   // Use the existing string-based implementation and convert to bytes
   // In a full implementation, this would work directly with bytes throughout
   match to_binary_string(archive) {
-    @deflate.Ok(zip_string) =>
-      @deflate.ok(
-        @utf16.encode(
-          zip_string[:],
-          bom=false,
-          endianness=@utf16.Endian::Little,
-        ),
-      )
-    @deflate.Err(error) => @deflate.err(error)
+    Ok(zip_string) =>
+      @deflate.ok(@utf16.encode(zip_string[:], bom=false, endianness=Little))
+    Err(error) => @deflate.err(error)
   }
 }
 
@@ -462,8 +444,8 @@ fn build_zip_file(archive : Archive) -> @deflate.Result[String, String] {
     let local_header_offset = zip_data.length()
     local_header_offsets.push(local_header_offset)
     match write_local_file_header(mem) {
-      @deflate.Ok(local_header_data) => zip_data = zip_data + local_header_data
-      @deflate.Err(error) =>
+      Ok(local_header_data) => zip_data = zip_data + local_header_data
+      Err(error) =>
         return @deflate.err("Failed to write local header: " + error)
     }
   }
@@ -474,8 +456,8 @@ fn build_zip_file(archive : Archive) -> @deflate.Result[String, String] {
     let mem = member_list[i]
     let local_offset = local_header_offsets[i]
     match write_central_directory_entry(mem, local_offset) {
-      @deflate.Ok(cd_entry) => central_directory = central_directory + cd_entry
-      @deflate.Err(error) =>
+      Ok(cd_entry) => central_directory = central_directory + cd_entry
+      Err(error) =>
         return @deflate.err("Failed to write central directory entry: " + error)
     }
   }
@@ -497,7 +479,7 @@ fn write_local_file_header(mem : Member) -> @deflate.Result[String, String] {
   let path = mem.path
   let path_bytes = path // Assuming UTF-8 encoding
   match mem.kind {
-    MemberKind::Dir => {
+    Dir => {
       // Directory entry
       let (dos_time, dos_date) = unix_to_dos_datetime(mem.mtime)
       let header = write_u32_le(local_file_header_signature) + // Signature
@@ -513,12 +495,12 @@ fn write_local_file_header(mem : Member) -> @deflate.Result[String, String] {
         write_u16_le(0) // Extra field length
       @deflate.ok(header + path_bytes)
     }
-    MemberKind::File(file) => {
+    File(file) => {
       // File entry
       let compression_method = match file.compression {
-        Compression::Stored => 0
-        Compression::Deflate => 8
-        Compression::Other(comp_method) => comp_method
+        Stored => 0
+        Deflate => 8
+        Other(comp_method) => comp_method
       }
       let (dos_time, dos_date) = unix_to_dos_datetime(mem.mtime)
       let header = write_u32_le(local_file_header_signature) + // Signature
@@ -547,7 +529,7 @@ fn write_central_directory_entry(
   let path = mem.path
   let path_bytes = path
   match mem.kind {
-    MemberKind::Dir => {
+    Dir => {
       let (dos_time, dos_date) = unix_to_dos_datetime(mem.mtime)
       let entry = write_u32_le(central_directory_signature) + // Signature
         write_u16_le(0x314) + // Version made by (Unix, ZIP 2.0)
@@ -568,11 +550,11 @@ fn write_central_directory_entry(
         write_u32_le(local_header_offset) // Local header offset
       @deflate.ok(entry + path_bytes)
     }
-    MemberKind::File(file) => {
+    File(file) => {
       let compression_method = match file.compression {
-        Compression::Stored => 0
-        Compression::Deflate => 8
-        Compression::Other(comp_method) => comp_method
+        Stored => 0
+        Deflate => 8
+        Other(comp_method) => comp_method
       }
       let (dos_time, dos_date) = unix_to_dos_datetime(mem.mtime)
       let entry = write_u32_le(central_directory_signature) + // Signature
@@ -764,11 +746,11 @@ fn parse_central_directory(
   let mut offset = cd_offset
   for i = 0; i < entry_count; i = i + 1 {
     match parse_central_directory_entry(data, offset) {
-      @deflate.Ok((mem, next_offset)) => {
+      Ok((mem, next_offset)) => {
         archive = add(mem, archive)
         offset = next_offset
       }
-      @deflate.Err(error) =>
+      Err(error) =>
         return @deflate.err(
           "Failed to parse central directory entry " +
           i.to_string() +
@@ -819,13 +801,13 @@ fn parse_central_directory_entry(
   // Determine compression type
   let compression = match compression_method {
     0 => Compression::Stored
-    8 => Compression::Deflate
-    _ => Compression::Other(compression_method)
+    8 => Deflate
+    _ => Other(compression_method)
   }
 
   // Read file data from local header
   match read_file_data(data, local_header_offset, compressed_size) {
-    @deflate.Ok(file_data) => {
+    Ok(file_data) => {
       // Create file object
       let file = {
         compression,
@@ -842,11 +824,7 @@ fn parse_central_directory_entry(
       // Determine if it's a directory
       let is_directory = filename.strip_suffix("/") is Some(_) ||
         (external_file_attrs & 0x10) != 0
-      let kind = if is_directory {
-        MemberKind::Dir
-      } else {
-        MemberKind::File(file)
-      }
+      let kind = if is_directory { MemberKind::Dir } else { File(file) }
 
       // Create member
       let mem = {
@@ -866,7 +844,7 @@ fn parse_central_directory_entry(
         file_comment_length
       @deflate.ok((mem, next_offset))
     }
-    @deflate.Err(error) => @deflate.err("Failed to read file data: " + error)
+    Err(error) => @deflate.err("Failed to read file data: " + error)
   }
 }
 

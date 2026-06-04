@@ -26,10 +26,10 @@ pub fn zlib_compress_bytes(data : Bytes, level : Level) -> ZlibData {
   let fcheck = 0 // Will be calculated
   let fdict = 0 // No preset dictionary
   let flevel = match level {
-    Level::None => 0 // Fastest
-    Level::Fast => 1 // Fast
-    Level::Default => 2 // Default
-    Level::Best => 3 // Maximum compression
+    None => 0 // Fastest
+    Fast => 1 // Fast
+    Default => 2 // Default
+    Best => 3 // Maximum compression
   }
   let flg = (flevel << 6) | (fdict << 5) | fcheck
 

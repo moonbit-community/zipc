@@ -72,8 +72,8 @@ pub fn gzip_compress_bytes(
 
       // Extra flags (1 byte)
       let extra_flags = match level {
-        Level::Best => 2 // Maximum compression
-        Level::Fast => 4 // Fastest compression
+        Best => 2 // Maximum compression
+        Fast => 4 // Fastest compression
         _ => 0 // Default
       }
       header = header + Bytes::from_array([extra_flags.to_byte()])
@@ -85,7 +85,7 @@ pub fn gzip_compress_bytes(
       match filename {
         Some(name) =>
           header = header +
-            @utf16.encode(name[:], bom=false, endianness=@utf16.Endian::Little) +
+            @utf16.encode(name[:], bom=false, endianness=Little) +
             Bytes::from_array([0x00])
         None => ()
       }
@@ -94,7 +94,7 @@ pub fn gzip_compress_bytes(
       match comment {
         Some(comm) =>
           header = header +
-            @utf16.encode(comm[:], bom=false, endianness=@utf16.Endian::Little) +
+            @utf16.encode(comm[:], bom=false, endianness=Little) +
             Bytes::from_array([0x00])
         None => ()
       }
@@ -292,7 +292,7 @@ pub fn gzip_to_bytes(compressed_data : Bytes) -> Bytes raise {
   let gzip_data : GzipData = {
     compressed_bytes: compressed_data,
     original_size: 0, // Will be read from trailer
-    crc32_checksum: @crc32.Crc32(0L), // Will be read from trailer
+    crc32_checksum: Crc32(0L), // Will be read from trailer
     filename: None,
     comment: None,
     modification_time: 0,

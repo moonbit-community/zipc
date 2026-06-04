@@ -14,20 +14,20 @@ test "empty archive properties" {
 test "empty archive encoding" {
   let archive = @zipc.empty()
   match @zipc.to_binary_string(archive) {
-    @deflate.Ok(zip_data) => {
+    Ok(zip_data) => {
       // Snapshot: Empty ZIP should be exactly 22 bytes
       inspect(zip_data.length(), content="22")
 
       // Test roundtrip
       match @zipc.of_binary_string(zip_data) {
-        @deflate.Ok(decoded) => {
+        Ok(decoded) => {
           inspect(@zipc.is_empty(decoded), content="true")
           inspect(@zipc.member_count(decoded), content="0")
         }
-        @deflate.Err(error) => fail("Empty ZIP decoding failed: " + error)
+        Err(error) => fail("Empty ZIP decoding failed: " + error)
       }
     }
-    @deflate.Err(error) => fail("Empty ZIP encoding failed: " + error)
+    Err(error) => fail("Empty ZIP encoding failed: " + error)
   }
 }
 
@@ -44,8 +44,8 @@ test "stored file basic properties" {
 
     // Test extraction
     match @zipc.file_to_binary_string(file_data) {
-      @deflate.Ok(extracted) => inspect(extracted, content=test_content)
-      @deflate.Err(error) => fail("File extraction failed: " + error)
+      Ok(extracted) => inspect(extracted, content=test_content)
+      Err(error) => fail("File extraction failed: " + error)
     }
   } catch {
     error => fail("Stored file creation failed: " + error.to_string())
@@ -56,16 +56,16 @@ test "stored file basic properties" {
 test "error handling basic" {
   // Test invalid ZIP data
   match @zipc.of_binary_string("Not a ZIP file") {
-    @deflate.Ok(_) => fail("Should have failed on invalid ZIP data")
-    @deflate.Err(error) =>
+    Ok(_) => fail("Should have failed on invalid ZIP data")
+    Err(error) =>
       // Snapshot: Should mention magic bytes - test the error message
       inspect(error, content="File too small to be a valid ZIP archive")
   }
 
   // Test empty data
   match @zipc.of_binary_string("") {
-    @deflate.Ok(_) => fail("Should have failed on empty data")
-    @deflate.Err(error) =>
+    Ok(_) => fail("Should have failed on empty data")
+    Err(error) =>
       // Snapshot: Should mention size - test the error message
       inspect(error, content="File too small to be a valid ZIP archive")
   }
@@ -86,29 +86,29 @@ test "compression levels api" {
 
   // Test compression with different levels
   match @zipc.deflate_of_binary_string(test_data, none_level) {
-    @deflate.Ok(compressed) =>
+    Ok(compressed) =>
       // Snapshot: Should produce compressed file
       inspect(@zipc.file_compressed_size(compressed) > 0, content="true")
-    @deflate.Err(error) => fail("Level None compression failed: " + error)
+    Err(error) => fail("Level None compression failed: " + error)
   }
   match @zipc.deflate_of_binary_string(test_data, fast_level) {
-    @deflate.Ok(compressed) =>
+    Ok(compressed) =>
       // Snapshot: Should produce compressed file
       inspect(@zipc.file_compressed_size(compressed) > 0, content="true")
-    @deflate.Err(error) => fail("Level Fast compression failed: " + error)
+    Err(error) => fail("Level Fast compression failed: " + error)
   }
 
   // Test default and best levels as well
   match @zipc.deflate_of_binary_string(test_data, default_level) {
-    @deflate.Ok(compressed) =>
+    Ok(compressed) =>
       // Snapshot: Should produce compressed file
       inspect(@zipc.file_compressed_size(compressed) > 0, content="true")
-    @deflate.Err(error) => fail("Level Default compression failed: " + error)
+    Err(error) => fail("Level Default compression failed: " + error)
   }
   match @zipc.deflate_of_binary_string(test_data, best_level) {
-    @deflate.Ok(compressed) =>
+    Ok(compressed) =>
       // Snapshot: Should produce compressed file
       inspect(@zipc.file_compressed_size(compressed) > 0, content="true")
-    @deflate.Err(error) => fail("Level Best compression failed: " + error)
+    Err(error) => fail("Level Best compression failed: " + error)
   }
 }

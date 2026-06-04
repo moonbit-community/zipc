@@ -1,9 +1,9 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "bobzhang/zipc/deflate"
+package "moonbit-community/zipc/deflate"
 
 import {
-  "bobzhang/zipc/adler32",
-  "bobzhang/zipc/crc32",
+  "moonbit-community/zipc/adler32",
+  "moonbit-community/zipc/crc32",
   "moonbitlang/core/debug",
 }
 

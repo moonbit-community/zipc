@@ -21,7 +21,7 @@ Add this to your `moon.pkg.json`:
 
 ```json
 {
-  "import": ["bobzhang/zipc"]
+  "import": ["moonbit-community/zipc"]
 }
 ```
 

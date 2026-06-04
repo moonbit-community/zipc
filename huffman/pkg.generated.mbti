@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "bobzhang/zipc/huffman"
+package "moonbit-community/zipc/huffman"
 
 import {
   "moonbitlang/core/debug",

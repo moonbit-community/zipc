@@ -16,10 +16,10 @@ pub struct DeflateData {
 pub fn deflate_compress(data : Bytes, level : Level) -> DeflateData {
   // Work directly with bytes to avoid corruption
   match level {
-    Level::None => compress_uncompressed(data)
-    Level::Fast => compress_basic_deflate_bytes(data)
-    Level::Default => compress_basic_deflate_bytes(data)
-    Level::Best => compress_basic_deflate_bytes(data)
+    None => compress_uncompressed(data)
+    Fast => compress_basic_deflate_bytes(data)
+    Default => compress_basic_deflate_bytes(data)
+    Best => compress_basic_deflate_bytes(data)
   }
 }
 
@@ -59,7 +59,7 @@ fn compress_uncompressed(data : Bytes) -> DeflateData {
   // For uncompressed: BTYPE = 00
   // Then LEN (16 bits) and NLEN (16 bits, one's complement of LEN)
 
-  let compressed = @buffer.new()
+  let compressed = Buffer()
   let mut remaining = data[:]
 
   // Process data in chunks (max 65535 bytes per uncompressed block)

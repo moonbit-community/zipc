@@ -45,8 +45,8 @@ Add this to your `moon.pkg.json`:
 ```json
 {
   "import": [
-    "bobzhang/zipc",
-    "bobzhang/zipc/deflate"
+    "moonbit-community/zipc",
+    "moonbit-community/zipc/deflate"
   ]
 }
 ```

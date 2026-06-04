@@ -1,8 +1,8 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "bobzhang/zipc"
+package "moonbit-community/zipc"
 
 import {
-  "bobzhang/zipc/deflate",
+  "moonbit-community/zipc/deflate",
   "moonbitlang/core/debug",
 }
 

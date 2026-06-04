@@ -10,7 +10,7 @@ pub enum HuffmanNode {
 } derive(Debug, Eq)
 
 ///|
-pub impl Show for HuffmanNode with output(node, logger) {
+pub impl Show for HuffmanNode with fn output(node, logger) {
   @debug.to_repr(node).output(logger)
 }
 
@@ -33,7 +33,7 @@ pub enum BlockType {
 } derive(Debug, Eq)
 
 ///|
-pub impl Show for BlockType with output(block_type, logger) {
+pub impl Show for BlockType with fn output(block_type, logger) {
   @debug.to_repr(block_type).output(logger)
 }
 
@@ -42,9 +42,9 @@ pub impl Show for BlockType with output(block_type, logger) {
 ///|
 pub fn block_type_to_btype(block_type : BlockType) -> Int {
   match block_type {
-    BlockType::Uncompressed => 0
-    BlockType::FixedHuffman => 1
-    BlockType::DynamicHuffman => 2
+    Uncompressed => 0
+    FixedHuffman => 1
+    DynamicHuffman => 2
   }
 }
 
@@ -53,9 +53,9 @@ pub fn block_type_to_btype(block_type : BlockType) -> Int {
 ///|
 pub fn btype_to_block_type(btype : Int) -> BlockType? {
   match btype {
-    0 => Some(BlockType::Uncompressed)
-    1 => Some(BlockType::FixedHuffman)
-    2 => Some(BlockType::DynamicHuffman)
+    0 => Some(Uncompressed)
+    1 => Some(FixedHuffman)
+    2 => Some(DynamicHuffman)
     _ => None
   }
 }
@@ -64,17 +64,17 @@ pub fn btype_to_block_type(btype : Int) -> BlockType? {
 
 ///|
 pub fn uncompressed_block_type() -> BlockType {
-  BlockType::Uncompressed
+  Uncompressed
 }
 
 ///|
 pub fn fixed_huffman_block_type() -> BlockType {
-  BlockType::FixedHuffman
+  FixedHuffman
 }
 
 ///|
 pub fn dynamic_huffman_block_type() -> BlockType {
-  BlockType::DynamicHuffman
+  DynamicHuffman
 }
 
 // RFC 1951 Constants

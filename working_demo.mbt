@@ -7,11 +7,7 @@ test "bytes_api_working_demo" {
 
   // Create some binary test data
   let text_content = "Hello, Bytes-based ZIP API! This demonstrates the new architecture."
-  let binary_data = @utf16.encode(
-    text_content[:],
-    bom=false,
-    endianness=@utf16.Endian::Little,
-  )
+  let binary_data = @utf16.encode(text_content[:], bom=false, endianness=Little)
   println("📝 Original data: " + text_content)
   println("📊 Original size: " + binary_data.length().to_string() + " bytes")
 
@@ -62,7 +58,7 @@ test "bytes_api_working_demo" {
 
   // String-based CRC32 (old way)
   let string_crc = @crc32.bytes(
-    @utf16.encode(text_content[:], bom=false, endianness=@utf16.Endian::Little),
+    @utf16.encode(text_content[:], bom=false, endianness=Little),
   )
   println("   ✓ String-based CRC32: " + string_crc.to_string())
 
@@ -82,8 +78,8 @@ test "bytes_api_working_demo" {
   println("\n✅ Test 4: Creating ZIP archive with bytes...")
   try {
     let file = stored_of_bytes(binary_data)
-    match member_make("demo.txt", MemberKind::File(file)) {
-      @deflate.Ok(zip_member) => {
+    match member_make("demo.txt", File(file)) {
+      Ok(zip_member) => {
         let archive = empty()
         let archive = add(zip_member, archive)
         println("   ✓ Archive created with 1 file")
@@ -91,7 +87,7 @@ test "bytes_api_working_demo" {
 
         // Convert archive to bytes
         match to_bytes(archive) {
-          @deflate.Ok(zip_bytes) => {
+          Ok(zip_bytes) => {
             println("   ✓ Archive serialized to bytes")
             println(
               "   ✓ ZIP file size: " +
@@ -101,7 +97,7 @@ test "bytes_api_working_demo" {
 
             // Parse it back
             match of_bytes(zip_bytes) {
-              @deflate.Ok(parsed_archive) => {
+              Ok(parsed_archive) => {
                 println("   ✓ Archive parsed from bytes successfully")
                 println(
                   "   ✓ Parsed member count: " +
@@ -112,15 +108,13 @@ test "bytes_api_working_demo" {
                   println("   ✓ Complete round-trip successful! 🎉")
                 }
               }
-              @deflate.Err(error) =>
-                println("   ✗ Archive parsing failed: " + error)
+              Err(error) => println("   ✗ Archive parsing failed: " + error)
             }
           }
-          @deflate.Err(error) =>
-            println("   ✗ Archive serialization failed: " + error)
+          Err(error) => println("   ✗ Archive serialization failed: " + error)
         }
       }
-      @deflate.Err(error) => println("   ✗ Member creation failed: " + error)
+      Err(error) => println("   ✗ Member creation failed: " + error)
     }
   } catch {
     error => println("   ✗ File creation failed: " + error.to_string())
@@ -162,10 +156,10 @@ test "bytes_vs_string_performance_demo" {
 
   // Test small data
   let small_string_crc = @crc32.bytes(
-    @utf16.encode(small_data[:], bom=false, endianness=@utf16.Endian::Little),
+    @utf16.encode(small_data[:], bom=false, endianness=Little),
   )
   let small_bytes_crc = @crc32.bytes(
-    @utf16.encode(small_data[:], bom=false, endianness=@utf16.Endian::Little),
+    @utf16.encode(small_data[:], bom=false, endianness=Little),
   )
   println(
     "   Small (" +
@@ -176,10 +170,10 @@ test "bytes_vs_string_performance_demo" {
 
   // Test medium data
   let medium_string_crc = @crc32.bytes(
-    @utf16.encode(medium_data[:], bom=false, endianness=@utf16.Endian::Little),
+    @utf16.encode(medium_data[:], bom=false, endianness=Little),
   )
   let medium_bytes_crc = @crc32.bytes(
-    @utf16.encode(medium_data[:], bom=false, endianness=@utf16.Endian::Little),
+    @utf16.encode(medium_data[:], bom=false, endianness=Little),
   )
   println(
     "   Medium (" +
@@ -190,10 +184,10 @@ test "bytes_vs_string_performance_demo" {
 
   // Test large data
   let large_string_crc = @crc32.bytes(
-    @utf16.encode(large_data[:], bom=false, endianness=@utf16.Endian::Little),
+    @utf16.encode(large_data[:], bom=false, endianness=Little),
   )
   let large_bytes_crc = @crc32.bytes(
-    @utf16.encode(large_data[:], bom=false, endianness=@utf16.Endian::Little),
+    @utf16.encode(large_data[:], bom=false, endianness=Little),
   )
   println(
     "   Large (" +
