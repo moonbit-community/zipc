@@ -1,8 +1,8 @@
 import {
   "moonbitlang/core/debug",
   "moonbitlang/core/encoding/utf16",
-  "bobzhang/zipc/deflate",
-  "bobzhang/zipc/crc32",
-  "bobzhang/zipc/huffman",
-  "bobzhang/zipc/lz77",
+  "moonbit-community/zipc/deflate",
+  "moonbit-community/zipc/crc32",
+  "moonbit-community/zipc/huffman",
+  "moonbit-community/zipc/lz77",
 }

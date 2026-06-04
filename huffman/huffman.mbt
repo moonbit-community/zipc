@@ -10,7 +10,7 @@ pub struct BitReader {
 } derive(Debug)
 
 ///|
-pub impl Show for BitReader with output(reader, logger) {
+pub impl Show for BitReader with fn output(reader, logger) {
   @debug.to_repr(reader).output(logger)
 }
 
@@ -85,7 +85,7 @@ fn build_canonical_huffman_tree(code_lengths : Array[Int]) -> HuffmanNode? {
   if total_codes == 1 {
     for i = 0; i < num_symbols; i = i + 1 {
       if code_lengths[i] > 0 {
-        return Some(HuffmanNode::Leaf(i))
+        return Some(Leaf(i))
       }
     }
   }
@@ -111,7 +111,7 @@ fn build_canonical_huffman_tree(code_lengths : Array[Int]) -> HuffmanNode? {
     if length > 0 {
       let code = next_code[length]
       next_code[length] += 1
-      symbols_by_code[symbol_count] = SymbolCode::{ symbol, code, length }
+      symbols_by_code[symbol_count] = { symbol, code, length }
       symbol_count += 1
     }
   }
@@ -149,10 +149,10 @@ fn build_simple_huffman_tree(
     // Create a tree with end-of-block as left child
     let eob_leaf = HuffmanNode::Leaf(256)
     let other_leaf = HuffmanNode::Leaf(65) // Default to 'A'
-    Some(HuffmanNode::Branch(eob_leaf, other_leaf))
+    Some(Branch(eob_leaf, other_leaf))
     // Create a simple tree with available symbols
   } else if count > 0 {
-    Some(HuffmanNode::Leaf(symbols[0].symbol))
+    Some(Leaf(symbols[0].symbol))
   } else {
     None
   }
@@ -188,7 +188,7 @@ fn build_fixed_literal_huffman_tree() -> HuffmanNode {
   // For now, create a minimal tree that works with our test cases
   let end_of_block = HuffmanNode::Leaf(256) // End of block
   let literal_branch = build_literal_subtree()
-  HuffmanNode::Branch(end_of_block, literal_branch)
+  Branch(end_of_block, literal_branch)
 }
 
 // Build subtree for literals
@@ -202,7 +202,7 @@ fn build_literal_subtree() -> HuffmanNode {
 
   // Build a simple binary tree structure
   let left_branch = HuffmanNode::Branch(literal_65, literal_72)
-  HuffmanNode::Branch(left_branch, literal_101)
+  Branch(left_branch, literal_101)
 }
 
 // Create RFC 1951 Fixed distance tree
@@ -230,7 +230,7 @@ fn build_fixed_distance_huffman_tree() -> HuffmanNode {
   // Build a simple tree structure
   let left_branch = HuffmanNode::Branch(distance_0, distance_1)
   let right_branch = HuffmanNode::Branch(distance_2, distance_4)
-  HuffmanNode::Branch(left_branch, right_branch)
+  Branch(left_branch, right_branch)
 }
 
 // Decode a symbol from the bit stream using a Huffman tree
@@ -242,13 +242,13 @@ pub fn decode_symbol(reader : BitReader, tree : HuffmanNode) -> Int? {
   // Traverse the tree following bits from the stream
   while true {
     match current {
-      HuffmanNode::Leaf(symbol) =>
+      Leaf(symbol) =>
         if symbol >= 0 {
           return Some(symbol)
         } else {
           return None // Invalid symbol
         }
-      HuffmanNode::Branch(left, right) => {
+      Branch(left, right) => {
         if reader.is_at_end() {
           return None // Premature end of data
         }
@@ -346,7 +346,7 @@ pub fn decompress_fixed_huffman_block_bytes(
 
   // Create bit reader starting from the offset
   let remaining_length = compressed.length() - offset
-  let block_data = @buffer.new()
+  let block_data = Buffer()
   for i = 0; i < remaining_length; i = i + 1 {
     block_data.write_byte(compressed[offset + i])
   }
@@ -363,7 +363,7 @@ pub fn decompress_fixed_huffman_block_bytes(
   }
 
   // Decompress the block
-  let output = @buffer.new()
+  let output = Buffer()
   let mut symbols_decoded = 0
   let max_symbols = 1000 // Prevent infinite loops
   while !reader.is_at_end() && symbols_decoded < max_symbols {

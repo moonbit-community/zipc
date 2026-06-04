@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "bobzhang/zipc/lz77"
+package "moonbit-community/zipc/lz77"
 
 import {
   "moonbitlang/core/debug",

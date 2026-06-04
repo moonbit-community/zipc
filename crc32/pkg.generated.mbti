@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "bobzhang/zipc/crc32"
+package "moonbit-community/zipc/crc32"
 
 // Values
 pub fn bytes(Bytes) -> Crc32

@@ -2,9 +2,9 @@ import {
   "moonbitlang/core/buffer",
   "moonbitlang/core/debug",
   "moonbitlang/core/encoding/utf16",
-  "bobzhang/zipc/crc32",
-  "bobzhang/zipc/adler32",
-  "bobzhang/zipc/huffman",
+  "moonbit-community/zipc/crc32",
+  "moonbit-community/zipc/adler32",
+  "moonbit-community/zipc/huffman",
 }
 
 options(

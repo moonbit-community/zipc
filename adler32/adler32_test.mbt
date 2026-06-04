@@ -14,7 +14,7 @@ test "adler32_hello_world_bytes" {
   let test_bytes = @utf16.encode(
     "Hello, World!"[:],
     bom=false,
-    endianness=@utf16.Endian::Little,
+    endianness=Little,
   )
   let adler = @adler32.bytes(test_bytes)
   let empty_adler = @adler32.bytes(Bytes::from_array([]))
@@ -25,15 +25,11 @@ test "adler32_hello_world_bytes" {
 ///|
 test "adler32_equality_modern" {
   let test_data = "test data"
-  let test_bytes = @utf16.encode(
-    test_data[:],
-    bom=false,
-    endianness=@utf16.Endian::Little,
-  )
+  let test_bytes = @utf16.encode(test_data[:], bom=false, endianness=Little)
   let adler1 = @adler32.bytes(test_bytes)
   let adler2 = @adler32.bytes(test_bytes)
   let different_adler = @adler32.bytes(
-    @utf16.encode("different"[:], bom=false, endianness=@utf16.Endian::Little),
+    @utf16.encode("different"[:], bom=false, endianness=Little),
   )
 
   // Test struct equality (modern way)
@@ -47,7 +43,7 @@ test "adler32_show_implementation" {
   let test_bytes = @utf16.encode(
     "Hello, Adler32!"[:],
     bom=false,
-    endianness=@utf16.Endian::Little,
+    endianness=Little,
   )
   let adler = @adler32.bytes(test_bytes)
 
@@ -64,7 +60,7 @@ test "adler32_show_implementation" {
 test "adler32_various_data_sizes" {
   // Test small data
   let small = @adler32.bytes(
-    @utf16.encode("a"[:], bom=false, endianness=@utf16.Endian::Little),
+    @utf16.encode("a"[:], bom=false, endianness=Little),
   )
   let empty = @adler32.bytes(Bytes::from_array([]))
   assert_true(small != empty)
@@ -74,7 +70,7 @@ test "adler32_various_data_sizes" {
     @utf16.encode(
       "Hello, this is a medium sized test string!"[:],
       bom=false,
-      endianness=@utf16.Endian::Little,
+      endianness=Little,
     ),
   )
   assert_true(medium != small)
@@ -84,7 +80,7 @@ test "adler32_various_data_sizes" {
   let large_data = @utf16.encode(
     "This is a much larger test string that should produce a different Adler-32 checksum than the smaller ones. It contains multiple sentences and should thoroughly test the checksum algorithm."[:],
     bom=false,
-    endianness=@utf16.Endian::Little,
+    endianness=Little,
   )
   let large = @adler32.bytes(large_data)
   assert_true(large != medium)

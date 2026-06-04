@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "bobzhang/zipc/adler32"
+package "moonbit-community/zipc/adler32"
 
 // Values
 pub fn bytes(Bytes) -> Adler32

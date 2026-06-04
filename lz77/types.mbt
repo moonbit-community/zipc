@@ -10,7 +10,7 @@ pub enum LZ77Token {
 } derive(Debug, Eq, ToJson)
 
 ///|
-pub impl Show for LZ77Token with output(token, logger) {
+pub impl Show for LZ77Token with fn output(token, logger) {
   @debug.to_repr(token).output(logger)
 }
 
@@ -25,7 +25,7 @@ pub(all) struct LZ77Config {
 } derive(Debug, Eq)
 
 ///|
-pub impl Show for LZ77Config with output(config, logger) {
+pub impl Show for LZ77Config with fn output(config, logger) {
   @debug.to_repr(config).output(logger)
 }
 
@@ -92,5 +92,5 @@ pub fn new_encoder_state(config : LZ77Config) -> EncoderState {
 
 ///|
 pub fn new_decoder_state() -> DecoderState {
-  { position: 0, output_buffer: @buffer.new() }
+  { position: 0, output_buffer: Buffer() }
 }

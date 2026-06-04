@@ -1,0 +1,17 @@
+name = "moonbit-community/zipc"
+
+version = "0.1.1"
+
+readme = "README.md"
+
+repository = "https://github.com/moonbit-community/zipc"
+
+license = "ISC"
+
+keywords = [ "zip", "compression", "deflate", "archive" ]
+
+description = "ZIP archive and deflate codec for MoonBit - ported from OCaml zipc library"
+
+options(
+  "alert-list": "+test_import_all",
+)

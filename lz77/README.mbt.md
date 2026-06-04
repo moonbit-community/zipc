@@ -180,7 +180,7 @@ test {
 ///|
 test {
   // Create data with repeating patterns
-  let pattern_data = @buffer.new()
+  let pattern_data = Buffer()
   for i = 0; i < 100; i = i + 1 {
     pattern_data.write_byte((i % 10 + 48).to_byte()) // "0123456789" repeated
   }

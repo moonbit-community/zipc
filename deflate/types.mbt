@@ -14,7 +14,7 @@ pub enum Level {
 } derive(Debug)
 
 ///|
-pub impl Show for Level with output(level, logger) {
+pub impl Show for Level with fn output(level, logger) {
   @debug.to_repr(level).output(logger)
 }
 
@@ -22,22 +22,22 @@ pub impl Show for Level with output(level, logger) {
 
 ///|
 pub fn level_none() -> Level {
-  Level::None
+  None
 }
 
 ///|
 pub fn level_fast() -> Level {
-  Level::Fast
+  Fast
 }
 
 ///|
 pub fn level_default() -> Level {
-  Level::Default
+  Default
 }
 
 ///|
 pub fn level_best() -> Level {
-  Level::Best
+  Best
 }
 
 // Result type for operations that can fail
