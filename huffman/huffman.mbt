@@ -54,6 +54,13 @@ pub fn BitReader::is_at_end(self : Self) -> Bool {
   self.bit_offset >= self.data.length() * 8
 }
 
+// Advance the bit position to the next byte boundary (RFC 1951 stored blocks).
+
+///|
+pub fn BitReader::align_to_byte(self : Self) -> Unit {
+  self.bit_offset = (self.bit_offset + 7) / 8 * 8
+}
+
 // Build proper RFC 1951 Fixed Huffman tree from code lengths
 
 ///|

@@ -168,84 +168,278 @@ fn compress_fixed_huffman_bytes(data : Bytes) -> DeflateData {
   }
 }
 
-// Decompress deflate blocks from bytes (handles binary data correctly)
+// ---------------------------------------------------------------------------
+// Correct RFC 1951 DEFLATE decompression (inflate)
+//
+// This is a puff.c-style canonical Huffman decoder: instead of building a tree,
+// we keep per-length code counts plus a list of symbols sorted by
+// (length, symbol) and decode one bit at a time.  The bit stream is read via
+// @huffman.BitReader (LSB-first, per RFC 1951).
+// ---------------------------------------------------------------------------
+
+// RFC 1951 Section 3.2.5 tables.
+
+///|
+let length_base_tbl : Array[Int] = [
+  3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83,
+  99, 115, 131, 163, 195, 227, 258,
+]
+
+///|
+let length_extra_tbl : Array[Int] = [
+  0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5,
+  5, 0,
+]
+
+///|
+let dist_base_tbl : Array[Int] = [
+  1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769,
+  1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577,
+]
+
+///|
+let dist_extra_tbl : Array[Int] = [
+  0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11,
+  12, 12, 13, 13,
+]
+
+// Order in which code-length code lengths are read for dynamic blocks.
+
+///|
+let cl_order : Array[Int] = [
+  16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15,
+]
+
+// A canonical Huffman decoder: counts[len] = number of codes of that length
+// (len in 1..=15), and symbols[] = symbols sorted by (length, symbol).
+
+///|
+priv struct HuffmanDecoder {
+  counts : Array[Int]
+  symbols : Array[Int]
+}
+
+///|
+fn build_huffman_decoder(code_lengths : Array[Int]) -> HuffmanDecoder {
+  let counts = Array::make(16, 0)
+  for i = 0; i < code_lengths.length(); i = i + 1 {
+    let l = code_lengths[i]
+    if l > 0 && l <= 15 {
+      counts[l] += 1
+    }
+  }
+  // Offsets into symbols[] for each length (sorted by length, then symbol).
+  let offsets = Array::make(16, 0)
+  for len = 1; len < 15; len = len + 1 {
+    offsets[len + 1] = offsets[len] + counts[len]
+  }
+  let total = offsets[15] + counts[15]
+  let symbols = Array::make(if total > 0 { total } else { 1 }, 0)
+  for sym = 0; sym < code_lengths.length(); sym = sym + 1 {
+    let l = code_lengths[sym]
+    if l > 0 && l <= 15 {
+      symbols[offsets[l]] = sym
+      offsets[l] += 1
+    }
+  }
+  { counts, symbols }
+}
+
+///|
+fn decode_symbol_canonical(
+  reader : @huffman.BitReader,
+  dec : HuffmanDecoder,
+) -> Int raise {
+  let mut code = 0
+  let mut first = 0
+  let mut index = 0
+  for len = 1; len <= 15; len = len + 1 {
+    code = code | reader.read_bits(1)
+    let count = dec.counts[len]
+    if code - first < count {
+      return dec.symbols[index + (code - first)]
+    }
+    index = index + count
+    first = (first + count) << 1
+    code = code << 1
+  }
+  fail("invalid Huffman code")
+}
+
+// Decompress deflate blocks from raw deflate bytes (RFC 1951).
 
 ///|
 fn decompress_deflate_blocks_bytes(compressed : Bytes) -> Bytes raise {
   if compressed.length() == 0 {
     return Bytes::from_array([])
   }
-  let mut result = Bytes::from_array([])
-  let mut offset = 0
-  while offset < compressed.length() {
-    // Read block header (3 bits, but we stored as full byte)
-    if offset >= compressed.length() {
-      fail("Unexpected end of compressed data")
+  let reader = @huffman.new_bit_reader(compressed)
+  let out : Array[Byte] = []
+  let mut done = false
+  while !done {
+    let bfinal = reader.read_bits(1)
+    let btype = reader.read_bits(2)
+    if btype == 0 {
+      inflate_stored_block(reader, out)
+    } else if btype == 1 {
+      inflate_fixed_block(reader, out)
+    } else if btype == 2 {
+      inflate_dynamic_block(reader, out)
+    } else {
+      fail("invalid btype 3")
     }
-    let header_byte = compressed[offset].to_int()
-    offset = offset + 1
-    let bfinal = header_byte & 1
-    let btype_value = (header_byte >> 1) & 3
-    match @huffman.btype_to_block_type(btype_value) {
-      Some(block_type) =>
-        if block_type == @huffman.uncompressed_block_type() {
-          // Uncompressed block
-          let (block_data, new_offset) = decompress_uncompressed_block_bytes(
-            compressed, offset,
-          )
-          result = result + block_data
-          offset = new_offset
-        } else if block_type == @huffman.fixed_huffman_block_type() {
-          // Fixed Huffman block - use bytes-based decompression
-          let (block_data, new_offset) = @huffman.decompress_fixed_huffman_block_bytes(
-            compressed, offset,
-          )
-          result = result + block_data
-          offset = new_offset
-        } else if block_type == @huffman.dynamic_huffman_block_type() {
-          // Dynamic Huffman - not implemented yet
-          fail("Dynamic Huffman decompression not implemented")
-        } else {
-          fail("Unknown block type")
-        }
-      None => fail("Invalid block type: " + btype_value.to_string())
-    }
-
-    // If this was the final block, we're done
     if bfinal == 1 {
-      break
+      done = true
     }
   }
-  result
+  Bytes::from_array(out)
 }
 
-// Decompress an uncompressed block from bytes (handles binary data correctly)
+// Stored (uncompressed) block, btype = 0.
 
 ///|
-fn decompress_uncompressed_block_bytes(
-  compressed : Bytes,
-  offset : Int,
-) -> (Bytes, Int) raise {
-  if offset + 4 > compressed.length() {
-    fail("Incomplete uncompressed block header")
+fn inflate_stored_block(
+  reader : @huffman.BitReader,
+  out : Array[Byte],
+) -> Unit raise {
+  // Align to next byte boundary.
+  reader.align_to_byte()
+  let len = reader.read_bits(16)
+  let nlen = reader.read_bits(16)
+  if len != ((nlen ^ 0xFFFF) & 0xFFFF) {
+    fail("stored block LEN/NLEN mismatch")
   }
-
-  // Read LEN (16-bit little-endian) from bytes
-  let len = read_u16_le_bytes(compressed, offset)
-  let nlen = read_u16_le_bytes(compressed, offset + 2)
-
-  // Verify NLEN is one's complement of LEN
-  if (len ^ nlen) != 0xffff {
-    fail("Invalid uncompressed block: LEN/NLEN mismatch")
+  for i = 0; i < len; i = i + 1 {
+    out.push(reader.read_bits(8).to_byte())
   }
-  let data_offset = offset + 4
-  if data_offset + len > compressed.length() {
-    fail("Incomplete uncompressed block data")
-  }
+}
 
-  // Extract the block data as bytes
-  let block_data = compressed[data_offset:data_offset + len].to_owned()
-  (block_data, data_offset + len)
+// Fixed Huffman block, btype = 1.
+
+///|
+fn inflate_fixed_block(
+  reader : @huffman.BitReader,
+  out : Array[Byte],
+) -> Unit raise {
+  let lit_lengths = Array::make(288, 0)
+  for i = 0; i <= 143; i = i + 1 {
+    lit_lengths[i] = 8
+  }
+  for i = 144; i <= 255; i = i + 1 {
+    lit_lengths[i] = 9
+  }
+  for i = 256; i <= 279; i = i + 1 {
+    lit_lengths[i] = 7
+  }
+  for i = 280; i <= 287; i = i + 1 {
+    lit_lengths[i] = 8
+  }
+  let dist_lengths = Array::make(30, 5)
+  let lit_dec = build_huffman_decoder(lit_lengths)
+  let dist_dec = build_huffman_decoder(dist_lengths)
+  inflate_symbols(reader, out, lit_dec, dist_dec)
+}
+
+// Dynamic Huffman block, btype = 2.
+
+///|
+fn inflate_dynamic_block(
+  reader : @huffman.BitReader,
+  out : Array[Byte],
+) -> Unit raise {
+  let hlit = reader.read_bits(5) + 257
+  let hdist = reader.read_bits(5) + 1
+  let hclen = reader.read_bits(4) + 4
+
+  // Read the code-length code lengths in the prescribed order.
+  let cl_lengths = Array::make(19, 0)
+  for i = 0; i < hclen; i = i + 1 {
+    cl_lengths[cl_order[i]] = reader.read_bits(3)
+  }
+  let cl_dec = build_huffman_decoder(cl_lengths)
+
+  // Decode HLIT + HDIST code lengths.
+  let all : Array[Int] = []
+  let needed = hlit + hdist
+  while all.length() < needed {
+    let sym = decode_symbol_canonical(reader, cl_dec)
+    if sym < 16 {
+      all.push(sym)
+    } else if sym == 16 {
+      if all.length() == 0 {
+        fail("repeat with no previous length")
+      }
+      let prev = all[all.length() - 1]
+      let rep = reader.read_bits(2) + 3
+      for j = 0; j < rep; j = j + 1 {
+        all.push(prev)
+      }
+    } else if sym == 17 {
+      let rep = reader.read_bits(3) + 3
+      for j = 0; j < rep; j = j + 1 {
+        all.push(0)
+      }
+    } else if sym == 18 {
+      let rep = reader.read_bits(7) + 11
+      for j = 0; j < rep; j = j + 1 {
+        all.push(0)
+      }
+    } else {
+      fail("invalid code-length symbol")
+    }
+  }
+  if all.length() != needed {
+    fail("code length overrun")
+  }
+  let lit_lengths = Array::make(hlit, 0)
+  for i = 0; i < hlit; i = i + 1 {
+    lit_lengths[i] = all[i]
+  }
+  let dist_lengths = Array::make(hdist, 0)
+  for i = 0; i < hdist; i = i + 1 {
+    dist_lengths[i] = all[hlit + i]
+  }
+  let lit_dec = build_huffman_decoder(lit_lengths)
+  let dist_dec = build_huffman_decoder(dist_lengths)
+  inflate_symbols(reader, out, lit_dec, dist_dec)
+}
+
+// Shared literal/length/distance symbol loop for fixed & dynamic blocks.
+
+///|
+fn inflate_symbols(
+  reader : @huffman.BitReader,
+  out : Array[Byte],
+  lit_dec : HuffmanDecoder,
+  dist_dec : HuffmanDecoder,
+) -> Unit raise {
+  let mut done = false
+  while !done {
+    let sym = decode_symbol_canonical(reader, lit_dec)
+    if sym < 256 {
+      out.push(sym.to_byte())
+    } else if sym == 256 {
+      done = true
+    } else if sym <= 285 {
+      let idx = sym - 257
+      let length = length_base_tbl[idx] + reader.read_bits(length_extra_tbl[idx])
+      let dsym = decode_symbol_canonical(reader, dist_dec)
+      if dsym >= 30 {
+        fail("invalid distance symbol")
+      }
+      let dist = dist_base_tbl[dsym] + reader.read_bits(dist_extra_tbl[dsym])
+      let start = out.length() - dist
+      if start < 0 {
+        fail("bad distance")
+      }
+      // Byte-by-byte copy to support overlapping back-references.
+      for i = 0; i < length; i = i + 1 {
+        out.push(out[start + i])
+      }
+    } else {
+      fail("invalid length symbol")
+    }
+  }
 }
 
 // Helper functions for binary data (reused from zip module)
@@ -255,16 +449,6 @@ fn write_u16_le_bytes(value : Int) -> Bytes {
   let b0 = value & 0xff
   let b1 = (value >> 8) & 0xff
   Bytes::from_array([b0.to_byte(), b1.to_byte()])
-}
-
-///|
-fn read_u16_le_bytes(data : Bytes, offset : Int) -> Int {
-  if offset + 1 >= data.length() {
-    return 0
-  }
-  let b0 = data[offset].to_int()
-  let b1 = data[offset + 1].to_int()
-  b0 + (b1 << 8)
 }
 
 // Create deflate-compressed file data for ZIP (DEPRECATED - use deflate_of_bytes)
