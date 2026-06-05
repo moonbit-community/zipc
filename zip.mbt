@@ -36,11 +36,6 @@ pub impl Show for ZipError with fn output(self, logger) {
 pub let dos_epoch : Int = 315532800
 
 ///|
-/// Maximum size of a single member's data (ZIP32 stores sizes in 32 bits; we cap
-/// at `Int` range, which is enough for any archive we build in memory).
-let max_file_size : Int = 0x7fffffff
-
-///|
 /// Maximum number of members in a ZIP32 archive.
 let max_members : Int = 65535
 
@@ -130,10 +125,7 @@ fn crc32_of(data : Bytes) -> Int {
 
 ///|
 /// Create a `Stored` (uncompressed) file from `data`.
-pub fn File::stored_of_bytes(data : Bytes) -> File raise ZipError {
-  if data.length() > max_file_size {
-    raise ZipError("file exceeds maximum size")
-  }
+pub fn File::stored_of_bytes(data : Bytes) -> File {
   {
     compression: Stored,
     data,
@@ -156,10 +148,7 @@ pub fn File::stored_of_bytes(data : Bytes) -> File raise ZipError {
 ///   assert_eq(file.to_bytes(), b"aaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 /// }
 /// ```
-pub fn File::deflate_of_bytes(data : Bytes) -> File raise ZipError {
-  if data.length() > max_file_size {
-    raise ZipError("file exceeds maximum size")
-  }
+pub fn File::deflate_of_bytes(data : Bytes) -> File {
   let compressed = @deflate.deflate(data)
   if compressed.length() >= data.length() {
     File::stored_of_bytes(data)
@@ -530,9 +519,7 @@ pub fn bytes_has_magic(data : Bytes) -> Bool {
 /// Scan backwards for the End Of Central Directory record's offset.
 fn find_eocd(data : Bytes) -> Int? {
   let len = data.length()
-  if len < 22 {
-    return None
-  }
+  // `of_bytes` guarantees len >= 22 before calling this.
   // The EOCD is at the end except for an optional trailing comment (<= 65535).
   let mut i = len - 22
   let limit = if len - 22 - 0xffff > 0 { len - 22 - 0xffff } else { 0 }

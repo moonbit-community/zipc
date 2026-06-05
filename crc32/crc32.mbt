@@ -91,12 +91,14 @@ pub fn bytes(data : Bytes) -> Crc32 {
 
 ///|
 pub impl Show for Crc32 with fn output(crc, logger) {
-  let hex_chars = "0123456789abcdef"
   let mut result = ""
   let mut value = crc.0
   for i = 0; i < 8; i = i + 1 {
     let digit = value.land(0xfL).to_int()
-    result = hex_chars[digit].to_string() + result
+    // Map 0-15 to '0'-'9' / 'a'-'f' by char code (avoids relying on String
+    // indexing semantics, which return code units, not characters).
+    let code = if digit < 10 { 0x30 + digit } else { 0x61 + digit - 10 }
+    result = code.unsafe_to_char().to_string() + result
     value = value >> 4
   }
   logger.write_string("0x" + result)

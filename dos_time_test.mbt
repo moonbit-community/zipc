@@ -200,3 +200,33 @@ test "dos time month calculations" {
     inspect(day, content="15")
   }
 }
+
+///|
+test "unix_to_dos_datetime at the end of a leap year (year-loop break)" {
+  // The last day of leap-year 2020: the day-of-year loop reaches remaining=365
+  // while days_in_year=366, so it takes the `break` branch.
+  let (t, d) = @zipc.unix_to_dos_datetime(1609372800) // 2020-12-31 UTC
+  let (y, mo, day, _, _, _) = @zipc.dos_datetime_components(t, d)
+  inspect(y, content="2020")
+  inspect(mo, content="12")
+  inspect(day, content="31")
+}
+
+///|
+test "make_dos_datetime clamps out-of-range components" {
+  // Everything below the minimum: year<1980, month<1, day<1, negative time parts.
+  let (t, d) = @zipc.make_dos_datetime(1970, 0, 0, -1, -1, -1)
+  let (y, mo, day, h, mi, s) = @zipc.dos_datetime_components(t, d)
+  inspect(y, content="1980")
+  inspect(mo, content="1")
+  inspect(day, content="1")
+  inspect(h, content="0")
+  inspect(mi, content="0")
+  inspect(s, content="0")
+}
+
+///|
+test "format_dos_datetime two-digit fields are not zero-padded twice" {
+  let (t, d) = @zipc.make_dos_datetime(2020, 12, 25, 13, 45, 30)
+  inspect(@zipc.format_dos_datetime(t, d), content="2020-12-25 13:45:30")
+}

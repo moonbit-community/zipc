@@ -51,25 +51,33 @@ test "crc32_bytes" {
   // MOONBIT supports overloading, in check modes, "" will be interpreted as Bytes
   inspect(
     @crc32.bytes(@utf16.encode("hello"[:], bom=false, endianness=Little)),
-    content="0x535349505550100102",
+    content=(
+      #|0x551272df
+    ),
   )
   inspect(
     @crc32.bytes(
       @utf16.encode("hello world hgoho"[:], bom=false, endianness=Little),
     ),
-    content="0x4898102545751100102",
+    content=(
+      #|0x0bf693df
+    ),
   )
   inspect(
     @crc32.bytes(
       @utf16.encode("hello world hgoho xx"[:], bom=false, endianness=Little),
     ),
-    content="0x5053575356979856",
+    content=(
+      #|0x25958ab8
+    ),
   )
   inspect(
     @crc32.bytes(
       @utf16.encode("hello world hgoho xx yy"[:], bom=false, endianness=Little),
     ),
-    content="0x10155555150535697",
+    content=(
+      #|0xe773258a
+    ),
   )
   inspect(
     @crc32.bytes(
@@ -79,7 +87,9 @@ test "crc32_bytes" {
         endianness=Little,
       ),
     ),
-    content="0x4852494950985699",
+    content=(
+      #|0x04112b8c
+    ),
   )
   inspect(
     @crc32.bytes(
@@ -89,7 +99,9 @@ test "crc32_bytes" {
         endianness=Little,
       ),
     ),
-    content="0x555710010051995653",
+    content=(
+      #|0x79dd3c85
+    ),
   )
   inspect(
     @crc32.bytes(
@@ -99,7 +111,9 @@ test "crc32_bytes" {
         endianness=Little,
       ),
     ),
-    content="0x100535156554852102",
+    content=(
+      #|0xd538704f
+    ),
   )
   inspect(
     @crc32.bytes(
@@ -109,7 +123,9 @@ test "crc32_bytes" {
         endianness=Little,
       ),
     ),
-    content="0x545650999898102102",
+    content=(
+      #|0x682cbbff
+    ),
   )
   inspect(
     @crc32.bytes(
@@ -119,7 +135,9 @@ test "crc32_bytes" {
         endianness=Little,
       ),
     ),
-    content="0x5099525655509853",
+    content=(
+      #|0x2c4872b5
+    ),
   )
   inspect(
     @crc32.bytes(
@@ -129,7 +147,9 @@ test "crc32_bytes" {
         endianness=Little,
       ),
     ),
-    content="0x485210210199505557",
+    content=(
+      #|0x04fec279
+    ),
   )
   inspect(
     @crc32.bytes(
@@ -139,7 +159,9 @@ test "crc32_bytes" {
         endianness=Little,
       ),
     ),
-    content="0x525399991011015749",
+    content=(
+      #|0x45ccee91
+    ),
   )
   inspect(
     @crc32.bytes(

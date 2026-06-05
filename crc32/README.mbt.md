@@ -22,7 +22,7 @@ test "quick_start_example" {
   // Calculate CRC-32 of some data
   let data = b"Hello, World!"
   let checksum = @crc32.bytes(data)
-  inspect(checksum, content="0x101995297995110048")
+  inspect(checksum, content="0xec4ac3d0")
 
   // Verify data integrity
   let received_data = b"Hello, World!"
@@ -59,7 +59,7 @@ Calculate the CRC-32 checksum of byte data.
 test "bytes_function_example" {
   let data = b"Hello, CRC32!"
   let crc = @crc32.bytes(data)
-  inspect(crc, content="0x10110150971025110249")
+  inspect(crc, content="0xee2af3f1")
 }
 ```
 
@@ -82,7 +82,7 @@ test "example_basic" {
 
   // Display result
   inspect("Message: Hello, World!", content="Message: Hello, World!")
-  inspect(checksum, content="0x101995297995110048")
+  inspect(checksum, content="0xec4ac3d0")
 }
 ```
 
@@ -117,7 +117,7 @@ test "example_data_types" {
 
   // They should be equal
   assert_eq(text_crc, binary_crc)
-  inspect(text_crc, content="0x102551004956575650")
+  inspect(text_crc, content="0xf7d18982")
 }
 ```
 
@@ -132,8 +132,8 @@ test "example_performance" {
   let small_crc = @crc32.bytes(small_data)
   let large_crc = @crc32.bytes(large_data)
 
-  inspect(small_crc, content="0x102551004956575650")
-  inspect(large_crc, content="0x49524897525197102")
+  inspect(small_crc, content="0xf7d18982")
+  inspect(large_crc, content="0x140a43af")
   inspect(
     "Both calculated efficiently!",
     content="Both calculated efficiently!",
@@ -183,7 +183,7 @@ test "integration_example" {
   let file_data = b"File content"
   let file_crc = @crc32.bytes(file_data)
   // CRC is automatically included in ZIP file headers
-  inspect(file_crc, content="0x995610150100495354")
+  inspect(file_crc, content="0xc8e2d156")
 }
 ```
 

@@ -56,8 +56,8 @@ pub fn File::compressed_size(Self) -> Int
 pub fn File::compression(Self) -> Compression
 pub fn File::decompressed_crc32(Self) -> Int
 pub fn File::decompressed_size(Self) -> Int
-pub fn File::deflate_of_bytes(Bytes) -> Self raise ZipError
-pub fn File::stored_of_bytes(Bytes) -> Self raise ZipError
+pub fn File::deflate_of_bytes(Bytes) -> Self
+pub fn File::stored_of_bytes(Bytes) -> Self
 pub fn File::to_bytes(Self) -> Bytes raise
 
 pub struct Member {

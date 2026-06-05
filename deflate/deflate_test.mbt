@@ -71,3 +71,16 @@ test "inflate rejects garbage" {
   let garbage : Bytes = [255, 255, 255, 255, 255, 255]
   assert_true(raises(() => @deflate.inflate(garbage)))
 }
+
+///|
+test "DeflateError has a readable Show" {
+  let garbage : Bytes = [255, 255, 255, 255, 255, 255]
+  let msg = try {
+    @deflate.inflate(garbage) |> ignore
+    ""
+  } catch {
+    e => "\{e}"
+  }
+  // message starts with the DeflateError wrapper and our "inflate" label
+  assert_true(msg.has_prefix("DeflateError(inflate"))
+}
