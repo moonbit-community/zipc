@@ -158,20 +158,6 @@ test "dos time precision" {
 }
 
 ///|
-test "dos time current timestamp" {
-  // Test current timestamp function (placeholder)
-  let current = @zipc.current_unix_timestamp()
-
-  // Should be a reasonable timestamp (after 2020)
-  inspect(current > 1577836800, content="true") // 2020-01-01 00:00:00 UTC
-
-  // Should convert to DOS time without error
-  let (dos_time, dos_date) = @zipc.unix_to_dos_datetime(current)
-  inspect(dos_time >= 0, content="true")
-  inspect(dos_date >= 0, content="true")
-}
-
-///|
 test "dos time invalid date handling" {
   // Test invalid DOS date/time values
   let invalid_unix = @zipc.dos_datetime_to_unix(0xffff, 0xffff) // Invalid values

@@ -149,15 +149,6 @@ fn month_day_to_day_of_year(month : Int, day : Int, is_leap : Bool) -> Int {
   day_of_year
 }
 
-// Get current Unix timestamp (placeholder - would need system integration)
-
-///|
-pub fn current_unix_timestamp() -> Int {
-  // This is a placeholder. In a real implementation, this would
-  // get the current system time. For now, return a reasonable default.
-  1640995200 // 2022-01-01 00:00:00 UTC
-}
-
 // Create DOS time/date from individual components
 
 ///|

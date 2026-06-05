@@ -1,10 +1,6 @@
 import {
-  "moonbitlang/core/buffer",
-  "moonbitlang/core/debug",
-  "moonbitlang/core/encoding/utf16",
-  "moonbit-community/zipc/crc32",
-  "moonbit-community/zipc/adler32",
-  "moonbit-community/zipc/huffman",
+  "gmlewis/io",
+  "gmlewis/flate",
 }
 
 options(

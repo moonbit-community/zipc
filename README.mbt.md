@@ -1,221 +1,136 @@
-# Zipc – ZIP archive and deflate codec for MoonBit
+# zipc
 
-Zipc is a comprehensive in-memory ZIP archive and deflate compression codec for MoonBit, ported and enhanced from the original [OCaml zipc library](https://github.com/dbuenzli/zipc).
+A **typed, in-memory ZIP archive** library for MoonBit, ported in spirit from
+the OCaml [zipc](https://github.com/dbuenzli/zipc) library.
 
-This library provides:
-- **Complete DEFLATE compression** with Fixed Huffman coding and uncompressed blocks
-- **Gzip format support** (RFC 1952) with metadata and CRC-32 validation
-- **ZIP archive manipulation** with full format compliance and metadata support
-- **Advanced ZIP features** including extra fields, DOS time conversion, and Unicode support
-- **Comprehensive checksums** with CRC-32 and Adler-32 implementations
-- **High-quality test suite** with 100+ tests ensuring correctness and compatibility
+Its focus is the *archive model*, not the codec: a value-oriented
+`Archive` / `Member` / `File` API that preserves per-entry Unix mode and
+modification time, produces deterministic (byte-stable) output, and verifies
+CRC-32 on every decode. The DEFLATE compression itself is delegated to the
+mature [`gmlewis/flate`](https://github.com/gmlewis/moonbit-flate) (a port of
+Go's `compress/flate`, with real LZ77 and fixed/dynamic Huffman blocks).
 
-## Features
+Verified interoperable with the reference C `zlib`/`gzip` and with `unzip` /
+Python's `zipfile` in both directions (see the tests). The examples below use the
+same APIs the test suite exercises.
 
-### Core Compression
-- **DEFLATE algorithm** (RFC 1951) with Fixed Huffman coding
-- **Gzip format** (RFC 1952) with full metadata support
-- **Zlib format** (RFC 1950) with Adler-32 checksums
-- **Uncompressed blocks** for maximum compatibility
+## Scope
 
-### ZIP Archive Support
-- **Complete ZIP format** reading and writing
-- **DOS time/date conversion** for proper file timestamps
-- **Extra fields system** for extended metadata
-- **Unicode filename support** with proper encoding
-- **Directory entries** with full attribute support
-- **Mixed compression modes** in single archives
+**In scope**
 
-### Data Integrity
-- **CRC-32 checksums** with optimized lookup tables
-- **Adler-32 checksums** for zlib format validation
-- **Format validation** with comprehensive error reporting
-- **Roundtrip testing** ensuring data integrity
+- A pure, in-memory ZIP archive value type: `Archive` / `Member` / `File` with
+  `add` / `find` / `mem` / `remove` / `each` / `to_array`.
+- Per-entry **Unix mode** and **mtime** preservation.
+- **Deterministic** serialization (members written in path order).
+- `Stored` and `Deflate` methods, produced and extracted natively, with CRC-32
+  verified on decode.
+- Byte-native throughout (`Bytes` in, `Bytes` out) — no lossy `String`
+  round-trips.
 
-### Developer Experience
-- **Pure MoonBit implementation** with no external dependencies
-- **Functional programming style** with immutable data structures
-- **Comprehensive error handling** using Result types
-- **Extensive test coverage** with 100+ test cases across 8 test modules
+**Non-goals** (use a dedicated library if you need these)
 
-## Installation
+- **ZIP64** — archives are limited to 65535 members and ~2 GiB per entry
+  (ZIP32). For larger archives, see `hustcer/fzip`.
+- **Encryption**, **multi-part / split archives**, and **streaming** (the whole
+  archive is held in memory for encode/decode).
+- **Tunable compression levels** — the backend compresses at a single fast
+  level. Choose per file between `File::stored_of_bytes` (no compression) and
+  `File::deflate_of_bytes` (compressed).
+- **Being a general codec library.** Only raw DEFLATE (`deflate`/`inflate`, the
+  format ZIP entries use) is exposed, as a thin `Bytes -> Bytes` convenience. For
+  zlib, gzip, streaming or dictionaries, use `gmlewis/flate`, `gmlewis/zlib`,
+  `gmlewis/gzip` directly.
 
-Add this to your `moon.pkg.json`:
+Entries that use methods other than `Stored`/`Deflate` round-trip as opaque
+`Compression::Other` payloads (they are preserved but not decoded).
 
-```json
-{
-  "import": [
-    "moonbit-community/zipc",
-    "moonbit-community/zipc/deflate"
-  ]
+## Install
+
+```bash
+moon add moonbit-community/zipc
+```
+
+```
+import {
+  "moonbit-community/zipc",
+  "moonbit-community/zipc/deflate", // only if you want the codec convenience
 }
 ```
 
-The main package provides ZIP archive functionality, while the `deflate` package provides compression algorithms and checksums.
+## Archives — `moonbit-community/zipc`
 
-## Quick Start
+Build an archive of members (files and directories), serialise it to ZIP bytes,
+and parse it back. Unix mode and modification time are preserved.
 
-### Basic ZIP Archive Operations
-
-```moonbit nocheck
+```mbt nocheck
 ///|
 test {
-  // Create an empty ZIP archive
-  let archive = @zipc.empty()
+  // build
+  let archive = @zipc.Archive::empty()
+  archive.add(
+    @zipc.Member::make(
+      "readme.txt",
+      File(@zipc.File::stored_of_bytes(b"hello")),
+    ),
+  )
+  |> ignore
+  archive.add(
+    @zipc.Member::make(
+      "src/data.bin",
+      File(
+        @zipc.File::deflate_of_bytes(b"compress me, compress me, compress me"),
+      ),
+      mode=0o644,
+    ),
+  )
+  |> ignore
+  let bytes = archive.to_bytes()
 
-  // Test basic archive properties
-  inspect(@zipc.member_count(archive), content="0")
-  inspect(@zipc.is_empty(archive), content="true")
-
-  // Test encoding/decoding empty archive
-  match @zipc.to_binary_string(archive) {
-    @deflate.Ok(zip_data) => {
-      inspect(zip_data.length(), content="22") // Empty ZIP is 22 bytes
-
-      // Test decoding
-      match @zipc.of_binary_string(zip_data) {
-        @deflate.Ok(decoded) => {
-          inspect(@zipc.is_empty(decoded), content="true")
-          inspect(@zipc.member_count(decoded), content="0")
-        }
-        @deflate.Err(error) => fail("Error decoding archive: " + error)
-      }
-    }
-    @deflate.Err(error) => fail("Error encoding archive: " + error)
-  }
+  // parse and extract
+  let parsed = @zipc.Archive::of_bytes(bytes)
+  guard parsed.find("readme.txt").unwrap().kind() is File(f)
+  assert_eq(f.to_bytes(), b"hello")
 }
 ```
 
-### Working with Checksums
+`File::deflate_of_bytes` automatically falls back to `Stored` when DEFLATE would
+not shrink the data. `File::to_bytes` verifies the entry's CRC-32 and size.
 
-```moonbit nocheck
+## Codec convenience — `moonbit-community/zipc/deflate`
+
+A thin `Bytes -> Bytes` layer over the backend for raw DEFLATE (RFC 1951) — the
+format ZIP entries use. `inflate` raises `DeflateError` on malformed input. For
+zlib, gzip, streaming or dictionaries, use `gmlewis/*` directly.
+
+```mbt nocheck
 ///|
 test {
-  // CRC-32 checksums
-  let data = b"Hello, World!"
-  let crc = @crc32.bytes(data)
-  inspect(crc.0 > 0L, content="true") // CRC should be non-zero for non-empty data
-
-  // Test CRC equality
-  let crc2 = @crc32.bytes(data)
-  inspect(crc == crc2, content="true") // Same data should produce same CRC
+  let data = b"the quick brown fox the quick brown fox"
+  assert_eq(@deflate.inflate(@deflate.deflate(data)), data)
 }
 ```
 
-### Gzip Compression
+## Compared to other MoonBit options
 
-```moonbit nocheck
-///|
-test {
-  // Test Gzip compression functionality
-  let data = "MoonBit zipc library example"
-  try {
-    let compressed = @deflate.gzip_of_bytes(
-      data.to_bytes(),
-      @deflate.level_default(),
-      None,
-      None,
-    )
-    // Verify compression produces output
-    inspect(compressed.length() > 0, content="true")
-    inspect(
-      "Gzip compression successful",
-      content="Gzip compression successful",
-    )
+- **`gmlewis/flate` / `gmlewis/gzip` / `gmlewis/zlib`** are codecs only — no ZIP
+  *archive* layer. This library builds on `gmlewis/flate` rather than competing
+  with it.
+- **`moonbitlang/async/gzip`** is a gzip stream transform for HTTP
+  content-encoding; it is not a ZIP archive tool.
+- **`hustcer/fzip`** (an `fflate` port) is the broader toolkit: more formats,
+  streaming, ZIP64 *reading*, more mature. If you just want
+  `zip_sync(files) -> bytes`, prefer it.
 
-    // Note: Full round-trip decompression requires complete DEFLATE implementation
-    // For now, we test that compression works and produces valid gzip headers
-  } catch {
-    _ => fail("Gzip operation failed")
-  }
-}
-```
+What this library offers that the others don't is the **typed, deterministic,
+metadata-preserving archive model** — the right choice when you need reproducible
+archives or faithful filesystem round-tripping (permissions and timestamps),
+rather than just packing a bag of bytes.
 
-## Current Status
+## Dependencies
 
-This is a **comprehensive implementation** of ZIP and DEFLATE functionality for MoonBit, significantly enhanced beyond the original OCaml zipc library.
-
-### ✅ Fully Implemented Features
-
-#### Core Compression Algorithms
-- **DEFLATE compression** (RFC 1951) with Fixed Huffman coding and uncompressed blocks
-- **Gzip format** (RFC 1952) with full metadata support (filename, comment, modification time)
-- **Zlib format** (RFC 1950) with proper headers and Adler-32 checksums
-- **Intelligent compression selection** - Fixed Huffman for small data, uncompressed for large data
-
-#### ZIP Archive Support
-- **Complete ZIP format** reading and writing with proper signatures
-- **DOS time/date conversion** for accurate file timestamps
-- **Extra fields system** supporting Unix timestamps, Unicode paths, and custom fields
-- **Directory entries** with full attribute support and proper mode handling
-- **Archive operations** - Add, remove, find, count members with comprehensive API
-- **Mixed compression modes** - Stored and deflate files in same archive
-- **Format validation** with detailed error reporting
-
-#### Data Integrity & Checksums
-- **CRC-32 checksums** with optimized lookup tables and hex formatting
-- **Adler-32 checksums** with proper initialization and validation
-- **Roundtrip testing** ensuring perfect data integrity
-- **Error handling** with comprehensive Result types
-
-#### Advanced Features
-- **Unicode filename support** with proper UTF-8 encoding in extra fields
-- **Extended metadata** through ZIP extra fields system
-- **Multiple compression levels** (None, Fast, Default, Best)
-- **Binary I/O utilities** with proper little-endian/big-endian handling
-
-### 🧪 Test Coverage
-- **100+ test cases** across 8 comprehensive test modules
-- **Snapshot testing** for format compliance
-- **Edge case coverage** including empty data, large data, and malformed inputs
-- **Roundtrip validation** ensuring data integrity
-- **Cross-format compatibility** testing
-
-### 🔄 Partially Implemented
-- **Dynamic Huffman coding** - Structure ready, algorithm pending
-- **ZIP64 support** - Framework in place for large files
-
-### ❌ Future Enhancements
-- **ZIP encryption** - Password protection and advanced security
-- **Streaming API** - Non-blocking, memory-efficient processing
-- **Advanced compression algorithms** - BZIP2, LZMA support
-
-## API Overview
-
-The library is organized into two main packages:
-
-### Main Package (`@zipc`)
-- **Archive operations**: `empty()`, `add()`, `remove()`, `find()`, `mem()`
-- **Encoding/Decoding**: `to_binary_string()`, `of_binary_string()`
-- **File operations**: `stored_of_binary_string()`, `deflate_of_binary_string()`
-- **Member utilities**: `member_make()`, `member_path()`, `member_mode()`, `member_mtime()`
-- **DOS time conversion**: `unix_to_dos_datetime()`, `dos_datetime_to_unix()`
-- **Extra fields**: `parse_extra_fields()`, `serialize_extra_fields()`, Unicode/Unix timestamp fields
-
-### Deflate Package (`@deflate`)
-- **Compression**: `deflate_compress()`, `deflate_decompress()` with multiple levels
-- **Gzip format**: `gzip_compress()`, `gzip_decompress()` with metadata support
-- **Zlib format**: `zlib_compress()`, `zlib_decompress()` with Adler-32
-- **Checksums**: `crc32_string()`, `adler32_string()` with validation utilities
-- **Huffman coding**: Fixed Huffman trees and decoding utilities
-
-## Design Principles
-
-- **Functional programming style** with immutable data structures
-- **Comprehensive error handling** using `Result[T, E]` types
-- **Type safety** with strong typing and validation
-- **RFC compliance** following official specifications
-- **Memory efficiency** with in-memory processing
-- **Extensibility** through modular design
-
-## Performance Characteristics
-
-- **Fixed Huffman compression** provides good compression ratios for small to medium files
-- **Optimized checksums** using lookup tables for fast CRC-32/Adler-32 computation
-- **Intelligent compression selection** automatically chooses best algorithm based on data size
-- **Memory-efficient** operations with minimal allocations
-- **Fast roundtrip** encoding/decoding with comprehensive validation
+`gmlewis/flate` and `gmlewis/io` (Apache-2.0) for the DEFLATE codec. Checksums
+use this module's own `crc32` package.
 
 ## License
 
-ISC License - same as the original OCaml zipc library.
+Apache-2.0. See [LICENSE](LICENSE).

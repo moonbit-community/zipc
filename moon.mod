@@ -1,17 +1,18 @@
 name = "moonbit-community/zipc"
 
-version = "0.1.3"
+version = "0.2.0"
 
-readme = "README.md"
+readme = "README.mbt.md"
 
 repository = "https://github.com/moonbit-community/zipc"
 
-license = "ISC"
+license = "Apache-2.0"
 
-keywords = [ "zip", "compression", "deflate", "archive" ]
+keywords = [ "zip", "archive", "compression", "deflate" ]
 
-description = "ZIP archive and deflate codec for MoonBit - ported from OCaml zipc library"
+description = "Typed, in-memory ZIP archive library for MoonBit (deflate via gmlewis/flate)"
 
-options(
-  "alert-list": "+test_import_all",
-)
+import {
+  "gmlewis/flate@0.36.8",
+  "gmlewis/io@0.23.11",
+}
