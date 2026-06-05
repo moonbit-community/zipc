@@ -834,10 +834,25 @@ fn parse_central_directory_entry(
         (external_file_attrs & 0x10) != 0
       let kind = if is_directory { MemberKind::Dir } else { File(file) }
 
+      // Unix permission bits are stored in the HIGH 16 bits of the external file
+      // attributes, but only when the archive was created on a Unix host (the
+      // "version made by" high byte == 3). Honour them — most importantly the
+      // executable bit — instead of forcing every file to 0o644: that way an
+      // extracted tree round-trips byte-for-byte and hashes identically to what
+      // `unzip` / a NAR-based content hash produce. Non-Unix archives (high byte
+      // != 3, or a zero mode) fall back to the conventional defaults.
+      let unix_mode = if (version_made_by >> 8) == 3 {
+        (external_file_attrs >> 16) & 0o777
+      } else {
+        0
+      }
+
       // Create member
       let mem = {
         path: filename,
-        mode: if is_directory {
+        mode: if unix_mode != 0 {
+          unix_mode
+        } else if is_directory {
           0o755
         } else {
           0o644
