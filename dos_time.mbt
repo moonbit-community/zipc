@@ -1,83 +1,83 @@
-// DOS time/date conversion utilities for ZIP files
-// DOS time format: 16-bit time and 16-bit date fields
-
-// DOS time structure (packed into 16 bits)
-// Bits 15-11: Hours (0-23)
-// Bits 10-5:  Minutes (0-59) 
-// Bits 4-0:   Seconds/2 (0-29, representing 0-58 seconds in 2-second intervals)
-
-// DOS date structure (packed into 16 bits)  
-// Bits 15-9: Year offset from 1980 (0-127, representing 1980-2107)
-// Bits 8-5:  Month (1-12)
-// Bits 4-0:  Day (1-31)
-
-// Unix timestamp to DOS date/time conversion
+// DOS date/time conversion for ZIP entries.
+//
+// ZIP stores modification time as two packed 16-bit fields (APPNOTE 4.4.6):
+//   time  bits 15-11 hours (0-23), 10-5 minutes (0-59), 4-0 seconds/2 (0-29)
+//   date  bits 15-9  year-1980 (0-127), 8-5 month (1-12), 4-0 day (1-31)
+// These helpers convert to and from Unix seconds (UTC). Only the two conversions
+// the encoder/decoder needs are defined here, and both are private to the package.
 
 ///|
-pub fn unix_to_dos_datetime(unix_timestamp : Int) -> (Int, Int) {
-  // Convert Unix timestamp to components
-  // This is a simplified conversion - a full implementation would handle
-  // leap years, time zones, etc. more accurately
+/// Days per month, indexed 0 (January) .. 11 (December), for a common year.
+let days_in_month_common : FixedArray[Int] = [
+  31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
+]
 
+///|
+/// Days per month for a leap year (February has 29).
+let days_in_month_leap : FixedArray[Int] = [
+  31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
+]
+
+///|
+fn days_in_months(is_leap : Bool) -> FixedArray[Int] {
+  if is_leap {
+    days_in_month_leap
+  } else {
+    days_in_month_common
+  }
+}
+
+///|
+fn is_leap_year(year : Int) -> Bool {
+  (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+}
+
+///|
+/// Convert a Unix timestamp (UTC seconds) to packed DOS (time, date) fields.
+/// Timestamps at or before the DOS epoch clamp to 1980-01-01 00:00:00.
+fn unix_to_dos_datetime(unix_timestamp : Int) -> (Int, Int) {
   if unix_timestamp <= dos_epoch {
-    // Before DOS epoch, use minimum DOS date/time (1980-01-01 00:00:00)
-    return (0, 0x0021) // Time: 00:00:00, Date: 1980-01-01
+    return (0, 0x0021) // 1980-01-01 00:00:00
   }
   let seconds_since_dos_epoch = unix_timestamp - dos_epoch
   let days_since_dos_epoch = seconds_since_dos_epoch / 86400
   let seconds_in_day = seconds_since_dos_epoch % 86400
-
-  // Calculate time components
   let hours = seconds_in_day / 3600
   let minutes = seconds_in_day % 3600 / 60
   let seconds = seconds_in_day % 60
-
-  // Pack DOS time (seconds are divided by 2)
   let dos_time = (hours << 11) | (minutes << 5) | (seconds / 2)
 
-  // Calculate date components (simplified - doesn't handle leap years perfectly)
-  let mut year = 1980
-  let mut remaining_days = days_since_dos_epoch
-
-  // Approximate year calculation
-  while remaining_days >= 365 {
+  // Walk whole years off the day count, then resolve month/day within the year.
+  let (year, remaining_days) = for year = 1980, remaining_days = days_since_dos_epoch; remaining_days >=
+                                  365; {
     let days_in_year = if is_leap_year(year) { 366 } else { 365 }
     if remaining_days >= days_in_year {
-      remaining_days = remaining_days - days_in_year
-      year = year + 1
+      continue year + 1, remaining_days - days_in_year
     } else {
-      break
+      break (year, remaining_days)
     }
+  } nobreak {
+    (year, remaining_days)
   }
-
-  // Calculate month and day
   let (month, day) = day_of_year_to_month_day(
     remaining_days + 1,
     is_leap_year(year),
   )
-
-  // Pack DOS date
-  let year_offset = year - 1980
-  let dos_date = (year_offset << 9) | (month << 5) | day
+  let dos_date = ((year - 1980) << 9) | (month << 5) | day
   (dos_time, dos_date)
 }
 
-// DOS date/time to Unix timestamp conversion
-
 ///|
-pub fn dos_datetime_to_unix(dos_time : Int, dos_date : Int) -> Int {
-  // Unpack DOS time
+/// Convert packed DOS (time, date) fields back to a Unix timestamp (UTC
+/// seconds). Out-of-range fields fall back to the DOS epoch.
+fn dos_datetime_to_unix(dos_time : Int, dos_date : Int) -> Int {
   let hours = (dos_time >> 11) & 0x1f
   let minutes = (dos_time >> 5) & 0x3f
   let seconds = (dos_time & 0x1f) * 2
-
-  // Unpack DOS date
   let year_offset = (dos_date >> 9) & 0x7f
   let month = (dos_date >> 5) & 0x0f
   let day = dos_date & 0x1f
   let year = 1980 + year_offset
-
-  // Validate components
   if month < 1 ||
     month > 12 ||
     day < 1 ||
@@ -85,184 +85,40 @@ pub fn dos_datetime_to_unix(dos_time : Int, dos_date : Int) -> Int {
     hours > 23 ||
     minutes > 59 ||
     seconds > 59 {
-    return dos_epoch // Return DOS epoch for invalid dates
+    return dos_epoch
   }
-
-  // Calculate days since DOS epoch
-  let mut days = 0
-
-  // Add days for complete years
-  for y = 1980; y < year; y = y + 1 {
-    days = days + (if is_leap_year(y) { 366 } else { 365 })
+  let year_days = for y = 1980, acc = 0; y < year; {
+    continue y + 1, acc + (if is_leap_year(y) { 366 } else { 365 })
+  } nobreak {
+    acc
   }
-
-  // Add days for complete months in the current year
-  days = days + month_day_to_day_of_year(month, day, is_leap_year(year)) - 1
-
-  // Calculate total seconds
+  let days = year_days +
+    month_day_to_day_of_year(month, day, is_leap_year(year)) -
+    1
   dos_epoch + days * 86400 + hours * 3600 + minutes * 60 + seconds
 }
 
-// Check if a year is a leap year
-
 ///|
-fn is_leap_year(year : Int) -> Bool {
-  (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
-}
-
-// Convert day of year to month and day
-
-///|
+/// Day-of-year (1-based) to (month, day).
 fn day_of_year_to_month_day(day_of_year : Int, is_leap : Bool) -> (Int, Int) {
-  let days_in_months = if is_leap {
-    [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-  } else {
-    [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-  }
-  let mut remaining_days = day_of_year
-  let mut month = 1
-  for i = 0; i < days_in_months.length(); i = i + 1 {
-    if remaining_days <= days_in_months[i] {
-      return (month, remaining_days)
+  let months = days_in_months(is_leap)
+  for i = 0, remaining_days = day_of_year; i < months.length(); {
+    if remaining_days <= months[i] {
+      break (i + 1, remaining_days)
     }
-    remaining_days = remaining_days - days_in_months[i]
-    month = month + 1
+    continue i + 1, remaining_days - months[i]
+  } nobreak {
+    (12, 31) // fallback for an out-of-range day-of-year
   }
-
-  // Fallback for invalid day of year
-  (12, 31)
 }
 
-// Convert month and day to day of year
-
 ///|
+/// (month, day) to day-of-year (1-based).
 fn month_day_to_day_of_year(month : Int, day : Int, is_leap : Bool) -> Int {
-  let days_in_months = if is_leap {
-    [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-  } else {
-    [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+  let months = days_in_months(is_leap)
+  for i = 0, day_of_year = day; i < month - 1 && i < months.length(); {
+    continue i + 1, day_of_year + months[i]
+  } nobreak {
+    day_of_year
   }
-  let mut day_of_year = day
-  for i = 0; i < month - 1 && i < days_in_months.length(); i = i + 1 {
-    day_of_year = day_of_year + days_in_months[i]
-  }
-  day_of_year
-}
-
-// Create DOS time/date from individual components
-
-///|
-pub fn make_dos_datetime(
-  year : Int,
-  month : Int,
-  day : Int,
-  hour : Int,
-  minute : Int,
-  second : Int,
-) -> (Int, Int) {
-  // Validate and clamp inputs
-  let year_clamped = if year < 1980 {
-    1980
-  } else if year > 2107 {
-    2107
-  } else {
-    year
-  }
-  let month_clamped = if month < 1 {
-    1
-  } else if month > 12 {
-    12
-  } else {
-    month
-  }
-  let day_clamped = if day < 1 { 1 } else if day > 31 { 31 } else { day }
-  let hour_clamped = if hour < 0 { 0 } else if hour > 23 { 23 } else { hour }
-  let minute_clamped = if minute < 0 {
-    0
-  } else if minute > 59 {
-    59
-  } else {
-    minute
-  }
-  let second_clamped = if second < 0 {
-    0
-  } else if second > 59 {
-    59
-  } else {
-    second
-  }
-
-  // Pack DOS time
-  let dos_time = (hour_clamped << 11) |
-    (minute_clamped << 5) |
-    (second_clamped / 2)
-
-  // Pack DOS date
-  let year_offset = year_clamped - 1980
-  let dos_date = (year_offset << 9) | (month_clamped << 5) | day_clamped
-  (dos_time, dos_date)
-}
-
-// Extract individual components from DOS time/date
-
-///|
-pub fn dos_datetime_components(
-  dos_time : Int,
-  dos_date : Int,
-) -> (Int, Int, Int, Int, Int, Int) {
-  // Unpack DOS time
-  let hours = (dos_time >> 11) & 0x1f
-  let minutes = (dos_time >> 5) & 0x3f
-  let seconds = (dos_time & 0x1f) * 2
-
-  // Unpack DOS date
-  let year_offset = (dos_date >> 9) & 0x7f
-  let month = (dos_date >> 5) & 0x0f
-  let day = dos_date & 0x1f
-  let year = 1980 + year_offset
-  (year, month, day, hours, minutes, seconds)
-}
-
-// Format DOS date/time as human-readable string
-
-///|
-pub fn format_dos_datetime(dos_time : Int, dos_date : Int) -> String {
-  let (year, month, day, hours, minutes, seconds) = dos_datetime_components(
-    dos_time, dos_date,
-  )
-
-  // Format as YYYY-MM-DD HH:MM:SS
-  let year_str = year.to_string()
-  let month_str = if month < 10 {
-    "0" + month.to_string()
-  } else {
-    month.to_string()
-  }
-  let day_str = if day < 10 { "0" + day.to_string() } else { day.to_string() }
-  let hour_str = if hours < 10 {
-    "0" + hours.to_string()
-  } else {
-    hours.to_string()
-  }
-  let minute_str = if minutes < 10 {
-    "0" + minutes.to_string()
-  } else {
-    minutes.to_string()
-  }
-  let second_str = if seconds < 10 {
-    "0" + seconds.to_string()
-  } else {
-    seconds.to_string()
-  }
-  year_str +
-  "-" +
-  month_str +
-  "-" +
-  day_str +
-  " " +
-  hour_str +
-  ":" +
-  minute_str +
-  ":" +
-  second_str
 }

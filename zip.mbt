@@ -11,9 +11,7 @@
 //
 // Spec: ZIP APPNOTE — https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT
 
-// ---------------------------------------------------------------------------
 // Errors
-// ---------------------------------------------------------------------------
 
 ///|
 pub suberror ZipError {
@@ -26,9 +24,7 @@ pub impl Show for ZipError with fn output(self, logger) {
   logger.write_string("ZipError(\{msg})")
 }
 
-// ---------------------------------------------------------------------------
 // Limits and constants
-// ---------------------------------------------------------------------------
 
 ///|
 /// Unix timestamp of the DOS epoch (1980-01-01 00:00:00 UTC), the earliest time
@@ -61,9 +57,7 @@ let version_needed : Int = 20
 /// General-purpose bit flag: bit 11 = filename/comment are UTF-8.
 let gp_flags_utf8 : Int = 0x800
 
-// ---------------------------------------------------------------------------
 // Compression
-// ---------------------------------------------------------------------------
 
 ///|
 pub enum Compression {
@@ -92,7 +86,7 @@ fn Compression::method_code(self : Compression) -> Int {
 }
 
 ///|
-fn Compression::of_method_code(code : Int) -> Compression {
+fn Compression::from_method_code(code : Int) -> Compression {
   match code {
     0 => Stored
     8 => Deflate
@@ -100,9 +94,7 @@ fn Compression::of_method_code(code : Int) -> Compression {
   }
 }
 
-// ---------------------------------------------------------------------------
 // File
-// ---------------------------------------------------------------------------
 
 ///|
 /// A file's data as it is stored in the archive.
@@ -118,14 +110,19 @@ pub struct File {
 }
 
 ///|
-/// CRC-32 of `data`, as a 32-bit value held in an `Int`.
+/// CRC-32 of `data`, as a 32-bit value held in an `Int`. Computed with
+/// `gmlewis/crc32` (standard IEEE CRC-32, polynomial 0xedb88320).
 fn crc32_of(data : Bytes) -> Int {
-  @crc32.bytes(data).0.to_int()
+  let d = @crc32.Digest::new()
+  for b in data {
+    d.write(b)
+  }
+  d.digest().reinterpret_as_int()
 }
 
 ///|
 /// Create a `Stored` (uncompressed) file from `data`.
-pub fn File::stored_of_bytes(data : Bytes) -> File {
+pub fn File::stored_from_bytes(data : Bytes) -> File {
   {
     compression: Stored,
     data,
@@ -143,15 +140,15 @@ pub fn File::stored_of_bytes(data : Bytes) -> File {
 ///
 /// ```mbt nocheck
 /// test {
-///   let file = @zipc.File::deflate_of_bytes(b"aaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+///   let file = @zipc.File::deflate_from_bytes(b"aaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 ///   inspect(file.compression(), content="Deflate")
 ///   assert_eq(file.to_bytes(), b"aaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 /// }
 /// ```
-pub fn File::deflate_of_bytes(data : Bytes) -> File {
-  let compressed = @deflate.deflate(data)
+pub fn File::deflate_from_bytes(data : Bytes) -> File {
+  let compressed = flate_encode(data)
   if compressed.length() >= data.length() {
-    File::stored_of_bytes(data)
+    File::stored_from_bytes(data)
   } else {
     {
       compression: Deflate,
@@ -195,10 +192,10 @@ pub fn File::can_extract(self : File) -> Bool {
 ///|
 /// Decompress the file back to its original bytes, verifying the CRC-32.
 /// Raises `ZipError` for unsupported methods or on a CRC / size mismatch.
-pub fn File::to_bytes(self : File) -> Bytes raise {
+pub fn File::to_bytes(self : File) -> Bytes raise ZipError {
   let out = match self.compression {
     Stored => self.data
-    Deflate => @deflate.inflate(self.data)
+    Deflate => flate_decode(self.data)
     Other(m) => raise ZipError("unsupported compression method \{m}")
   }
   if out.length() != self.decompressed_size {
@@ -210,9 +207,7 @@ pub fn File::to_bytes(self : File) -> Bytes raise {
   out
 }
 
-// ---------------------------------------------------------------------------
 // Member
-// ---------------------------------------------------------------------------
 
 ///|
 pub(all) enum MemberKind {
@@ -294,9 +289,7 @@ pub fn Member::is_dir(self : Member) -> Bool {
   self.kind is Dir
 }
 
-// ---------------------------------------------------------------------------
 // Archive
-// ---------------------------------------------------------------------------
 
 ///|
 /// An in-memory ZIP archive: a set of members keyed by path.
@@ -362,13 +355,11 @@ pub fn Archive::each(self : Archive, f : (Member) -> Unit) -> Unit {
   }
 }
 
-// ---------------------------------------------------------------------------
 // Encoding
-// ---------------------------------------------------------------------------
 
 ///|
 /// Serialise the archive to ZIP bytes. Members are written in path order, so the
-/// output is deterministic. Parse it back with `Archive::of_bytes`.
+/// output is deterministic. Parse it back with `Archive::from_bytes`.
 ///
 /// Example:
 ///
@@ -376,11 +367,11 @@ pub fn Archive::each(self : Archive, f : (Member) -> Unit) -> Unit {
 /// test {
 ///   let archive = @zipc.Archive::empty()
 ///   archive.add(
-///     @zipc.Member::make("hi.txt", File(@zipc.File::stored_of_bytes(b"hi"))),
+///     @zipc.Member::make("hi.txt", File(@zipc.File::stored_from_bytes(b"hi"))),
 ///   )
 ///   |> ignore
 ///   let bytes = archive.to_bytes()
-///   let parsed = @zipc.Archive::of_bytes(bytes)
+///   let parsed = @zipc.Archive::from_bytes(bytes)
 ///   guard parsed.find("hi.txt").unwrap().kind() is File(f)
 ///   assert_eq(f.to_bytes(), b"hi")
 /// }
@@ -406,15 +397,9 @@ pub fn Archive::to_bytes(self : Archive) -> Bytes raise ZipError {
 }
 
 ///|
-/// Common DOS date/time for a member.
-fn dos_datetime(m : Member) -> (Int, Int) {
-  unix_to_dos_datetime(m.mtime)
-}
-
-///|
 fn write_local_header(buf : @buffer.Buffer, m : Member) -> Unit {
   let name = @utf8.encode(m.path[:])
-  let (dos_time, dos_date) = dos_datetime(m)
+  let (dos_time, dos_date) = unix_to_dos_datetime(m.mtime)
   let (meth, crc, csize, usize, data) = match m.kind {
     Dir => (0, 0, 0, 0, b"")
     File(f) =>
@@ -448,7 +433,7 @@ fn write_central_entry(
   local_offset : Int,
 ) -> Unit {
   let name = @utf8.encode(m.path[:])
-  let (dos_time, dos_date) = dos_datetime(m)
+  let (dos_time, dos_date) = unix_to_dos_datetime(m.mtime)
   let (meth, crc, csize, usize) = match m.kind {
     Dir => (0, 0, 0, 0)
     File(f) =>
@@ -500,9 +485,7 @@ fn write_eocd(
   put_u16_le(buf, 0) // archive comment length
 }
 
-// ---------------------------------------------------------------------------
 // Decoding
-// ---------------------------------------------------------------------------
 
 ///|
 /// Whether `data` starts with a ZIP local-file-header or empty-archive EOCD
@@ -519,7 +502,7 @@ pub fn bytes_has_magic(data : Bytes) -> Bool {
 /// Scan backwards for the End Of Central Directory record's offset.
 fn find_eocd(data : Bytes) -> Int? {
   let len = data.length()
-  // `of_bytes` guarantees len >= 22 before calling this.
+  // `from_bytes` guarantees len >= 22 before calling this.
   // The EOCD is at the end except for an optional trailing comment (<= 65535).
   let mut i = len - 22
   let limit = if len - 22 - 0xffff > 0 { len - 22 - 0xffff } else { 0 }
@@ -534,7 +517,7 @@ fn find_eocd(data : Bytes) -> Int? {
 
 ///|
 /// Parse ZIP bytes into an archive. Raises `ZipError` on malformed input.
-pub fn Archive::of_bytes(data : Bytes) -> Archive raise ZipError {
+pub fn Archive::from_bytes(data : Bytes) -> Archive raise ZipError {
   if data.length() < 22 || !bytes_has_magic(data) {
     raise ZipError("not a ZIP archive")
   }
@@ -606,7 +589,7 @@ fn parse_central_entry(
     MemberKind::Dir
   } else {
     File({
-      compression: Compression::of_method_code(method_code),
+      compression: Compression::from_method_code(method_code),
       data: compressed,
       decompressed_size: usize,
       decompressed_crc32: crc,

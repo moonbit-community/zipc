@@ -15,4 +15,5 @@ description = "Typed, in-memory ZIP archive library for MoonBit (deflate via gml
 import {
   "gmlewis/flate@0.36.8",
   "gmlewis/io@0.23.11",
+  "gmlewis/crc32@0.8.17",
 }

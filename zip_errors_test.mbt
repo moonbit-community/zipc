@@ -17,7 +17,7 @@ fn raises_zip(thunk : () -> Unit raise) -> Bool {
 /// A valid single-entry archive: stored file "a.txt" = b"xy".
 fn base_archive() -> Array[Byte] raise {
   @zipc.Archive::empty()
-  .add(@zipc.Member::make("a.txt", File(@zipc.File::stored_of_bytes(b"xy"))))
+  .add(@zipc.Member::make("a.txt", File(@zipc.File::stored_from_bytes(b"xy"))))
   .to_bytes()
   .to_array()
 }
@@ -51,87 +51,87 @@ let central_sig : UInt = 0x02014b50
 // --- malformed top-level input --------------------------------------------
 
 ///|
-test "of_bytes rejects too-short and non-magic input" {
-  assert_true(raises_zip(() => @zipc.Archive::of_bytes(b"") |> ignore))
-  assert_true(raises_zip(() => @zipc.Archive::of_bytes(b"PK") |> ignore))
+test "from_bytes rejects too-short and non-magic input" {
+  assert_true(raises_zip(() => @zipc.Archive::from_bytes(b"") |> ignore))
+  assert_true(raises_zip(() => @zipc.Archive::from_bytes(b"PK") |> ignore))
   assert_true(
     raises_zip(() => {
-      @zipc.Archive::of_bytes(b"not a zip but long enough.............")
+      @zipc.Archive::from_bytes(b"not a zip but long enough.............")
       |> ignore
     }),
   )
 }
 
 ///|
-test "of_bytes raises when the EOCD record is missing" {
+test "from_bytes raises when the EOCD record is missing" {
   // Starts with a local-file-header magic (so bytes_has_magic passes) but has no
   // EOCD signature anywhere.
   let data : Bytes = [
     0x50, 0x4b, 0x03, 0x04, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0,
   ]
-  assert_true(raises_zip(() => @zipc.Archive::of_bytes(data) |> ignore))
+  assert_true(raises_zip(() => @zipc.Archive::from_bytes(data) |> ignore))
 }
 
 ///|
-test "of_bytes raises on a bad central-directory signature" {
+test "from_bytes raises on a bad central-directory signature" {
   let arr = base_archive()
   let eocd = arr.length() - 22
   let cd_off = arr[eocd + 16].to_int() | (arr[eocd + 17].to_int() << 8)
   arr[cd_off] = 0xff // corrupt the central-dir signature
   assert_true(
-    raises_zip(() => @zipc.Archive::of_bytes(Bytes::from_array(arr)) |> ignore),
+    raises_zip(() => @zipc.Archive::from_bytes(Bytes::from_array(arr)) |> ignore),
   )
 }
 
 ///|
-test "of_bytes raises when the central directory is truncated" {
+test "from_bytes raises when the central directory is truncated" {
   let arr = base_archive()
   let eocd = arr.length() - 22
   // Point the central directory near the very end so offset + 46 overruns.
   put_u32(arr, eocd + 16, arr.length() - 4)
   assert_true(
-    raises_zip(() => @zipc.Archive::of_bytes(Bytes::from_array(arr)) |> ignore),
+    raises_zip(() => @zipc.Archive::from_bytes(Bytes::from_array(arr)) |> ignore),
   )
 }
 
 ///|
-test "of_bytes raises on a bad local-header signature" {
+test "from_bytes raises on a bad local-header signature" {
   // Keep the file's leading magic intact (so the top-level check passes) but
   // point the central entry's local-header offset at a non-header location.
   let arr = base_archive()
   let c = find_sig(arr, central_sig)
   put_u32(arr, c + 42, 4) // local header offset -> mid local header (no signature)
   assert_true(
-    raises_zip(() => @zipc.Archive::of_bytes(Bytes::from_array(arr)) |> ignore),
+    raises_zip(() => @zipc.Archive::from_bytes(Bytes::from_array(arr)) |> ignore),
   )
 }
 
 ///|
-test "of_bytes raises when the local header overruns the buffer" {
+test "from_bytes raises when the local header overruns the buffer" {
   let arr = base_archive()
   let c = find_sig(arr, central_sig)
   put_u32(arr, c + 42, arr.length() - 5) // local offset so that +30 overruns
   assert_true(
-    raises_zip(() => @zipc.Archive::of_bytes(Bytes::from_array(arr)) |> ignore),
+    raises_zip(() => @zipc.Archive::from_bytes(Bytes::from_array(arr)) |> ignore),
   )
 }
 
 ///|
-test "of_bytes raises when local file data overruns the buffer" {
+test "from_bytes raises when local file data overruns the buffer" {
   let arr = base_archive()
   // Bloat the local header's extra-field length so the data range overruns.
   arr[28] = 0xff // local header extra field length low byte
   arr[29] = 0xff
   assert_true(
-    raises_zip(() => @zipc.Archive::of_bytes(Bytes::from_array(arr)) |> ignore),
+    raises_zip(() => @zipc.Archive::from_bytes(Bytes::from_array(arr)) |> ignore),
   )
 }
 
 ///|
 test "to_bytes raises when there are too many members" {
   let a = @zipc.Archive::empty()
-  let empty = @zipc.File::stored_of_bytes(b"")
+  let empty = @zipc.File::stored_from_bytes(b"")
   for i in 0..<=65535 { // 65536 members, one over the ZIP32 limit
     a.add(@zipc.Member::make(i.to_string(), File(empty))) |> ignore
   }
@@ -145,7 +145,7 @@ test "to_bytes raises 'CRC-32 mismatch' when the recorded CRC is wrong" {
   let arr = base_archive()
   let c = find_sig(arr, central_sig)
   put_u32(arr, c + 16, 0x12345678) // clobber the central-dir CRC field
-  let archive = @zipc.Archive::of_bytes(Bytes::from_array(arr))
+  let archive = @zipc.Archive::from_bytes(Bytes::from_array(arr))
   guard archive.find("a.txt").unwrap().kind() is File(f)
   assert_true(raises_zip(() => f.to_bytes() |> ignore))
 }
@@ -156,13 +156,13 @@ test "Other compression: preserved (round-trips) but not extractable" {
   let c = find_sig(arr, central_sig)
   arr[c + 10] = 99 // central-dir compression method = 99 (unknown)
   arr[c + 11] = 0
-  let archive = @zipc.Archive::of_bytes(Bytes::from_array(arr))
+  let archive = @zipc.Archive::from_bytes(Bytes::from_array(arr))
   guard archive.find("a.txt").unwrap().kind() is File(f)
   inspect(f.compression(), content="Other(99)")
   inspect(f.can_extract(), content="false")
   assert_true(raises_zip(() => f.to_bytes() |> ignore))
   // The opaque entry must survive re-serialisation with its method intact.
-  let again = @zipc.Archive::of_bytes(archive.to_bytes())
+  let again = @zipc.Archive::from_bytes(archive.to_bytes())
   guard again.find("a.txt").unwrap().kind() is File(f2)
   inspect(f2.compression(), content="Other(99)")
 }
@@ -172,19 +172,19 @@ test "to_bytes raises 'decompressed size mismatch' on a wrong stored size" {
   let arr = base_archive()
   let c = find_sig(arr, central_sig)
   put_u32(arr, c + 24, 9999) // central-dir uncompressed size, but data is 2 bytes
-  let archive = @zipc.Archive::of_bytes(Bytes::from_array(arr))
+  let archive = @zipc.Archive::from_bytes(Bytes::from_array(arr))
   guard archive.find("a.txt").unwrap().kind() is File(f)
   assert_true(raises_zip(() => f.to_bytes() |> ignore))
 }
 
 ///|
-test "of_bytes raises when a central filename is truncated" {
+test "from_bytes raises when a central filename is truncated" {
   let arr = base_archive()
   let c = find_sig(arr, central_sig)
   arr[c + 28] = 0xff // filename length = 0xffff, overruns the buffer
   arr[c + 29] = 0xff
   assert_true(
-    raises_zip(() => @zipc.Archive::of_bytes(Bytes::from_array(arr)) |> ignore),
+    raises_zip(() => @zipc.Archive::from_bytes(Bytes::from_array(arr)) |> ignore),
   )
 }
 
@@ -194,7 +194,7 @@ test "non-Unix host falls back to default modes" {
   let arr = base_archive()
   let c = find_sig(arr, central_sig)
   arr[c + 5] = 0 // version-made-by high byte = 0 (DOS/FAT, not Unix)
-  let archive = @zipc.Archive::of_bytes(Bytes::from_array(arr))
+  let archive = @zipc.Archive::from_bytes(Bytes::from_array(arr))
   inspect(archive.find("a.txt").unwrap().mode(), content="420") // 0o644
   // Directory from a non-Unix archive → 0o755.
   let darr = @zipc.Archive::empty()
@@ -203,7 +203,7 @@ test "non-Unix host falls back to default modes" {
     .to_array()
   let dc = find_sig(darr, central_sig)
   darr[dc + 5] = 0
-  let darch = @zipc.Archive::of_bytes(Bytes::from_array(darr))
+  let darch = @zipc.Archive::from_bytes(Bytes::from_array(darr))
   inspect(darch.find("d/").unwrap().mode(), content="493") // 0o755
 }
 
@@ -227,7 +227,7 @@ test "empty directory path normalises to './'" {
 ///|
 test "ZipError has a readable Show" {
   let msg = try {
-    @zipc.Archive::of_bytes(b"") |> ignore
+    @zipc.Archive::from_bytes(b"") |> ignore
     ""
   } catch {
     e => "\{e}"
@@ -242,7 +242,8 @@ test "Member::make raises on an over-long path" {
   let long = String::make(70000, 'a') // > 65535 bytes once UTF-8 encoded
   assert_true(
     raises_zip(() => {
-      @zipc.Member::make(long, File(@zipc.File::stored_of_bytes(b""))) |> ignore
+      @zipc.Member::make(long, File(@zipc.File::stored_from_bytes(b"")))
+      |> ignore
     }),
   )
 }
@@ -251,7 +252,7 @@ test "Member::make raises on an over-long path" {
 
 ///|
 test "File and Member accessors" {
-  let f = @zipc.File::stored_of_bytes(b"hello")
+  let f = @zipc.File::stored_from_bytes(b"hello")
   inspect(f.can_extract(), content="true")
   inspect(f.compressed_size(), content="5")
   inspect(f.decompressed_size(), content="5")
@@ -268,9 +269,9 @@ test "File and Member accessors" {
 ///|
 test "Archive remove / mem / each" {
   let a = @zipc.Archive::empty()
-  a.add(@zipc.Member::make("x", File(@zipc.File::stored_of_bytes(b"1"))))
+  a.add(@zipc.Member::make("x", File(@zipc.File::stored_from_bytes(b"1"))))
   |> ignore
-  a.add(@zipc.Member::make("y", File(@zipc.File::stored_of_bytes(b"2"))))
+  a.add(@zipc.Member::make("y", File(@zipc.File::stored_from_bytes(b"2"))))
   |> ignore
   inspect(a.member_count(), content="2")
   a.remove("x") |> ignore

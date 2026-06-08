@@ -1,6 +1,7 @@
 import {
-  "moonbit-community/zipc/deflate",
-  "moonbit-community/zipc/crc32",
+  "gmlewis/crc32",
   "moonbitlang/core/buffer",
   "moonbitlang/core/encoding/utf8",
+  "gmlewis/flate",
+  "gmlewis/io",
 }

@@ -4,17 +4,7 @@ package "moonbit-community/zipc"
 // Values
 pub fn bytes_has_magic(Bytes) -> Bool
 
-pub fn dos_datetime_components(Int, Int) -> (Int, Int, Int, Int, Int, Int)
-
-pub fn dos_datetime_to_unix(Int, Int) -> Int
-
 pub let dos_epoch : Int
-
-pub fn format_dos_datetime(Int, Int) -> String
-
-pub fn make_dos_datetime(Int, Int, Int, Int, Int, Int) -> (Int, Int)
-
-pub fn unix_to_dos_datetime(Int) -> (Int, Int)
 
 // Errors
 pub suberror ZipError {
@@ -30,10 +20,10 @@ pub fn Archive::add(Self, Member) -> Self
 pub fn Archive::each(Self, (Member) -> Unit) -> Unit
 pub fn Archive::empty() -> Self
 pub fn Archive::find(Self, String) -> Member?
+pub fn Archive::from_bytes(Bytes) -> Self raise ZipError
 pub fn Archive::is_empty(Self) -> Bool
 pub fn Archive::mem(Self, String) -> Bool
 pub fn Archive::member_count(Self) -> Int
-pub fn Archive::of_bytes(Bytes) -> Self raise ZipError
 pub fn Archive::remove(Self, String) -> Self
 pub fn Archive::to_array(Self) -> Array[Member]
 pub fn Archive::to_bytes(Self) -> Bytes raise ZipError
@@ -56,9 +46,9 @@ pub fn File::compressed_size(Self) -> Int
 pub fn File::compression(Self) -> Compression
 pub fn File::decompressed_crc32(Self) -> Int
 pub fn File::decompressed_size(Self) -> Int
-pub fn File::deflate_of_bytes(Bytes) -> Self
-pub fn File::stored_of_bytes(Bytes) -> Self
-pub fn File::to_bytes(Self) -> Bytes raise
+pub fn File::deflate_from_bytes(Bytes) -> Self
+pub fn File::stored_from_bytes(Bytes) -> Self
+pub fn File::to_bytes(Self) -> Bytes raise ZipError
 
 pub struct Member {
   path : String

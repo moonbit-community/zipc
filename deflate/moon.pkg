@@ -1,8 +1,0 @@
-import {
-  "gmlewis/io",
-  "gmlewis/flate",
-}
-
-options(
-  "is-main": false,
-)

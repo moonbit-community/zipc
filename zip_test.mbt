@@ -26,7 +26,7 @@ test "empty archive round-trips" {
   let a = @zipc.Archive::empty()
   let bytes = a.to_bytes()
   assert_true(@zipc.bytes_has_magic(bytes))
-  let b = @zipc.Archive::of_bytes(bytes)
+  let b = @zipc.Archive::from_bytes(bytes)
   inspect(b.member_count(), content="0")
   inspect(b.is_empty(), content="true")
 }
@@ -34,10 +34,10 @@ test "empty archive round-trips" {
 ///|
 test "stored file round-trips" {
   let content = b"the quick brown fox"
-  let file = @zipc.File::stored_of_bytes(content)
+  let file = @zipc.File::stored_from_bytes(content)
   let mem = @zipc.Member::make("fox.txt", File(file))
   let bytes = @zipc.Archive::empty().add(mem).to_bytes()
-  let archive = @zipc.Archive::of_bytes(bytes)
+  let archive = @zipc.Archive::from_bytes(bytes)
   inspect(archive.member_count(), content="1")
   let got = archive.find("fox.txt").unwrap()
   guard got.kind() is File(f)
@@ -48,13 +48,13 @@ test "stored file round-trips" {
 ///|
 test "deflate file round-trips and compresses" {
   let content = repeat_unit(50) // 900 bytes, highly compressible
-  let file = @zipc.File::deflate_of_bytes(content)
+  let file = @zipc.File::deflate_from_bytes(content)
   inspect(file.compression(), content="Deflate")
   assert_true(file.compressed_size() < content.length() / 2)
   let bytes = @zipc.Archive::empty()
     .add(@zipc.Member::make("data.txt", File(file)))
     .to_bytes()
-  let archive = @zipc.Archive::of_bytes(bytes)
+  let archive = @zipc.Archive::from_bytes(bytes)
   guard archive.find("data.txt").unwrap().kind() is File(f)
   inspect(f.compression(), content="Deflate")
   assert_eq(f.to_bytes(), content)
@@ -64,18 +64,18 @@ test "deflate file round-trips and compresses" {
 test "multi-member archive with a directory round-trips" {
   let a = @zipc.Archive::empty()
   a.add(
-    @zipc.Member::make("readme.txt", File(@zipc.File::stored_of_bytes(b"hi"))),
+    @zipc.Member::make("readme.txt", File(@zipc.File::stored_from_bytes(b"hi"))),
   )
   |> ignore
   a.add(
     @zipc.Member::make(
       "src/main.mbt",
-      File(@zipc.File::deflate_of_bytes(repeat_unit(20))),
+      File(@zipc.File::deflate_from_bytes(repeat_unit(20))),
     ),
   )
   |> ignore
   a.add(@zipc.Member::make("src", Dir)) |> ignore
-  let archive = @zipc.Archive::of_bytes(a.to_bytes())
+  let archive = @zipc.Archive::from_bytes(a.to_bytes())
   inspect(archive.member_count(), content="3")
   assert_true(archive.mem("readme.txt"))
   assert_true(archive.mem("src/")) // directories gain a trailing slash
@@ -89,14 +89,14 @@ test "multi-member archive with a directory round-trips" {
 
 ///|
 test "Unix mode and mtime are preserved" {
-  let file = @zipc.File::stored_of_bytes(b"#!/bin/sh\necho hi\n")
+  let file = @zipc.File::stored_from_bytes(b"#!/bin/sh\necho hi\n")
   let mem = @zipc.Member::make(
     "run.sh",
     File(file),
     mode=0o755,
     mtime=978307200, // 2001-01-01
   )
-  let archive = @zipc.Archive::of_bytes(
+  let archive = @zipc.Archive::from_bytes(
     @zipc.Archive::empty().add(mem).to_bytes(),
   )
   let got = archive.find("run.sh").unwrap()
@@ -118,7 +118,7 @@ test "parses and extracts a real Python zipfile archive" {
     0, 0, 0, 0, 0,
   ]
   assert_true(@zipc.bytes_has_magic(real))
-  let archive = @zipc.Archive::of_bytes(real)
+  let archive = @zipc.Archive::from_bytes(real)
   inspect(archive.member_count(), content="1")
   let got = archive.find("greeting.txt").unwrap()
   inspect(got.mode(), content="420") // 0o644
@@ -130,7 +130,7 @@ test "parses and extracts a real Python zipfile archive" {
 ///|
 test "deflate constructor falls back to stored for incompressible data" {
   // A tiny input cannot be shrunk by DEFLATE framing.
-  let file = @zipc.File::deflate_of_bytes(b"x")
+  let file = @zipc.File::deflate_from_bytes(b"x")
   inspect(file.compression(), content="Stored")
   assert_eq(file.to_bytes(), b"x")
 }
@@ -140,12 +140,14 @@ test "serialization is deterministic regardless of insertion order" {
   // Two archives with the same members added in different orders must produce
   // byte-identical output (members are written in path order).
   let a = @zipc.Archive::empty()
-  a.add(@zipc.Member::make("b.txt", File(@zipc.File::stored_of_bytes(b"two"))))
+  a.add(
+    @zipc.Member::make("b.txt", File(@zipc.File::stored_from_bytes(b"two"))),
+  )
   |> ignore
   a.add(
     @zipc.Member::make(
       "a.txt",
-      File(@zipc.File::deflate_of_bytes(repeat_unit(30))),
+      File(@zipc.File::deflate_from_bytes(repeat_unit(30))),
     ),
   )
   |> ignore
@@ -155,11 +157,13 @@ test "serialization is deterministic regardless of insertion order" {
   b.add(
     @zipc.Member::make(
       "a.txt",
-      File(@zipc.File::deflate_of_bytes(repeat_unit(30))),
+      File(@zipc.File::deflate_from_bytes(repeat_unit(30))),
     ),
   )
   |> ignore
-  b.add(@zipc.Member::make("b.txt", File(@zipc.File::stored_of_bytes(b"two"))))
+  b.add(
+    @zipc.Member::make("b.txt", File(@zipc.File::stored_from_bytes(b"two"))),
+  )
   |> ignore
   assert_eq(a.to_bytes(), b.to_bytes())
   // and serialising the same archive twice is stable
@@ -167,11 +171,11 @@ test "serialization is deterministic regardless of insertion order" {
 }
 
 ///|
-test "of_bytes rejects non-ZIP input" {
+test "from_bytes rejects non-ZIP input" {
   let garbage : Bytes = b"this is definitely not a zip file at all!!"
   assert_true(
     try {
-      @zipc.Archive::of_bytes(garbage) |> ignore
+      @zipc.Archive::from_bytes(garbage) |> ignore
       false
     } catch {
       _ => true
@@ -188,7 +192,7 @@ test "to_bytes detects a corrupted deflate payload" {
     .add(
       @zipc.Member::make(
         "data.txt",
-        File(@zipc.File::deflate_of_bytes(repeat_unit(50))),
+        File(@zipc.File::deflate_from_bytes(repeat_unit(50))),
       ),
     )
     .to_bytes()
@@ -196,7 +200,7 @@ test "to_bytes detects a corrupted deflate payload" {
   // Local header is 30 bytes + 8-byte name "data.txt"; the deflate payload
   // begins at offset 38. Flip a byte well inside it.
   arr[44] = (arr[44].to_int() ^ 0xff).to_byte()
-  let archive = @zipc.Archive::of_bytes(Bytes::from_array(arr))
+  let archive = @zipc.Archive::from_bytes(Bytes::from_array(arr))
   guard archive.find("data.txt").unwrap().kind() is File(f)
   assert_true(
     try {
