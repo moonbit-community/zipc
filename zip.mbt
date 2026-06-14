@@ -111,13 +111,10 @@ pub struct File {
 
 ///|
 /// CRC-32 of `data`, as a 32-bit value held in an `Int`. Computed with
-/// `gmlewis/crc32` (standard IEEE CRC-32, polynomial 0xedb88320).
+/// `moonbit-community/flate/checksum` (standard IEEE CRC-32, polynomial
+/// 0xedb88320).
 fn crc32_of(data : Bytes) -> Int {
-  let d = @crc32.Digest::new()
-  for b in data {
-    d.write(b)
-  }
-  d.digest().reinterpret_as_int()
+  @checksum.crc32(data).reinterpret_as_int()
 }
 
 ///|

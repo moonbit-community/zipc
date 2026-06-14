@@ -6,9 +6,10 @@ the OCaml [zipc](https://github.com/dbuenzli/zipc) library.
 Its focus is the *archive model*, not the codec: a value-oriented
 `Archive` / `Member` / `File` API that preserves per-entry Unix mode and
 modification time, produces deterministic (byte-stable) output, and verifies
-CRC-32 on every decode. The DEFLATE compression itself is delegated to the
-mature [`gmlewis/flate`](https://github.com/gmlewis/moonbit-flate) (a port of
-Go's `compress/flate`, with real LZ77 and fixed/dynamic Huffman blocks).
+CRC-32 on every decode. The DEFLATE compression itself is delegated to
+[`moonbit-community/flate`](https://github.com/moonbit-community/flate) — a
+pure-MoonBit, io-free DEFLATE engine with real LZ77 and fixed/dynamic Huffman
+blocks.
 
 
 ## Scope
@@ -35,8 +36,8 @@ Go's `compress/flate`, with real LZ77 and fixed/dynamic Huffman blocks).
   `File::deflate_from_bytes` (compressed).
 - **Being a codec library.** No standalone DEFLATE/zlib/gzip surface is exposed;
   compression is an internal detail of reading and writing entries. For raw
-  DEFLATE, zlib, gzip, streaming or dictionaries, use `gmlewis/flate`,
-  `gmlewis/zlib`, `gmlewis/gzip` directly.
+  DEFLATE, zlib, gzip, streaming or dictionaries, use `moonbit-community/flate`,
+  `moonbit-community/flate/zlib`, `moonbit-community/flate/gzip` directly.
 
 Entries that use methods other than `Stored`/`Deflate` round-trip as opaque
 `Compression::Other` payloads (they are preserved but not decoded).
@@ -83,8 +84,8 @@ not shrink the data. `File::to_bytes` verifies the entry's CRC-32 and size.
 
 ## Compared to other MoonBit options
 
-- **`gmlewis/flate` / `gmlewis/gzip` / `gmlewis/zlib`** are codecs only — no ZIP
-  *archive* layer. This library builds on `gmlewis/flate` rather than competing
+- **`moonbit-community/flate`** (with its `gzip` / `zlib` wrappers) is a codec
+  only — no ZIP *archive* layer. This library builds on it rather than competing
   with it.
 - **`moonbitlang/async/gzip`** is a gzip stream transform for HTTP
   content-encoding; it is not a ZIP archive tool.

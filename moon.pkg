@@ -1,7 +1,6 @@
 import {
-  "gmlewis/crc32",
+  "moonbit-community/flate",
+  "moonbit-community/flate/checksum",
   "moonbitlang/core/buffer",
   "moonbitlang/core/encoding/utf8",
-  "gmlewis/flate",
-  "gmlewis/io",
 }

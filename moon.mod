@@ -1,6 +1,6 @@
 name = "moonbit-community/zipc"
 
-version = "0.2.1"
+version = "0.2.2"
 
 readme = "README.mbt.md"
 
@@ -10,10 +10,8 @@ license = "Apache-2.0"
 
 keywords = [ "zip", "archive", "compression", "deflate" ]
 
-description = "Typed, in-memory ZIP archive library for MoonBit (deflate via gmlewis/flate)"
+description = "Typed, in-memory ZIP archive library for MoonBit (deflate via moonbit-community/flate)"
 
 import {
-  "gmlewis/flate@0.36.8",
-  "gmlewis/io@0.23.11",
-  "gmlewis/crc32@0.8.17",
+  "moonbit-community/flate@0.2.0",
 }
