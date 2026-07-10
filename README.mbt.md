@@ -48,7 +48,7 @@ Entries that use methods other than `Stored`/`Deflate` round-trip as opaque
 Build an archive of members (files and directories), serialise it to ZIP bytes,
 and parse it back. Unix mode and modification time are preserved.
 
-```mbt nocheck
+```mbt check
 ///|
 test {
   // build
@@ -80,7 +80,9 @@ test {
 ```
 
 `File::deflate_from_bytes` automatically falls back to `Stored` when DEFLATE would
-not shrink the data. `File::to_bytes` verifies the entry's CRC-32 and size.
+not shrink the data. `File::to_bytes` verifies the entry's CRC-32 and size,
+requires the DEFLATE stream to consume the complete compressed payload, and
+bounds decompression by the size recorded in the ZIP entry.
 
 ## Compared to other MoonBit options
 

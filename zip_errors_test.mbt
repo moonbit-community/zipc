@@ -3,13 +3,14 @@
 // accessor / collection surface that the happy-path tests don't reach.
 
 ///|
-/// True if `thunk` raises (any error).
+/// True if `thunk` raises `ZipError` rather than leaking another error kind.
 fn raises_zip(thunk : () -> Unit raise) -> Bool {
   try {
     thunk()
     false
   } catch {
-    _ => true
+    @zipc.ZipError(_) => true
+    _ => false
   }
 }
 
@@ -43,6 +44,22 @@ fn put_u32(arr : Array[Byte], off : Int, v : Int) -> Unit {
   arr[off + 1] = ((v >> 8) & 0xff).to_byte()
   arr[off + 2] = ((v >> 16) & 0xff).to_byte()
   arr[off + 3] = ((v >> 24) & 0xff).to_byte()
+}
+
+///|
+fn get_u32(arr : Array[Byte], off : Int) -> Int {
+  arr[off].to_int() |
+  (arr[off + 1].to_int() << 8) |
+  (arr[off + 2].to_int() << 16) |
+  (arr[off + 3].to_int() << 24)
+}
+
+///|
+fn deflate_archive(content : Bytes) -> Array[Byte] raise {
+  @zipc.Archive::empty()
+  .add(@zipc.Member::make("a", File(@zipc.File::deflate_from_bytes(content))))
+  .to_bytes()
+  .to_array()
 }
 
 ///|
@@ -178,11 +195,101 @@ test "to_bytes raises 'decompressed size mismatch' on a wrong stored size" {
 }
 
 ///|
+test "parser rejects compressed-size spill into central directory" {
+  let content = Bytes::make(4096, b'A')
+  let arr = deflate_archive(content)
+  let c = find_sig(arr, central_sig)
+  let csize = get_u32(arr, c + 20)
+  // The central-directory size is authoritative. Adding one makes the payload
+  // include the first byte of the central-directory signature while CRC-32 and
+  // the decompressed size remain valid.
+  put_u32(arr, c + 20, csize + 1)
+  assert_true(
+    raises_zip(() => @zipc.Archive::from_bytes(Bytes::from_array(arr)) |> ignore),
+  )
+}
+
+///|
+test "deflate extraction rejects a central compressed size that is too small" {
+  let content = Bytes::make(4096, b'A')
+  let arr = deflate_archive(content)
+  let c = find_sig(arr, central_sig)
+  let csize = get_u32(arr, c + 20)
+  put_u32(arr, c + 20, csize - 1)
+  let archive = @zipc.Archive::from_bytes(Bytes::from_array(arr))
+  guard archive.find("a").unwrap().kind() is File(parsed)
+  assert_true(raises_zip(() => parsed.to_bytes() |> ignore))
+}
+
+///|
+test "deflate extraction enforces the central decompressed size" {
+  let content = Bytes::make(4096, b'A')
+  let arr = deflate_archive(content)
+  let c = find_sig(arr, central_sig)
+  put_u32(arr, c + 24, content.length() - 1)
+  let archive = @zipc.Archive::from_bytes(Bytes::from_array(arr))
+  guard archive.find("a").unwrap().kind() is File(parsed)
+  assert_true(raises_zip(() => parsed.to_bytes() |> ignore))
+}
+
+///|
 test "from_bytes raises when a central filename is truncated" {
   let arr = base_archive()
   let c = find_sig(arr, central_sig)
   arr[c + 28] = 0xff // filename length = 0xffff, overruns the buffer
   arr[c + 29] = 0xff
+  assert_true(
+    raises_zip(() => @zipc.Archive::from_bytes(Bytes::from_array(arr)) |> ignore),
+  )
+}
+
+///|
+test "from_bytes rejects truncated central extra and comment fields" {
+  let extra = base_archive()
+  let extra_c = find_sig(extra, central_sig)
+  extra[extra_c + 30] = 0xff
+  extra[extra_c + 31] = 0xff
+  assert_true(
+    raises_zip(() => {
+      @zipc.Archive::from_bytes(Bytes::from_array(extra)) |> ignore
+    }),
+  )
+  let comment = base_archive()
+  let comment_c = find_sig(comment, central_sig)
+  comment[comment_c + 32] = 0xff
+  comment[comment_c + 33] = 0xff
+  assert_true(
+    raises_zip(() => {
+      @zipc.Archive::from_bytes(Bytes::from_array(comment)) |> ignore
+    }),
+  )
+}
+
+///|
+test "from_bytes accepts a declared EOCD comment and rejects unclaimed bytes" {
+  let commented = @zipc.Archive::empty().to_bytes().to_array()
+  commented[20] = 3
+  commented.push(b'z')
+  commented.push(b'i')
+  commented.push(b'p')
+  inspect(
+    @zipc.Archive::from_bytes(Bytes::from_array(commented)).is_empty(),
+    content="true",
+  )
+  let trailing = @zipc.Archive::empty().to_bytes().to_array()
+  trailing.push(b'!')
+  assert_true(
+    raises_zip(() => {
+      @zipc.Archive::from_bytes(Bytes::from_array(trailing)) |> ignore
+    }),
+  )
+}
+
+///|
+test "from_bytes rejects ZIP32 offsets outside the supported Int range" {
+  let arr = base_archive()
+  let eocd = arr.length() - 22
+  put_u32(arr, eocd + 16, -1)
   assert_true(
     raises_zip(() => @zipc.Archive::from_bytes(Bytes::from_array(arr)) |> ignore),
   )

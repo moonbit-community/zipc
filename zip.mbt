@@ -135,7 +135,7 @@ pub fn File::stored_from_bytes(data : Bytes) -> File {
 ///
 /// Example:
 ///
-/// ```mbt nocheck
+/// ```mbt check
 /// test {
 ///   let file = @zipc.File::deflate_from_bytes(b"aaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 ///   inspect(file.compression(), content="Deflate")
@@ -192,7 +192,7 @@ pub fn File::can_extract(self : File) -> Bool {
 pub fn File::to_bytes(self : File) -> Bytes raise ZipError {
   let out = match self.compression {
     Stored => self.data
-    Deflate => flate_decode(self.data)
+    Deflate => flate_decode(self.data, self.decompressed_size)
     Other(m) => raise ZipError("unsupported compression method \{m}")
   }
   if out.length() != self.decompressed_size {
@@ -360,7 +360,7 @@ pub fn Archive::each(self : Archive, f : (Member) -> Unit) -> Unit {
 ///
 /// Example:
 ///
-/// ```mbt nocheck
+/// ```mbt check
 /// test {
 ///   let archive = @zipc.Archive::empty()
 ///   archive.add(
@@ -504,7 +504,10 @@ fn find_eocd(data : Bytes) -> Int? {
   let mut i = len - 22
   let limit = if len - 22 - 0xffff > 0 { len - 22 - 0xffff } else { 0 }
   while i >= limit {
-    if read_u32_le(data, i) == eocd_sig {
+    // A matching signature inside an archive comment is not an EOCD. The
+    // record's declared comment must account for every byte through EOF.
+    if read_u32_le(data, i) == eocd_sig &&
+      read_u16_le(data, i + 20) == len - (i + 22) {
       return Some(i)
     }
     i -= 1
@@ -523,11 +526,15 @@ pub fn Archive::from_bytes(data : Bytes) -> Archive raise ZipError {
     None => raise ZipError("end of central directory record not found")
   }
   let entry_count = read_u16_le(data, eocd + 10)
+  let cd_size = read_u32_le(data, eocd + 12)
   let cd_offset = read_u32_le(data, eocd + 16)
+  if cd_size < 0 || cd_offset < 0 || cd_offset > eocd {
+    raise ZipError("invalid central directory range")
+  }
   let archive = Archive::empty()
   let mut offset = cd_offset
   for _ in 0..<entry_count {
-    let (mem, next) = parse_central_entry(data, offset)
+    let (mem, next) = parse_central_entry(data, offset, cd_offset, eocd)
     archive.add(mem) |> ignore
     offset = next
   }
@@ -540,8 +547,10 @@ pub fn Archive::from_bytes(data : Bytes) -> Archive raise ZipError {
 fn parse_central_entry(
   data : Bytes,
   offset : Int,
+  cd_start : Int,
+  cd_end : Int,
 ) -> (Member, Int) raise ZipError {
-  if offset + 46 > data.length() {
+  if offset < cd_start || offset > cd_end || cd_end - offset < 46 {
     raise ZipError("central directory entry truncated")
   }
   if read_u32_le(data, offset) != central_dir_sig {
@@ -559,12 +568,18 @@ fn parse_central_entry(
   let comment_len = read_u16_le(data, offset + 32)
   let external_attrs = read_u32_le(data, offset + 38)
   let local_offset = read_u32_le(data, offset + 42)
-  let name_start = offset + 46
-  if name_start + name_len > data.length() {
-    raise ZipError("central directory filename truncated")
+  if csize < 0 || usize < 0 || local_offset < 0 {
+    raise ZipError("unsupported ZIP32 size or offset")
   }
-  let name = @utf8.decode_lossy(data[name_start:name_start + name_len])
-  let compressed = read_local_data(data, local_offset, csize)
+  let name_start = offset + 46
+  let variable_len = name_len + extra_len + comment_len
+  if variable_len > cd_end - name_start {
+    raise ZipError("central directory entry data truncated")
+  }
+  let name_end = name_start + name_len
+  let entry_end = name_start + variable_len
+  let name = @utf8.decode_lossy(data[name_start:name_end])
+  let compressed = read_local_data(data, local_offset, csize, cd_start)
   let is_dir = name.has_suffix("/") || (external_attrs & 0x10) != 0
 
   // Unix mode lives in the high 16 bits of the external attributes, but only
@@ -593,7 +608,7 @@ fn parse_central_entry(
     })
   }
   let mem = { path: name, mode, mtime, kind }
-  (mem, offset + 46 + name_len + extra_len + comment_len)
+  (mem, entry_end)
 }
 
 ///|
@@ -603,8 +618,12 @@ fn read_local_data(
   data : Bytes,
   local_offset : Int,
   csize : Int,
+  data_end : Int,
 ) -> Bytes raise ZipError {
-  if local_offset + 30 > data.length() {
+  if local_offset < 0 ||
+    csize < 0 ||
+    local_offset > data_end ||
+    data_end - local_offset < 30 {
     raise ZipError("local header truncated")
   }
   if read_u32_le(data, local_offset) != local_file_header_sig {
@@ -612,8 +631,13 @@ fn read_local_data(
   }
   let name_len = read_u16_le(data, local_offset + 26)
   let extra_len = read_u16_le(data, local_offset + 28)
-  let start = local_offset + 30 + name_len + extra_len
-  if start + csize > data.length() {
+  let variable_len = name_len + extra_len
+  let header_end = local_offset + 30
+  if variable_len > data_end - header_end {
+    raise ZipError("file data truncated")
+  }
+  let start = header_end + variable_len
+  if csize > data_end - start {
     raise ZipError("file data truncated")
   }
   data[start:start + csize].to_owned()

@@ -1,6 +1,6 @@
 name = "moonbit-community/zipc"
 
-version = "0.2.2"
+version = "0.2.3"
 
 readme = "README.mbt.md"
 
@@ -13,5 +13,5 @@ keywords = [ "zip", "archive", "compression", "deflate" ]
 description = "Typed, in-memory ZIP archive library for MoonBit (deflate via moonbit-community/flate)"
 
 import {
-  "moonbit-community/flate@0.2.0",
+  "moonbit-community/flate@0.3.0",
 }

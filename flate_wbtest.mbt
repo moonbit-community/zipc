@@ -27,12 +27,22 @@ let sample_inputs : Array[Bytes] = [
 ]
 
 ///|
+fn flate_decode_error(data : Bytes, decompressed_size : Int) -> String? {
+  try {
+    flate_decode(data, decompressed_size) |> ignore
+    None
+  } catch {
+    ZipError(message) => Some(message)
+  }
+}
+
+///|
 test "raw deflate round-trips" {
   for inp in sample_inputs {
-    assert_eq(flate_decode(flate_encode(inp)), inp)
+    assert_eq(flate_decode(flate_encode(inp), inp.length()), inp)
   }
   let big = repeated(1000)
-  assert_eq(flate_decode(flate_encode(big)), big)
+  assert_eq(flate_decode(flate_encode(big), big.length()), big)
 }
 
 ///|
@@ -49,17 +59,56 @@ test "decode of a real zlib raw-deflate stream" {
     203, 72, 205, 201, 201, 215, 81, 40, 207, 47, 202, 73, 225, 202, 192, 201, 1,
     0,
   ]
-  assert_eq(flate_decode(stream), b"hello, world\nhello, world\nhello, world\n")
+  assert_eq(
+    flate_decode(stream, 39),
+    b"hello, world\nhello, world\nhello, world\n",
+  )
 }
 
 ///|
 test "decode rejects garbage" {
   let garbage : Bytes = [255, 255, 255, 255, 255, 255]
   let raised = try {
-    flate_decode(garbage) |> ignore
+    flate_decode(garbage, 0) |> ignore
     false
   } catch {
     ZipError(_) => true
   }
   assert_true(raised)
+}
+
+///|
+test "decode rejects bytes after the final DEFLATE block" {
+  let compressed = flate_encode(b"exactly one stream").to_array()
+  compressed.push(b'!')
+  assert_true(
+    flate_decode_error(Bytes::from_array(compressed), 18) ==
+    Some("inflate: trailing data"),
+  )
+}
+
+///|
+test "decode enforces the advertised output size" {
+  let input = repeated(100)
+  assert_true(
+    flate_decode_error(flate_encode(input), input.length() - 1) ==
+    Some("decompressed size mismatch"),
+  )
+}
+
+///|
+test "decode rejects a truncated valid DEFLATE stream" {
+  let input = repeated(20)
+  let compressed = flate_encode(input)
+  let truncated = compressed[:compressed.length() - 1].to_owned()
+  assert_true(
+    flate_decode_error(truncated, input.length()) ==
+    Some("inflate: unexpected end of input"),
+  )
+}
+
+///|
+test "decode completes after exactly filling its scratch buffer" {
+  let input = Bytes::make(32768, b'A')
+  assert_eq(flate_decode(flate_encode(input), input.length()), input)
 }
