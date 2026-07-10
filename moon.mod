@@ -13,5 +13,5 @@ keywords = [ "zip", "archive", "compression", "deflate" ]
 description = "Typed, in-memory ZIP archive library for MoonBit (deflate via moonbit-community/flate)"
 
 import {
-  "moonbit-community/flate@0.3.0",
+  "moonbit-community/flate@0.4.0",
 }

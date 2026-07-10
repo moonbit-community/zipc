@@ -38,13 +38,15 @@ fn flate_decode(data : Bytes, decompressed_size : Int) -> Bytes raise ZipError {
     } else {
       scratch.length()
     }
-    let (status, consumed, produced) = inflater.step(
+    let status = inflater.step(
       data[pos:],
       scratch.mut_view(end=output_len),
       end=true,
     ) catch {
-      InflateError(msg) => raise ZipError("inflate: \{msg}")
+      InflateError(_, message) => raise ZipError("inflate: \{message}")
     }
+    let consumed = inflater.last_consumed()
+    let produced = inflater.last_produced()
     pos = pos + consumed
     if produced > remaining {
       raise ZipError("decompressed size mismatch")
