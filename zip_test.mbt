@@ -40,7 +40,7 @@ test "stored file round-trips" {
   let archive = @zipc.Archive::from_bytes(bytes)
   inspect(archive.member_count(), content="1")
   let got = archive.find("fox.txt").unwrap()
-  guard got.kind() is File(f)
+  guard! got.kind() is File(f)
   inspect(f.compression(), content="Stored")
   assert_eq(f.to_bytes(), content)
 }
@@ -55,7 +55,7 @@ test "deflate file round-trips and compresses" {
     .add(@zipc.Member::make("data.txt", File(file)))
     .to_bytes()
   let archive = @zipc.Archive::from_bytes(bytes)
-  guard archive.find("data.txt").unwrap().kind() is File(f)
+  guard! archive.find("data.txt").unwrap().kind() is File(f)
   inspect(f.compression(), content="Deflate")
   assert_eq(f.to_bytes(), content)
 }
@@ -122,7 +122,7 @@ test "parses and extracts a real Python zipfile archive" {
   inspect(archive.member_count(), content="1")
   let got = archive.find("greeting.txt").unwrap()
   inspect(got.mode(), content="420") // 0o644
-  guard got.kind() is File(f)
+  guard! got.kind() is File(f)
   inspect(f.compression(), content="Deflate")
   assert_eq(f.to_bytes(), repeat_unit(20))
 }
@@ -201,7 +201,7 @@ test "to_bytes detects a corrupted deflate payload" {
   // begins at offset 38. Flip a byte well inside it.
   arr[44] = (arr[44].to_int() ^ 0xff).to_byte()
   let archive = @zipc.Archive::from_bytes(Bytes::from_array(arr))
-  guard archive.find("data.txt").unwrap().kind() is File(f)
+  guard! archive.find("data.txt").unwrap().kind() is File(f)
   assert_true(
     try {
       f.to_bytes() |> ignore

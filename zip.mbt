@@ -369,7 +369,7 @@ pub fn Archive::each(self : Archive, f : (Member) -> Unit) -> Unit {
 ///   |> ignore
 ///   let bytes = archive.to_bytes()
 ///   let parsed = @zipc.Archive::from_bytes(bytes)
-///   guard parsed.find("hi.txt").unwrap().kind() is File(f)
+///   guard! parsed.find("hi.txt").unwrap().kind() is File(f)
 ///   assert_eq(f.to_bytes(), b"hi")
 /// }
 /// ```
