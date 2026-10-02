@@ -2,8 +2,8 @@ name: publish-package
 run-name: publish to mooncakes
 
 env:
-  MOONBIT_VERSION: 0.10.3+16975d007
-  MOONBIT_CORE_VERSION: 0.10.3+16975d007
+  MOONBIT_VERSION: 0.10.14+7d59c7ec9
+  MOONBIT_CORE_VERSION: 0.10.14+7d59c7ec9
 
 on:
   push:
