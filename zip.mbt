@@ -257,7 +257,7 @@ pub fn Member::make(
   if @utf8.encode(p[:]).length() > 0xffff {
     raise ZipError("path too long")
   }
-  { path: p, mode: mode.unwrap_or(default_mode), mtime, kind }
+  { path: p, mode: mode.unwrap_or(default_mode), mtime, kind, }
 }
 
 ///|
@@ -296,7 +296,7 @@ pub struct Archive {
 
 ///|
 pub fn Archive::empty() -> Archive {
-  { members: {} }
+  { members: {}, }
 }
 
 ///|
@@ -607,7 +607,7 @@ fn parse_central_entry(
       decompressed_crc32: crc,
     })
   }
-  let mem = { path: name, mode, mtime, kind }
+  let mem = { path: name, mode, mtime, kind, }
   (mem, entry_end)
 }
 
