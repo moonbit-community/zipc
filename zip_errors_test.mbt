@@ -163,7 +163,9 @@ test "to_bytes raises 'CRC-32 mismatch' when the recorded CRC is wrong" {
   let c = find_sig(arr, central_sig)
   put_u32(arr, c + 16, 0x12345678) // clobber the central-dir CRC field
   let archive = @zipc.Archive::from_bytes(Bytes::from_array(arr))
-  guard archive.find("a.txt").unwrap().kind() is File(f)
+  guard archive.find("a.txt").unwrap().kind() is File(f) else {
+    fail("expected a file")
+  }
   assert_true(raises_zip(() => f.to_bytes() |> ignore))
 }
 
@@ -174,13 +176,17 @@ test "Other compression: preserved (round-trips) but not extractable" {
   arr[c + 10] = 99 // central-dir compression method = 99 (unknown)
   arr[c + 11] = 0
   let archive = @zipc.Archive::from_bytes(Bytes::from_array(arr))
-  guard archive.find("a.txt").unwrap().kind() is File(f)
+  guard archive.find("a.txt").unwrap().kind() is File(f) else {
+    fail("expected a file")
+  }
   inspect(f.compression(), content="Other(99)")
   inspect(f.can_extract(), content="false")
   assert_true(raises_zip(() => f.to_bytes() |> ignore))
   // The opaque entry must survive re-serialisation with its method intact.
   let again = @zipc.Archive::from_bytes(archive.to_bytes())
-  guard again.find("a.txt").unwrap().kind() is File(f2)
+  guard again.find("a.txt").unwrap().kind() is File(f2) else {
+    fail("expected a file")
+  }
   inspect(f2.compression(), content="Other(99)")
 }
 
@@ -190,7 +196,9 @@ test "to_bytes raises 'decompressed size mismatch' on a wrong stored size" {
   let c = find_sig(arr, central_sig)
   put_u32(arr, c + 24, 9999) // central-dir uncompressed size, but data is 2 bytes
   let archive = @zipc.Archive::from_bytes(Bytes::from_array(arr))
-  guard archive.find("a.txt").unwrap().kind() is File(f)
+  guard archive.find("a.txt").unwrap().kind() is File(f) else {
+    fail("expected a file")
+  }
   assert_true(raises_zip(() => f.to_bytes() |> ignore))
 }
 
@@ -217,7 +225,9 @@ test "deflate extraction rejects a central compressed size that is too small" {
   let csize = get_u32(arr, c + 20)
   put_u32(arr, c + 20, csize - 1)
   let archive = @zipc.Archive::from_bytes(Bytes::from_array(arr))
-  guard archive.find("a").unwrap().kind() is File(parsed)
+  guard archive.find("a").unwrap().kind() is File(parsed) else {
+    fail("expected a file")
+  }
   assert_true(raises_zip(() => parsed.to_bytes() |> ignore))
 }
 
@@ -228,7 +238,9 @@ test "deflate extraction enforces the central decompressed size" {
   let c = find_sig(arr, central_sig)
   put_u32(arr, c + 24, content.length() - 1)
   let archive = @zipc.Archive::from_bytes(Bytes::from_array(arr))
-  guard archive.find("a").unwrap().kind() is File(parsed)
+  guard archive.find("a").unwrap().kind() is File(parsed) else {
+    fail("expected a file")
+  }
   assert_true(raises_zip(() => parsed.to_bytes() |> ignore))
 }
 

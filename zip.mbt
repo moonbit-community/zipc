@@ -24,6 +24,9 @@ pub impl Show for ZipError with fn output(self, logger) {
   logger.write_string("ZipError(\{msg})")
 }
 
+///|
+pub extend ZipError with Show::{to_string, output}
+
 // Limits and constants
 
 ///|
@@ -74,6 +77,12 @@ pub impl Show for Compression with fn output(self, logger) {
     Other(m) => logger.write_string("Other(\{m})")
   }
 }
+
+///|
+pub extend Compression with Eq::{not_equal, equal}
+
+///|
+pub extend Compression with Show::{to_string, output}
 
 ///|
 /// The numeric ZIP compression-method code for a `Compression`.
@@ -369,7 +378,9 @@ pub fn Archive::each(self : Archive, f : (Member) -> Unit) -> Unit {
 ///   |> ignore
 ///   let bytes = archive.to_bytes()
 ///   let parsed = @zipc.Archive::from_bytes(bytes)
-///   guard parsed.find("hi.txt").unwrap().kind() is File(f)
+///   guard parsed.find("hi.txt").unwrap().kind() is File(f) else {
+///     fail("expected a file")
+///   }
 ///   assert_eq(f.to_bytes(), b"hi")
 /// }
 /// ```
