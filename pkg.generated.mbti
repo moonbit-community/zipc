@@ -10,6 +10,8 @@ pub let dos_epoch : Int
 pub suberror ZipError {
   ZipError(String)
 }
+pub fn ZipError::output(Self, &Logger) -> Unit
+pub fn ZipError::to_string(Self) -> String
 pub impl Show for ZipError
 
 // Types and methods
@@ -33,6 +35,10 @@ pub enum Compression {
   Deflate
   Other(Int)
 } derive(Eq)
+pub fn Compression::equal(Self, Self) -> Bool
+pub fn Compression::not_equal(Self, Self) -> Bool
+pub fn Compression::output(Self, &Logger) -> Unit
+pub fn Compression::to_string(Self) -> String
 pub impl Show for Compression
 
 pub struct File {
@@ -71,4 +77,3 @@ pub(all) enum MemberKind {
 // Type aliases
 
 // Traits
-

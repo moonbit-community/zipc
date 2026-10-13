@@ -24,38 +24,41 @@ pub impl Show for ZipError with fn output(self, logger) {
   logger.write_string("ZipError(\{msg})")
 }
 
+///|
+pub extend ZipError with Show::{to_string, output}
+
 // Limits and constants
 
 ///|
 /// Unix timestamp of the DOS epoch (1980-01-01 00:00:00 UTC), the earliest time
 /// representable in a ZIP entry.
-pub let dos_epoch : Int = 315532800
+pub let dos_epoch : Int32 = 315532800
 
 ///|
 /// Maximum number of members in a ZIP32 archive.
-let max_members : Int = 65535
+let max_members : Int32 = 65535
 
 ///|
-let local_file_header_sig : Int = 0x04034b50
+let local_file_header_sig : Int32 = 0x04034b50
 
 ///|
-let central_dir_sig : Int = 0x02014b50
+let central_dir_sig : Int32 = 0x02014b50
 
 ///|
-let eocd_sig : Int = 0x06054b50
+let eocd_sig : Int32 = 0x06054b50
 
 ///|
 /// "version made by": high byte 3 = Unix (so the external-attribute mode bits
 /// are honoured), low byte 20 = ZIP 2.0.
-let version_made_by : Int = 0x0314
+let version_made_by : Int32 = 0x0314
 
 ///|
 /// "version needed to extract": 2.0 (DEFLATE support).
-let version_needed : Int = 20
+let version_needed : Int32 = 20
 
 ///|
 /// General-purpose bit flag: bit 11 = filename/comment are UTF-8.
-let gp_flags_utf8 : Int = 0x800
+let gp_flags_utf8 : Int32 = 0x800
 
 // Compression
 
@@ -63,7 +66,7 @@ let gp_flags_utf8 : Int = 0x800
 pub enum Compression {
   Stored
   Deflate
-  Other(Int)
+  Other(Int32)
 } derive(Eq)
 
 ///|
@@ -76,8 +79,14 @@ pub impl Show for Compression with fn output(self, logger) {
 }
 
 ///|
+pub extend Compression with Eq::{not_equal, equal}
+
+///|
+pub extend Compression with Show::{to_string, output}
+
+///|
 /// The numeric ZIP compression-method code for a `Compression`.
-fn Compression::method_code(self : Compression) -> Int {
+fn Compression::method_code(self : Compression) -> Int32 {
   match self {
     Stored => 0
     Deflate => 8
@@ -86,7 +95,7 @@ fn Compression::method_code(self : Compression) -> Int {
 }
 
 ///|
-fn Compression::from_method_code(code : Int) -> Compression {
+fn Compression::from_method_code(code : Int32) -> Compression {
   match code {
     0 => Stored
     8 => Deflate
@@ -105,15 +114,15 @@ fn Compression::from_method_code(code : Int) -> Compression {
 pub struct File {
   compression : Compression
   data : Bytes
-  decompressed_size : Int
-  decompressed_crc32 : Int
+  decompressed_size : Int32
+  decompressed_crc32 : Int32
 }
 
 ///|
 /// CRC-32 of `data`, as a 32-bit value held in an `Int`. Computed with
 /// `moonbit-community/flate/checksum` (standard IEEE CRC-32, polynomial
 /// 0xedb88320).
-fn crc32_of(data : Bytes) -> Int {
+fn crc32_of(data : Bytes) -> Int32 {
   @checksum.crc32(data).reinterpret_as_int()
 }
 
@@ -163,17 +172,17 @@ pub fn File::compression(self : File) -> Compression {
 
 ///|
 /// Size of the stored (possibly compressed) payload, in bytes.
-pub fn File::compressed_size(self : File) -> Int {
+pub fn File::compressed_size(self : File) -> Int32 {
   self.data.length()
 }
 
 ///|
-pub fn File::decompressed_size(self : File) -> Int {
+pub fn File::decompressed_size(self : File) -> Int32 {
   self.decompressed_size
 }
 
 ///|
-pub fn File::decompressed_crc32(self : File) -> Int {
+pub fn File::decompressed_crc32(self : File) -> Int32 {
   self.decompressed_crc32
 }
 
@@ -217,8 +226,8 @@ pub(all) enum MemberKind {
 /// (Unix seconds).
 pub struct Member {
   path : String
-  mode : Int
-  mtime : Int
+  mode : Int32
+  mtime : Int32
   kind : MemberKind
 }
 
@@ -246,8 +255,8 @@ fn normalize_path(path : String, kind : MemberKind) -> String {
 pub fn Member::make(
   path : String,
   kind : MemberKind,
-  mode? : Int,
-  mtime? : Int = dos_epoch,
+  mode? : Int32,
+  mtime~ : Int32 = dos_epoch,
 ) -> Member raise ZipError {
   let default_mode = match kind {
     Dir => 0o755
@@ -266,12 +275,12 @@ pub fn Member::path(self : Member) -> String {
 }
 
 ///|
-pub fn Member::mode(self : Member) -> Int {
+pub fn Member::mode(self : Member) -> Int32 {
   self.mode
 }
 
 ///|
-pub fn Member::mtime(self : Member) -> Int {
+pub fn Member::mtime(self : Member) -> Int32 {
   self.mtime
 }
 
@@ -305,7 +314,7 @@ pub fn Archive::is_empty(self : Archive) -> Bool {
 }
 
 ///|
-pub fn Archive::member_count(self : Archive) -> Int {
+pub fn Archive::member_count(self : Archive) -> Int32 {
   self.members.length()
 }
 
@@ -369,7 +378,9 @@ pub fn Archive::each(self : Archive, f : (Member) -> Unit) -> Unit {
 ///   |> ignore
 ///   let bytes = archive.to_bytes()
 ///   let parsed = @zipc.Archive::from_bytes(bytes)
-///   guard parsed.find("hi.txt").unwrap().kind() is File(f)
+///   guard parsed.find("hi.txt").unwrap().kind() is File(f) else {
+///     fail("expected a file")
+///   }
 ///   assert_eq(f.to_bytes(), b"hi")
 /// }
 /// ```
@@ -427,7 +438,7 @@ fn write_local_header(buf : @buffer.Buffer, m : Member) -> Unit {
 fn write_central_entry(
   buf : @buffer.Buffer,
   m : Member,
-  local_offset : Int,
+  local_offset : Int32,
 ) -> Unit {
   let name = @utf8.encode(m.path[:])
   let (dos_time, dos_date) = unix_to_dos_datetime(m.mtime)
@@ -468,9 +479,9 @@ fn write_central_entry(
 ///|
 fn write_eocd(
   buf : @buffer.Buffer,
-  entry_count : Int,
-  cd_size : Int,
-  cd_offset : Int,
+  entry_count : Int32,
+  cd_size : Int32,
+  cd_offset : Int32,
 ) -> Unit {
   put_u32_le(buf, eocd_sig)
   put_u16_le(buf, 0) // this disk
@@ -497,7 +508,7 @@ pub fn bytes_has_magic(data : Bytes) -> Bool {
 
 ///|
 /// Scan backwards for the End Of Central Directory record's offset.
-fn find_eocd(data : Bytes) -> Int? {
+fn find_eocd(data : Bytes) -> Int32? {
   let len = data.length()
   // `from_bytes` guarantees len >= 22 before calling this.
   // The EOCD is at the end except for an optional trailing comment (<= 65535).
@@ -546,10 +557,10 @@ pub fn Archive::from_bytes(data : Bytes) -> Archive raise ZipError {
 /// and the offset of the next entry.
 fn parse_central_entry(
   data : Bytes,
-  offset : Int,
-  cd_start : Int,
-  cd_end : Int,
-) -> (Member, Int) raise ZipError {
+  offset : Int32,
+  cd_start : Int32,
+  cd_end : Int32,
+) -> (Member, Int32) raise ZipError {
   if offset < cd_start || offset > cd_end || cd_end - offset < 46 {
     raise ZipError("central directory entry truncated")
   }
@@ -616,9 +627,9 @@ fn parse_central_entry(
 /// following its local-header offset.
 fn read_local_data(
   data : Bytes,
-  local_offset : Int,
-  csize : Int,
-  data_end : Int,
+  local_offset : Int32,
+  csize : Int32,
+  data_end : Int32,
 ) -> Bytes raise ZipError {
   if local_offset < 0 ||
     csize < 0 ||

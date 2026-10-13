@@ -20,7 +20,10 @@ fn flate_encode(data : Bytes) -> Bytes {
 /// `decompressed_size` output bytes. ZIP records both compressed and
 /// decompressed sizes, so accepting a valid DEFLATE prefix or growing output
 /// past the declared size would violate the entry boundary.
-fn flate_decode(data : Bytes, decompressed_size : Int) -> Bytes raise ZipError {
+fn flate_decode(
+  data : Bytes,
+  decompressed_size : Int32,
+) -> Bytes raise ZipError {
   if decompressed_size < 0 {
     raise ZipError("invalid decompressed size")
   }

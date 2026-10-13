@@ -8,18 +8,18 @@
 
 ///|
 /// Days per month, indexed 0 (January) .. 11 (December), for a common year.
-let days_in_month_common : FixedArray[Int] = [
+let days_in_month_common : FixedArray[Int32] = [
   31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
 ]
 
 ///|
 /// Days per month for a leap year (February has 29).
-let days_in_month_leap : FixedArray[Int] = [
+let days_in_month_leap : FixedArray[Int32] = [
   31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31,
 ]
 
 ///|
-fn days_in_months(is_leap : Bool) -> FixedArray[Int] {
+fn days_in_months(is_leap : Bool) -> FixedArray[Int32] {
   if is_leap {
     days_in_month_leap
   } else {
@@ -28,14 +28,14 @@ fn days_in_months(is_leap : Bool) -> FixedArray[Int] {
 }
 
 ///|
-fn is_leap_year(year : Int) -> Bool {
+fn is_leap_year(year : Int32) -> Bool {
   (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
 }
 
 ///|
 /// Convert a Unix timestamp (UTC seconds) to packed DOS (time, date) fields.
 /// Timestamps at or before the DOS epoch clamp to 1980-01-01 00:00:00.
-fn unix_to_dos_datetime(unix_timestamp : Int) -> (Int, Int) {
+fn unix_to_dos_datetime(unix_timestamp : Int32) -> (Int32, Int32) {
   if unix_timestamp <= dos_epoch {
     return (0, 0x0021) // 1980-01-01 00:00:00
   }
@@ -70,7 +70,7 @@ fn unix_to_dos_datetime(unix_timestamp : Int) -> (Int, Int) {
 ///|
 /// Convert packed DOS (time, date) fields back to a Unix timestamp (UTC
 /// seconds). Out-of-range fields fall back to the DOS epoch.
-fn dos_datetime_to_unix(dos_time : Int, dos_date : Int) -> Int {
+fn dos_datetime_to_unix(dos_time : Int32, dos_date : Int32) -> Int32 {
   let hours = (dos_time >> 11) & 0x1f
   let minutes = (dos_time >> 5) & 0x3f
   let seconds = (dos_time & 0x1f) * 2
@@ -100,7 +100,10 @@ fn dos_datetime_to_unix(dos_time : Int, dos_date : Int) -> Int {
 
 ///|
 /// Day-of-year (1-based) to (month, day).
-fn day_of_year_to_month_day(day_of_year : Int, is_leap : Bool) -> (Int, Int) {
+fn day_of_year_to_month_day(
+  day_of_year : Int32,
+  is_leap : Bool,
+) -> (Int32, Int32) {
   let months = days_in_months(is_leap)
   for i = 0, remaining_days = day_of_year; i < months.length(); {
     if remaining_days <= months[i] {
@@ -114,7 +117,11 @@ fn day_of_year_to_month_day(day_of_year : Int, is_leap : Bool) -> (Int, Int) {
 
 ///|
 /// (month, day) to day-of-year (1-based).
-fn month_day_to_day_of_year(month : Int, day : Int, is_leap : Bool) -> Int {
+fn month_day_to_day_of_year(
+  month : Int32,
+  day : Int32,
+  is_leap : Bool,
+) -> Int32 {
   let months = days_in_months(is_leap)
   for i = 0, day_of_year = day; i < month - 1 && i < months.length(); {
     continue i + 1, day_of_year + months[i]
