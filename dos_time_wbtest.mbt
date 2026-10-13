@@ -6,7 +6,7 @@
 
 ///|
 /// Round-trip a Unix timestamp through DOS packing and back.
-fn dos_roundtrip(unix : Int) -> Int {
+fn dos_roundtrip(unix : Int32) -> Int32 {
   let (t, d) = unix_to_dos_datetime(unix)
   dos_datetime_to_unix(t, d)
 }

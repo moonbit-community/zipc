@@ -25,7 +25,7 @@ fn base_archive() -> Array[Byte] raise {
 
 ///|
 /// Index of the first occurrence of the 4-byte little-endian signature `sig`.
-fn find_sig(arr : Array[Byte], sig : UInt) -> Int {
+fn find_sig(arr : Array[Byte], sig : UInt32) -> Int32 {
   for i in 0..<(arr.length() - 3) {
     let v = arr[i].to_uint() |
       (arr[i + 1].to_uint() << 8) |
@@ -39,7 +39,7 @@ fn find_sig(arr : Array[Byte], sig : UInt) -> Int {
 }
 
 ///|
-fn put_u32(arr : Array[Byte], off : Int, v : Int) -> Unit {
+fn put_u32(arr : Array[Byte], off : Int32, v : Int32) -> Unit {
   arr[off] = (v & 0xff).to_byte()
   arr[off + 1] = ((v >> 8) & 0xff).to_byte()
   arr[off + 2] = ((v >> 16) & 0xff).to_byte()
@@ -47,7 +47,7 @@ fn put_u32(arr : Array[Byte], off : Int, v : Int) -> Unit {
 }
 
 ///|
-fn get_u32(arr : Array[Byte], off : Int) -> Int {
+fn get_u32(arr : Array[Byte], off : Int32) -> Int32 {
   arr[off].to_int() |
   (arr[off + 1].to_int() << 8) |
   (arr[off + 2].to_int() << 16) |
@@ -63,7 +63,7 @@ fn deflate_archive(content : Bytes) -> Array[Byte] raise {
 }
 
 ///|
-let central_sig : UInt = 0x02014b50
+let central_sig : UInt32 = 0x02014b50
 
 // --- malformed top-level input --------------------------------------------
 
