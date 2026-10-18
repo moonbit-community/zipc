@@ -74,7 +74,9 @@ test {
 
   // parse and extract
   let parsed = @zipc.Archive::from_bytes(bytes)
-  guard parsed.find("readme.txt").unwrap().kind() is File(f)
+  guard parsed.find("readme.txt").unwrap().kind() is File(f) else {
+    fail("readme.txt should be a file member")
+  }
   assert_eq(f.to_bytes(), b"hello")
 }
 ```
