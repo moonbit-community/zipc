@@ -10,7 +10,7 @@
 
 ///|
 /// `b"hello, zip world!\n"` repeated `n` times.
-fn repeat_unit(n : Int) -> Bytes {
+fn repeat_unit(n : Int32) -> Bytes {
   let unit = b"hello, zip world!\n"
   let arr : Array[Byte] = []
   for _ in 0..<n {
