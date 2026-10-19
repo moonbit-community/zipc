@@ -9,7 +9,7 @@
 
 ///|
 /// Build `b"hello, world\n"` repeated `n` times.
-fn repeated(n : Int) -> Bytes {
+fn repeated(n : Int32) -> Bytes {
   let unit = b"hello, world\n"
   let arr : Array[Byte] = []
   for _ in 0..<n {
@@ -27,7 +27,7 @@ let sample_inputs : Array[Bytes] = [
 ]
 
 ///|
-fn flate_decode_error(data : Bytes, decompressed_size : Int) -> String? {
+fn flate_decode_error(data : Bytes, decompressed_size : Int32) -> String? {
   try {
     flate_decode(data, decompressed_size) |> ignore
     None
