@@ -25,6 +25,8 @@ pub impl Show for ZipError with fn output(self, logger) {
 }
 
 ///|
+#deprecated
+#doc(hidden)
 pub extend ZipError with Show::{to_string, output}
 
 // Limits and constants
@@ -70,6 +72,8 @@ pub enum Compression {
 } derive(Eq)
 
 ///|
+#deprecated
+#doc(hidden)
 pub extend Compression with Eq::{not_equal, equal}
 
 ///|
@@ -82,6 +86,8 @@ pub impl Show for Compression with fn output(self, logger) {
 }
 
 ///|
+#deprecated
+#doc(hidden)
 pub extend Compression with Show::{to_string, output}
 
 ///|

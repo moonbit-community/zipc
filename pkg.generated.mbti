@@ -4,14 +4,12 @@ package "moonbit-community/zipc"
 // Values
 pub fn bytes_has_magic(Bytes) -> Bool
 
-pub let dos_epoch : Int
+pub let dos_epoch : Int32
 
 // Errors
 pub suberror ZipError {
   ZipError(String)
 }
-pub fn ZipError::output(Self, &Logger) -> Unit
-pub fn ZipError::to_string(Self) -> String
 pub impl Show for ZipError
 
 // Types and methods
@@ -25,7 +23,7 @@ pub fn Archive::find(Self, String) -> Member?
 pub fn Archive::from_bytes(Bytes) -> Self raise ZipError
 pub fn Archive::is_empty(Self) -> Bool
 pub fn Archive::mem(Self, String) -> Bool
-pub fn Archive::member_count(Self) -> Int
+pub fn Archive::member_count(Self) -> Int32
 pub fn Archive::remove(Self, String) -> Self
 pub fn Archive::to_array(Self) -> Array[Member]
 pub fn Archive::to_bytes(Self) -> Bytes raise ZipError
@@ -33,40 +31,36 @@ pub fn Archive::to_bytes(Self) -> Bytes raise ZipError
 pub enum Compression {
   Stored
   Deflate
-  Other(Int)
+  Other(Int32)
 } derive(Eq)
-pub fn Compression::equal(Self, Self) -> Bool
-pub fn Compression::not_equal(Self, Self) -> Bool
-pub fn Compression::output(Self, &Logger) -> Unit
-pub fn Compression::to_string(Self) -> String
 pub impl Show for Compression
 
 pub struct File {
   compression : Compression
   data : Bytes
-  decompressed_size : Int
-  decompressed_crc32 : Int
+  decompressed_size : Int32
+  decompressed_crc32 : Int32
 }
 pub fn File::can_extract(Self) -> Bool
-pub fn File::compressed_size(Self) -> Int
+pub fn File::compressed_size(Self) -> Int32
 pub fn File::compression(Self) -> Compression
-pub fn File::decompressed_crc32(Self) -> Int
-pub fn File::decompressed_size(Self) -> Int
+pub fn File::decompressed_crc32(Self) -> Int32
+pub fn File::decompressed_size(Self) -> Int32
 pub fn File::deflate_from_bytes(Bytes) -> Self
 pub fn File::stored_from_bytes(Bytes) -> Self
 pub fn File::to_bytes(Self) -> Bytes raise ZipError
 
 pub struct Member {
   path : String
-  mode : Int
-  mtime : Int
+  mode : Int32
+  mtime : Int32
   kind : MemberKind
 }
 pub fn Member::is_dir(Self) -> Bool
 pub fn Member::kind(Self) -> MemberKind
-pub fn Member::make(String, MemberKind, mode? : Int, mtime? : Int) -> Self raise ZipError
-pub fn Member::mode(Self) -> Int
-pub fn Member::mtime(Self) -> Int
+pub fn Member::make(String, MemberKind, mode? : Int32, mtime? : Int32) -> Self raise ZipError
+pub fn Member::mode(Self) -> Int32
+pub fn Member::mtime(Self) -> Int32
 pub fn Member::path(Self) -> String
 
 pub(all) enum MemberKind {
